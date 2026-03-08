@@ -42,10 +42,25 @@ This repo builds it all from scratch across 11 notebooks: forward process, U-Net
 
 ## Setup
 
+First, create and activate a virtual environment, then install the dependencies:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+```
+
+### Running in VS Code (Recommended)
+If you are opening this repository in Visual Studio Code:
+1. Open any `.ipynb` notebook file.
+2. Click on the **Select Kernel** button in the top right corner.
+3. Choose **Python Environments** -> **.venv** to use the local environment you just created.
+
+*Note: If the VS Code Jupyter extension warns that your Python version is unsupported, ensure `ipykernel` is installed in your `.venv` (it should be included in `requirements.txt`). Try restarting VS Code or the Jupyter Server via the VS Code Command Palette.*
+
+### Running in Browser
+If you prefer the classic Jupyter interface:
+```bash
 jupyter notebook
 ```
 
