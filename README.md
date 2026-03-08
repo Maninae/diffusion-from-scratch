@@ -1,9 +1,5 @@
 <p align="center">
-
-```math
-x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)
-```
-
+  <img src="assets/equation.png" alt="x_t = sqrt(ᾱ_t) x_0 + sqrt(1 - ᾱ_t) ε" width="520">
 </p>
 
 <h1 align="center">Diffusion From Scratch</h1>
