@@ -1,10 +1,10 @@
 # Diffusion From Scratch
 
-A comprehensive mini-course on diffusion models for image generation — implemented from scratch in Python, NumPy, and PyTorch.
+Diffusion models generate images by learning to reverse noise. Start with static, end with a picture. That's the whole idea — the math is surprisingly clean and the results are what power Stable Diffusion, DALL·E 3, Imagen, and basically every image generation system worth talking about right now.
 
-## What Is This?
+This repo is 11 Jupyter notebooks that build the whole thing from scratch. No black-box imports, no "just trust me" abstractions. You start with NumPy array operations and end up implementing DDPM, DDIM, classifier-free guidance, latent diffusion, and flow matching — writing every line yourself.
 
-11 Jupyter notebook modules covering everything from NumPy fundamentals to latent diffusion and flow matching, with timed interview exercises. Built for hands-on learning: every concept is taught, then implemented, then exercised.
+There are timed coding exercises throughout, and Module 10 is a full interview simulation if that's what you're here for.
 
 ## Modules
 
