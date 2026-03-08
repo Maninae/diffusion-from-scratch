@@ -25,7 +25,17 @@ A comprehensive mini-course on diffusion models for image generation — impleme
 ## Setup
 
 ```bash
+# 1. Create a virtual environment
+python3 -m venv .venv
+
+# 2. Activate it
+source .venv/bin/activate
+
+# 3. Install dependencies
 pip install -r requirements.txt
+
+# 4. Launch Jupyter
+jupyter notebook
 ```
 
 ## Structure
