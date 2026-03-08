@@ -1,65 +1,70 @@
-# Diffusion From Scratch
+<p align="center">
 
-Diffusion models generate images by learning to reverse noise. Start with static, end with a picture. That's the whole idea — the math is surprisingly clean and the results are what power Stable Diffusion, DALL·E 3, Imagen, and basically every image generation system worth talking about right now.
+$$x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)$$
 
-This repo is 11 Jupyter notebooks that build the whole thing from scratch. No black-box imports, no "just trust me" abstractions. You start with NumPy array operations and end up implementing DDPM, DDIM, classifier-free guidance, latent diffusion, and flow matching — writing every line yourself.
+</p>
 
-There are timed coding exercises throughout, and Module 10 is a full interview simulation if that's what you're here for.
+<h1 align="center">Diffusion From Scratch</h1>
+
+<p align="center">
+  <em>Learn to reverse noise into images. One notebook at a time.</em>
+</p>
+
+<p align="center">
+  <a href="#modules"><img alt="Modules" src="https://img.shields.io/badge/modules-11-E8A87C?style=flat-square"></a>
+  <a href="#setup"><img alt="Hardware" src="https://img.shields.io/badge/runs_on-MPS_%7C_CPU-85CDCA?style=flat-square"></a>
+  <a href="docs/papers.md"><img alt="Papers" src="https://img.shields.io/badge/papers-linked-6C63FF?style=flat-square"></a>
+</p>
+
+---
+
+Diffusion models turn static into pictures. Add noise until an image is unrecognizable, then train a neural network to undo it — one step at a time. That's the engine behind Stable Diffusion, DALL·E 3, and Imagen.
+
+This repo builds it all from scratch across 11 notebooks: forward process, U-Net, training loop, DDPM/DDIM sampling, classifier-free guidance, latent diffusion, DiT, and flow matching. Every line of code is yours to write and understand.
 
 ## Modules
 
-| # | Module | Focus |
-|---|--------|-------|
-| 0 | NumPy Foundations | Broadcasting, einsum, vectorization |
+| # | Module | What you'll build |
+|---|--------|-------------------|
+| 0 | NumPy Foundations | Broadcasting, einsum, vectorized operations |
 | 1 | PyTorch Fundamentals | Autograd, nn.Module, custom layers |
-| 2 | Convolutions | Conv layers, normalization, residual blocks |
+| 2 | Convolutions | Conv2d from scratch, GroupNorm, residual blocks |
 | 3 | Attention | Self-attention, multi-head, spatial attention |
-| 4 | U-Net Architecture | Encoder-decoder, skip connections, time conditioning |
+| 4 | U-Net Architecture | Encoder-decoder with skip connections and time conditioning |
 | 5 | Diffusion Math | Forward process, reverse process, ELBO, noise schedules |
-| 6 | Training | Full training loop, EMA, monitoring |
-| 7 | Sampling | DDPM, DDIM, accelerated sampling |
-| 8 | Conditioning & Guidance | Class conditioning, CFG, guidance scale |
+| 6 | Training | Full training loop with EMA and loss monitoring |
+| 7 | Sampling | DDPM, DDIM, and accelerated sampling |
+| 8 | Conditioning & Guidance | Class conditioning and classifier-free guidance |
 | 9 | Advanced Topics | Latent diffusion, DiT, flow matching |
-| 10 | Interview Simulation | Timed exercises, verbal prompts, code review |
+| 10 | Interview Simulation | Timed exercises, verbal prompts, bug hunts |
 
 ## Setup
 
 ```bash
-# 1. Create a virtual environment
 python3 -m venv .venv
-
-# 2. Activate it
 source .venv/bin/activate
-
-# 3. Install dependencies
 pip install -r requirements.txt
-
-# 4. Launch Jupyter
 jupyter notebook
 ```
+
+Runs on Apple Silicon (MPS) or CPU. No CUDA required.
+
+## Papers
+
+Every concept links back to its source paper. See [docs/papers.md](docs/papers.md) for the full reading list with arxiv links.
 
 ## Structure
 
 ```
-├── README.md
-├── requirements.txt
-├── module_00_numpy_foundations.ipynb
-├── module_01_pytorch_fundamentals.ipynb
-├── ...
-├── utils/                  # Shared utilities
-│   ├── visualization.py
-│   ├── data.py
-│   └── schedule.py
-├── checkpoints/            # Saved models (gitignored)
-├── data/                   # Datasets (gitignored)
-├── assets/                 # Diagrams
-└── docs/                   # Build specs & paper references
+├── module_00 … module_10.ipynb   # The notebooks
+├── utils/                        # Shared code (UNet, schedules, viz)
+├── docs/                         # Build specs & paper references
+├── checkpoints/                  # Saved models (gitignored)
+└── data/                         # Datasets (gitignored)
 ```
 
-## Papers
+---
 
-See [docs/papers.md](docs/papers.md) for the complete reading list with arxiv links and a recommended reading order.
-
-## Target Hardware
-
-MacBook with Apple Silicon (MPS) or CPU. No CUDA required.
+<p align="center">
+  <em>"All you need is noise and patience."</em>
+</p>
