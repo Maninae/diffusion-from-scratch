@@ -16,6 +16,10 @@ $$x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \epsilon, \qua
   <a href="docs/papers.md"><img alt="Papers" src="https://img.shields.io/badge/papers-linked-6C63FF?style=flat-square"></a>
 </p>
 
+<p align="center">
+  <img src="assets/hero.png" alt="Forward diffusion process: clean image → noise" width="720">
+</p>
+
 ---
 
 Diffusion models turn static into pictures. Add noise until an image is unrecognizable, then train a neural network to undo it — one step at a time. That's the engine behind Stable Diffusion, DALL·E 3, and Imagen.
