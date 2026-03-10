@@ -156,3 +156,38 @@ def ddpm_sample(
     if clip:
         x_t = x_t.clamp(-1, 1)
     return x_t
+
+
+def ddpm_sample_step(
+    x_t: torch.Tensor,
+    noise_pred: torch.Tensor,
+    t_val: int,
+    schedule: Dict[str, torch.Tensor],
+) -> torch.Tensor:
+    """Perform a single DDPM reverse step given a (possibly modified) noise prediction.
+
+    Useful for classifier guidance and CFG where the noise prediction is
+    adjusted before the denoising step.
+
+    Args:
+        x_t: Current noisy image, shape (B, C, H, W).
+        noise_pred: Predicted (or guided) noise, shape (B, C, H, W).
+        t_val: Current integer timestep index.
+        schedule: Dict of precomputed schedule tensors (on device).
+
+    Returns:
+        Denoised image for timestep t_val - 1, shape (B, C, H, W).
+    """
+    beta_t = schedule["betas"][t_val]
+    alpha_bar_t = schedule["alphas_cumprod"][t_val]
+    sqrt_recip_alpha = schedule["sqrt_recip_alphas"][t_val]
+
+    mean = sqrt_recip_alpha * (
+        x_t - (beta_t / (1 - alpha_bar_t).sqrt()) * noise_pred
+    )
+
+    if t_val > 0:
+        posterior_var = schedule["posterior_variance"][t_val]
+        z = torch.randn_like(x_t)
+        return mean + posterior_var.sqrt() * z
+    return mean
