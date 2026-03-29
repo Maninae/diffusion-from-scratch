@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 9: Classifier-Free Guidance — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 9</div>
+    <h2>Classifier-Free Guidance</h2>
+    <p class="lecture-desc">The single most impactful trick in modern diffusion &mdash; one model, two predictions, and an extrapolation that transformed generative AI.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">CFG</span>
+      <span class="lecture-tag">Label Dropout</span>
+      <span class="lecture-tag">Guidance Scale</span>
+      <span class="lecture-tag">Text Conditioning</span>
+      <span class="lecture-tag">Negative Prompts</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 9.1 -->
+    <h2 id="the-training-trick">The Training Trick: Random Label Dropout</h2>
+
+    <p>Classifier guidance (Lecture 8) works, but it requires training a separate classifier on noisy images at every noise level. Want to condition on text? Train another classifier. Want to adjust guidance strength? Still need that extra model. The approach is expensive, inflexible, and inelegant.</p>
+
+    <p>What if we could get guidance without any classifier at all? The key insight, from Ho &amp; Salimans (2022), is disarmingly simple: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
+
+    <p>During training, with probability $p_\text{uncond}$ (typically 10&ndash;20%), we replace the class label with a special <strong>null token</strong> &mdash; the extra embedding at index <code>num_classes</code> that we set up in Lecture 8. The rest of the time, we train normally with the real class label.</p>
+
+    <p>The result: the same network learns two skills:</p>
+
+    <ul>
+      <li>$\epsilon_\theta(x_t, t, c)$ &mdash; <strong>conditional</strong> noise prediction (when given a real class label)</li>
+      <li>$\epsilon_\theta(x_t, t, \varnothing)$ &mdash; <strong>unconditional</strong> noise prediction (when given the null token)</li>
+    </ul>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      This is the entire training trick. No new loss function, no new architecture, no second model. Just randomly dropping labels during training. The null token at index <code>num_classes</code> (e.g., index 10 for MNIST digits 0&ndash;9) is what tells the model "there is no class &mdash; predict noise unconditionally."
+    </div>
+
+    <div class="pseudocode">
+<strong>Training with Random Label Dropout</strong>
+
+def train_step_cfg(model, x_0, class_label, schedule, p_uncond=0.1):
+    <span class="comment"># Randomly drop labels → null token</span>
+    drop_mask = random(batch_size) &lt; p_uncond
+    class_label[drop_mask] = NULL_CLASS          <span class="comment"># index = num_classes</span>
+
+    <span class="comment"># Standard training with modified labels</span>
+    t = random_integers(0, T-1, batch_size)
+    noise = randn_like(x_0)
+    x_t = q_sample(x_0, t, noise, schedule)
+    noise_pred = model(x_t, t, class_label)
+    loss = mse_loss(noise_pred, noise)
+    return loss
+    </div>
+
+    <!-- Section 9.2 -->
+    <h2 id="the-guidance-formula">The Guidance Formula</h2>
+
+    <p>At inference time, for each denoising step, we run the model <em>twice</em>: once with the class label, once with the null token. Then we extrapolate in the direction of the conditioning signal:</p>
+
+    $$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$$
+
+    <p>Let's unpack this. The term $(\epsilon_\text{cond} - \epsilon_\text{uncond})$ is the <strong>conditioning signal</strong> &mdash; it captures exactly what's different about the model's prediction when it knows the class versus when it doesn't. The guidance scale $s$ controls how aggressively we amplify this difference.</p>
+
+    <h3 id="guidance-scale-values">The Guidance Scale $s$</h3>
+
+    <ul>
+      <li>$s = 0$: pure unconditional generation (the $\epsilon_\text{cond}$ term vanishes)</li>
+      <li>$s = 1$: standard conditional generation (the formula reduces to just $\epsilon_\text{cond}$)</li>
+      <li>$s > 1$: amplified conditioning &mdash; sharper, more "on-topic" outputs</li>
+    </ul>
+
+    <p>Typical values: $s = 2$&ndash;$4$ for class labels, $s = 7.5$&ndash;$15$ for text-to-image (Stable Diffusion defaults to $s = 7.5$).</p>
+
+    <h3 id="algebraic-equivalence">Two Forms of the Same Formula</h3>
+
+    <p>The CFG formula can be written in two equivalent ways. Both are widely used, and you should recognize each on sight.</p>
+
+    <p><strong>Form 1 &mdash; Extrapolation:</strong></p>
+
+    $$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$$
+
+    <p><strong>Form 2 &mdash; Weighted combination:</strong></p>
+
+    $$\hat{\epsilon} = (1 - s) \cdot \epsilon_\text{uncond} + s \cdot \epsilon_\text{cond}$$
+
+    <div class="callout definition">
+      <div class="callout-label">Algebraic Equivalence</div>
+      <p>To see these are the same, expand Form 1:</p>
+      <p>$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot \epsilon_\text{cond} - s \cdot \epsilon_\text{uncond} = (1 - s) \cdot \epsilon_\text{uncond} + s \cdot \epsilon_\text{cond}$</p>
+      <p>Form 1 makes the <strong>amplification</strong> interpretation clearer &mdash; we're adding $s$ times the conditioning signal. Form 2 reveals that it's a <strong>weighted combination</strong>: when $s = 1$, it's pure conditional; when $s > 1$, we're <em>extrapolating</em> beyond the conditional prediction, which is why guided outputs look sharper than standard conditional ones.</p>
+    </div>
+
+    <h3 id="batched-forward-pass">Efficient Implementation: Batched Forward Pass</h3>
+
+    <p>Running the model twice per step sounds expensive. In practice, we batch the conditional and unconditional inputs into a single forward pass:</p>
+
+    <div class="pseudocode">
+<strong>Batched CFG Forward Pass</strong>
+
+<span class="comment"># Concatenate conditional + unconditional into one batch</span>
+x_combined = concat([x_t, x_t], dim=0)              <span class="comment"># (2B, C, H, W)</span>
+t_combined = concat([t, t], dim=0)                   <span class="comment"># (2B,)</span>
+c_combined = concat([class_label, null_labels])      <span class="comment"># (2B,)</span>
+
+<span class="comment"># Single forward pass</span>
+noise_pred = model(x_combined, t_combined, c_combined)
+eps_cond, eps_uncond = noise_pred.chunk(2, dim=0)
+
+<span class="comment"># Apply guidance</span>
+eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
+    </div>
+
+    <p>This doubles the batch size for one forward pass instead of requiring two separate passes. On GPUs, this is much more efficient than two sequential calls.</p>
+
+    <!-- Section 9.3 -->
+    <h2 id="why-cfg-works">Why CFG Works: The Implicit Distribution</h2>
+
+    <p>CFG isn't just a heuristic &mdash; there's a clean mathematical story behind it. Let's trace through the derivation.</p>
+
+    <h3 id="score-function-connection">From Noise Prediction to Score Functions</h3>
+
+    <p>Recall from Lecture 7 that the noise prediction $\epsilon_\theta$ is related to the <strong>score function</strong> (gradient of the log-density):</p>
+
+    $$\nabla_{x_t} \log p(x_t) \approx -\frac{\epsilon_\theta(x_t, t)}{\sqrt{1 - \bar{\alpha}_t}}$$
+
+    <p>So the CFG formula in score space becomes:</p>
+
+    $$\nabla_{x_t} \log p_\text{cfg}(x_t \mid c) = (1 - s) \cdot \nabla_{x_t} \log p(x_t) + s \cdot \nabla_{x_t} \log p(x_t \mid c)$$
+
+    <h3 id="bayes-step">The Bayes Step</h3>
+
+    <p>Now we use Bayes' rule to rewrite the conditional score. Since $p(x_t \mid c) = p(c \mid x_t) \cdot p(x_t) / p(c)$, taking log-gradients (with respect to $x_t$, so $\log p(c)$ vanishes):</p>
+
+    $$\nabla_{x_t} \log p(x_t \mid c) = \nabla_{x_t} \log p(x_t) + \nabla_{x_t} \log p(c \mid x_t)$$
+
+    <p>Substituting this into the CFG formula:</p>
+
+    $$\nabla_{x_t} \log p_\text{cfg} = (1 - s) \cdot \nabla_{x_t} \log p(x_t) + s \cdot \left[\nabla_{x_t} \log p(x_t) + \nabla_{x_t} \log p(c \mid x_t)\right]$$
+
+    $$= \nabla_{x_t} \log p(x_t) + s \cdot \nabla_{x_t} \log p(c \mid x_t)$$
+
+    <h3 id="implicit-distribution">The Implicit Distribution</h3>
+
+    <p>This score corresponds to sampling from the distribution:</p>
+
+    $$p_\text{cfg}(x \mid c) \propto p(x) \cdot p(c \mid x)^s$$
+
+    <p>Or equivalently, using Bayes' rule once more ($p(c \mid x) = p(x \mid c) \cdot p(c) / p(x)$):</p>
+
+    $$p_\text{cfg}(x \mid c) \propto p(x \mid c)^s \;/\; p(x)^{s-1}$$
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      <strong>The temperature analogy.</strong> The guidance scale $s$ acts like inverse temperature on the conditional distribution. At $s = 1$, we sample from the standard conditional. At $s > 1$, the distribution sharpens &mdash; peaks become taller, tails shrink. As $s \to \infty$, we converge to the single most likely image for that class. This is why higher guidance produces sharper but less diverse outputs.
+    </div>
+
+    <h3 id="diversity-fidelity">The Diversity-Fidelity Tradeoff</h3>
+
+    <ul>
+      <li>$s = 1$: diverse outputs, but some samples are ambiguous or low-quality</li>
+      <li>$s = 4$: most samples are sharp, clear, on-topic &mdash; some diversity lost</li>
+      <li>$s = 10$: very sharp, but all samples start looking similar &mdash; diversity severely reduced</li>
+    </ul>
+
+    <p>This tradeoff is fundamental. Nearly all state-of-the-art results use $s > 1$ because users generally prefer sharp, coherent outputs over diversity. Finding the right $s$ is often a matter of taste and application.</p>
+
+    <!-- Section 9.4 -->
+    <h2 id="text-conditioning">Text Conditioning via Cross-Attention</h2>
+
+    <p>Everything we've covered so far uses class labels &mdash; a single integer per image. But the real power of CFG emerges when the conditioning signal is a <strong>text prompt</strong>. This is how Stable Diffusion, DALL-E, and Imagen work.</p>
+
+    <h3 id="text-to-image-pipeline">The Text-to-Image Pipeline</h3>
+
+    <ol>
+      <li><strong>Encode the text:</strong> A pretrained text encoder (CLIP or T5) maps the prompt to a sequence of embeddings with shape $(\text{seq\_len}, d_\text{text})$. "A photo of a cat on a beach" becomes a matrix of token embeddings.</li>
+      <li><strong>Inject via cross-attention:</strong> In the U-Net, at each attention layer:
+        <ul>
+          <li><strong>Q</strong> comes from the image features (spatial tokens)</li>
+          <li><strong>K, V</strong> come from the text embeddings</li>
+          <li>Each spatial position in the image attends to all text tokens</li>
+        </ul>
+      </li>
+      <li><strong>Apply CFG:</strong> During training, randomly drop the text conditioning (replace with an empty string embedding). During sampling, use the same CFG formula with text-conditioned and unconditional predictions.</li>
+    </ol>
+
+    <div class="callout definition">
+      <div class="callout-label">Definition</div>
+      <strong>Cross-Attention.</strong> The same mechanism as the self-attention from Lecture 5, but Q comes from one source (image features) and K, V come from another (text embeddings). This allows the image to "query" the text: each pixel asks "which words in the prompt are relevant to what I should look like?"
+    </div>
+
+    <p>We won't implement text conditioning in this course (it requires pretrained text encoders), but understanding the architecture is important. The <em>guidance mechanism</em> is identical &mdash; CFG doesn't care whether the conditioning is a class integer or a text embedding. You still train with random dropout and combine conditional + unconditional predictions at inference.</p>
+
+    <!-- Section 9.5 -->
+    <h2 id="negative-prompts">Negative Prompts</h2>
+
+    <p>If you've used Stable Diffusion, you've probably entered a "negative prompt" &mdash; text describing what you <em>don't</em> want. This feature falls directly out of the CFG framework with one small modification.</p>
+
+    <p>In standard CFG, the unconditional prediction $\epsilon_\text{uncond}$ serves as the "baseline" we extrapolate away from:</p>
+
+    $$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$$
+
+    <p>With negative prompts, we replace $\epsilon_\text{uncond}$ with $\epsilon_\text{neg}$ &mdash; the model's prediction conditioned on the <em>negative</em> prompt:</p>
+
+    $$\hat{\epsilon} = \epsilon_\text{neg} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{neg})$$
+
+    <p>Now instead of extrapolating away from "nothing" (unconditional), we're extrapolating away from "blurry, low quality, deformed" and toward "sharp photo of a cat." The model steers <strong>away</strong> from the negative prompt and <strong>toward</strong> the positive prompt.</p>
+
+    <div class="callout example">
+      <div class="callout-label">Example</div>
+      <strong>Practical use.</strong> Positive prompt: "sharp photo of a cat in sunlight." Negative prompt: "blurry, low quality, watermark." The model computes three predictions &mdash; positive, negative, and (optionally) unconditional &mdash; and amplifies the difference between positive and negative. The result: images that are both <em>more like</em> the positive and <em>less like</em> the negative.
+    </div>
+
+    <p>Mechanically, this requires a third forward pass (or a 3&times; batched pass) per step. In practice, most implementations batch all three predictions together for efficiency.</p>
+
+    <!-- Section 9.6 -->
+    <h2 id="complete-pipeline">The Complete CFG Sampling Pipeline</h2>
+
+    <p>Let's put it all together. Here's the full classifier-free guidance sampling algorithm &mdash; this is what runs inside every modern conditional diffusion system.</p>
+
+    <div class="pseudocode">
+<strong>Classifier-Free Guidance Sampling</strong>
+
+def cfg_sample(model, shape, schedule, class_label, guidance_scale=4.0):
+    x = randn(shape)                              <span class="comment"># start from pure noise</span>
+    null_label = full(batch_size, NULL_CLASS)      <span class="comment"># null = num_classes</span>
+
+    for t in reversed(range(T)):
+        <span class="comment"># Batched forward: conditional + unconditional</span>
+        x_double = concat([x, x], dim=0)          <span class="comment"># (2B, C, H, W)</span>
+        t_double = concat([t, t], dim=0)           <span class="comment"># (2B,)</span>
+        c_double = concat([class_label, null_label])
+
+        eps_both = model(x_double, t_double, c_double)
+        eps_cond, eps_uncond = eps_both.chunk(2, dim=0)
+
+        <span class="comment"># CFG combination</span>
+        eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
+
+        <span class="comment"># Standard denoising step with guided prediction</span>
+        x = ddpm_step(x, eps_guided, t, schedule)
+
+    return denormalize(x.clamp(-1, 1))
+    </div>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      <strong>No classifier anywhere.</strong> Compare this to the classifier guidance pseudocode in Lecture 8. There's no separate classifier, no gradient computation, no <code>autograd.grad</code>. The guidance comes entirely from the diffusion model itself &mdash; from the difference between its conditional and unconditional predictions. That's the elegance of CFG.
+    </div>
+
+    <!-- Section 9.7: PyTorch -->
+    <h2 id="pytorch-reference">PyTorch Reference</h2>
+
+    <p>Training with label dropout &mdash; the only change from Lecture 8's conditional training:</p>
+
+    <div class="code-block">
+<span class="code-block-label">PyTorch</span>
+<span class="keyword">def</span> <span class="function">train_step_cfg</span>(model, x_0, class_label, optimizer, schedule, p_uncond=<span class="number">0.1</span>):
+    <span class="comment">"""One training step with random label dropout for CFG."""</span>
+    <span class="comment"># Random label dropout</span>
+    drop_mask = torch.<span class="function">rand</span>(x_0.shape[<span class="number">0</span>], device=device) &lt; p_uncond
+    class_label = class_label.<span class="function">clone</span>()
+    class_label[drop_mask] = num_classes             <span class="comment"># null class = num_classes</span>
+
+    <span class="comment"># Standard diffusion training</span>
+    t = torch.<span class="function">randint</span>(<span class="number">0</span>, T, (x_0.shape[<span class="number">0</span>],), device=device)
+    noise = torch.<span class="function">randn_like</span>(x_0)
+    x_t = q_sample(x_0, t, noise, schedule)
+    noise_pred = model(x_t, t, class_label)
+    loss = F.<span class="function">mse_loss</span>(noise_pred, noise)
+
+    optimizer.<span class="function">zero_grad</span>()
+    loss.<span class="function">backward</span>()
+    optimizer.<span class="function">step</span>()
+    <span class="keyword">return</span> loss.<span class="function">item</span>()
+    </div>
+
+    <p>And the full CFG sampling loop:</p>
+
+    <div class="code-block">
+<span class="code-block-label">PyTorch</span>
+<span class="keyword">@</span>torch.no_grad()
+<span class="keyword">def</span> <span class="function">cfg_sample</span>(model, shape, schedule, class_label, guidance_scale=<span class="number">4.0</span>):
+    <span class="comment">"""Generate images with classifier-free guidance."""</span>
+    B = class_label.shape[<span class="number">0</span>]
+    x = torch.<span class="function">randn</span>(shape, device=device)
+    null_label = torch.<span class="function">full</span>((B,), num_classes, device=device, dtype=torch.long)
+
+    <span class="keyword">for</span> t <span class="keyword">in</span> <span class="function">reversed</span>(<span class="function">range</span>(T)):
+        t_batch = torch.<span class="function">full</span>((B,), t, device=device, dtype=torch.long)
+
+        <span class="comment"># Batched forward pass: conditional + unconditional</span>
+        x_double = torch.<span class="function">cat</span>([x, x], dim=<span class="number">0</span>)             <span class="comment"># (2B, C, H, W)</span>
+        t_double = torch.<span class="function">cat</span>([t_batch, t_batch], dim=<span class="number">0</span>)  <span class="comment"># (2B,)</span>
+        c_double = torch.<span class="function">cat</span>([class_label, null_label])    <span class="comment"># (2B,)</span>
+
+        eps_both = model(x_double, t_double, c_double)
+        eps_cond, eps_uncond = eps_both.<span class="function">chunk</span>(<span class="number">2</span>, dim=<span class="number">0</span>)
+
+        <span class="comment"># CFG combination</span>
+        eps = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
+
+        <span class="comment"># DDPM step</span>
+        x = ddpm_step(x, eps, t, schedule)
+
+    <span class="keyword">return</span> denormalize(x.<span class="function">clamp</span>(-<span class="number">1</span>, <span class="number">1</span>))
+    </div>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture08.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Conditioning &amp; Classifier Guidance</span>
+    </a>
+    <a class="next" href="lecture10.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">Latent Diffusion &amp; Stable Diffusion</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

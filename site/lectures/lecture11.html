@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 11: Prediction Targets & Advanced Schedules — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 11</div>
+    <h2>Prediction Targets &amp; Advanced Schedules</h2>
+    <p class="lecture-desc">Three ways to parameterize what a diffusion model predicts, conversion formulas between them, and the noise schedule improvements that make modern systems production-ready.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">v-prediction</span>
+      <span class="lecture-tag">Noise Schedules</span>
+      <span class="lecture-tag">Zero Terminal SNR</span>
+      <span class="lecture-tag">Offset Noise</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 1: The Prediction Target Problem -->
+    <h2 id="prediction-target-problem">The Prediction Target Problem</h2>
+
+    <p>Throughout this course, we've trained our diffusion model to predict the noise $\varepsilon$ that was added to a clean image. This is the DDPM default, and it works well. But it has a flaw that becomes visible when you look closely at training dynamics across timesteps.</p>
+
+    <p>Recall the forward process: $x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1 - \bar\alpha_t} \cdot \varepsilon$. At different timesteps, the balance between signal and noise changes dramatically:</p>
+
+    <ul>
+      <li>At <strong>low noise</strong> ($t$ near 0): $x_t \approx x_0$ with a tiny sprinkle of noise. Predicting that tiny noise accurately is hard&mdash;the loss signal is weak, and gradients are small.</li>
+      <li>At <strong>high noise</strong> ($t$ near $T$): $x_t \approx \varepsilon$ with almost no signal. Predicting noise is numerically stable here, but the model has almost nothing to work with&mdash;it's essentially guessing.</li>
+    </ul>
+
+    <p>Can we do better? Let's look at what happens when we change what the model predicts.</p>
+
+    <!-- Section 2: Three Parameterizations -->
+    <h2 id="three-parameterizations">Three Prediction Parameterizations</h2>
+
+    <p>All three approaches below are <strong>mathematically equivalent</strong>&mdash;you can convert freely between them given $(x_t, t)$. They differ in <em>numerical stability</em> and <em>gradient behavior</em> across timesteps.</p>
+
+    <h3 id="epsilon-prediction">$\varepsilon$-Prediction (DDPM Standard)</h3>
+
+    <p>The model predicts the noise $\varepsilon$ that was added to $x_0$:</p>
+
+    $$\mathcal{L}_\varepsilon = \mathbb{E}_{t, x_0, \varepsilon}\Big[\|\varepsilon - \varepsilon_\theta(x_t, t)\|^2\Big]$$
+
+    <ul>
+      <li><strong>Strengths:</strong> stable at high noise ($t$ near $T$), well-studied, the default choice for most tutorials and papers</li>
+      <li><strong>Weakness:</strong> at low noise ($t$ near 0), the noise $\varepsilon$ is scaled down by $\sqrt{1 - \bar\alpha_t}$ which approaches zero&mdash;the loss signal per training step is tiny</li>
+    </ul>
+
+    <h3 id="x0-prediction">$x_0$-Prediction</h3>
+
+    <p>The model predicts the clean image $x_0$ directly:</p>
+
+    $$\mathcal{L}_{x_0} = \mathbb{E}_{t, x_0, \varepsilon}\Big[\|x_0 - \hat{x}_0(x_t, t)\|^2\Big]$$
+
+    <ul>
+      <li><strong>Strengths:</strong> intuitive&mdash;"what did the image look like before we added noise?" Good at low noise timesteps where $x_t \approx x_0$.</li>
+      <li><strong>Weakness:</strong> at high noise, predicting $x_0$ from near-pure noise produces large errors and unstable gradients. The model is asked to hallucinate a clean image from almost nothing.</li>
+    </ul>
+
+    <h3 id="v-prediction">$v$-Prediction (Salimans &amp; Ho, 2022)</h3>
+
+    <p>Here's where it gets interesting. Define the <strong>velocity</strong>:</p>
+
+    $$v = \sqrt{\bar\alpha_t} \cdot \varepsilon - \sqrt{1 - \bar\alpha_t} \cdot x_0$$
+
+    <p>The model predicts this velocity $v$, and the loss is:</p>
+
+    $$\mathcal{L}_v = \mathbb{E}_{t, x_0, \varepsilon}\Big[\|v - v_\theta(x_t, t)\|^2\Big]$$
+
+    <p>Why "velocity"? Think of the forward process as moving along a path from $x_0$ to $\varepsilon$ in a space parameterized by the noise level. The velocity $v$ is the direction and magnitude of that motion. At each timestep, $v$ is a blend of noise and signal, weighted so that:</p>
+
+    <ul>
+      <li>At <strong>high noise</strong> ($\bar\alpha_t$ small): $v \approx -x_0$, so predicting $v$ is roughly predicting the (negated) clean image&mdash;which is stable because the signal component is small in $x_t$</li>
+      <li>At <strong>low noise</strong> ($\bar\alpha_t$ close to 1): $v \approx \varepsilon$, so predicting $v$ is roughly predicting the noise&mdash;but now the noise is the dominant component in $x_t$</li>
+    </ul>
+
+    <p>In other words, $v$-prediction <strong>automatically adapts</strong> to whatever's easier at each timestep. It's numerically stable across the entire range, with balanced gradients everywhere.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      $v$-prediction interpolates between "predict noise" (at high $t$) and "predict image" (at low $t$), adapting to whichever is more tractable. This is why it's the default for production systems like Imagen and SD 2.x.
+    </div>
+
+    <!-- Section 3: Conversion Formulas -->
+    <h2 id="conversion-formulas">Conversion Between Parameterizations</h2>
+
+    <p>Since all three parameterizations are mathematically equivalent, you can convert between any two given $(x_t, t)$. The key identity you always start from is the forward process:</p>
+
+    $$x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1 - \bar\alpha_t} \cdot \varepsilon$$
+
+    <p>Here's the complete conversion table. Let $\alpha = \sqrt{\bar\alpha_t}$ and $\sigma = \sqrt{1 - \bar\alpha_t}$ for readability:</p>
+
+    <div class="algorithm">
+      <div class="algorithm-title">Prediction Target Conversions</div>
+      <p><strong>From $\varepsilon$ to other targets:</strong></p>
+      <ul>
+        <li>$x_0 = (x_t - \sigma \cdot \varepsilon) \;/\; \alpha$</li>
+        <li>$v = \alpha \cdot \varepsilon - \sigma \cdot x_0$</li>
+      </ul>
+      <p><strong>From $x_0$ to other targets:</strong></p>
+      <ul>
+        <li>$\varepsilon = (x_t - \alpha \cdot x_0) \;/\; \sigma$</li>
+        <li>$v = \alpha \cdot \varepsilon - \sigma \cdot x_0$</li>
+      </ul>
+      <p><strong>From $v$ to other targets:</strong></p>
+      <ul>
+        <li>$x_0 = \alpha \cdot x_t - \sigma \cdot v$</li>
+        <li>$\varepsilon = \sigma \cdot x_t + \alpha \cdot v$</li>
+      </ul>
+      <p style="margin-top:12px;"><em>where $\alpha = \sqrt{\bar\alpha_t}$ and $\sigma = \sqrt{1 - \bar\alpha_t}$</em></p>
+    </div>
+
+    <p>Let's verify one of these. From $v$-prediction, recovering $x_0$:</p>
+
+    $$x_0 = \sqrt{\bar\alpha_t} \cdot x_t - \sqrt{1 - \bar\alpha_t} \cdot v$$
+
+    <p>Substitute $v = \sqrt{\bar\alpha_t} \cdot \varepsilon - \sqrt{1 - \bar\alpha_t} \cdot x_0$ and $x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1 - \bar\alpha_t} \cdot \varepsilon$:</p>
+
+    $$\sqrt{\bar\alpha_t}(\sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1 - \bar\alpha_t} \cdot \varepsilon) - \sqrt{1 - \bar\alpha_t}(\sqrt{\bar\alpha_t} \cdot \varepsilon - \sqrt{1 - \bar\alpha_t} \cdot x_0)$$
+
+    $$= \bar\alpha_t \cdot x_0 + \underbrace{\sqrt{\bar\alpha_t(1-\bar\alpha_t)} \cdot \varepsilon - \sqrt{\bar\alpha_t(1-\bar\alpha_t)} \cdot \varepsilon}_{= \; 0} + (1-\bar\alpha_t) \cdot x_0 = x_0 \;\; \checkmark$$
+
+    <h3 id="conversion-pseudocode">Conversion in Code</h3>
+
+    <div class="pseudocode">
+<span class="comment"># Conversion utilities</span>
+<span class="comment"># alpha = sqrt(alpha_bar_t), sigma = sqrt(1 - alpha_bar_t)</span>
+
+<span class="keyword">def</span> eps_to_x0(x_t, eps, alpha, sigma):
+    <span class="keyword">return</span> (x_t - sigma * eps) / alpha
+
+<span class="keyword">def</span> eps_to_v(eps, x0, alpha, sigma):
+    <span class="keyword">return</span> alpha * eps - sigma * x0
+
+<span class="keyword">def</span> v_to_x0(x_t, v, alpha, sigma):
+    <span class="keyword">return</span> alpha * x_t - sigma * v
+
+<span class="keyword">def</span> v_to_eps(x_t, v, alpha, sigma):
+    <span class="keyword">return</span> sigma * x_t + alpha * v
+    </div>
+
+    <!-- Section 4: When to Use Which -->
+    <h2 id="when-to-use-which">When to Use Which Parameterization</h2>
+
+    <ul>
+      <li><strong>$\varepsilon$-prediction:</strong> the safe default. Use when following DDPM tutorials, starting a new project, or when simplicity matters more than peak performance. This is what we've used throughout the course.</li>
+      <li><strong>$x_0$-prediction:</strong> useful when you want to inspect the model's "current best guess" at $x_0$ during sampling. This is handy for <em>dynamic thresholding</em> (clipping predicted $x_0$ to a valid range). Sometimes better with cosine schedules.</li>
+      <li><strong>$v$-prediction:</strong> the modern production default. Use when training with schedules that approach zero terminal SNR (see below), when you need stability across all timesteps, or when doing few-step sampling with DDIM. Used in Imagen, SD 2.x, and most recent systems.</li>
+    </ul>
+
+    <div class="callout note">
+      <div class="callout-label">Practical Note</div>
+      The choice of prediction target matters less than getting the rest of the pipeline right. Any of the three parameterizations will produce good results with proper training. If you're agonizing over $\varepsilon$ vs. $v$, your time is better spent on data quality, schedule tuning, and training stability.
+    </div>
+
+    <!-- Section 5: Advanced Noise Schedules -->
+    <h2 id="advanced-schedules">Advanced Noise Schedules</h2>
+
+    <p>In Lecture 2, we introduced linear and cosine noise schedules. These get you most of the way there, but modern production systems use several refinements that fix subtle issues. Let's look at each one.</p>
+
+    <h3 id="cosine-recap">Cosine Schedule (Recap)</h3>
+
+    <p>Nichol &amp; Dhariwal (2021) introduced the cosine schedule where $\bar\alpha_t$ follows a cosine curve instead of a linear decay. The information in $x_t$ is preserved longer, giving the model more signal to work with at medium timesteps. This is generally preferred over linear for all applications&mdash;there's rarely a reason to use a linear schedule.</p>
+
+    <h3 id="offset-noise">Offset Noise</h3>
+
+    <p>Here's a subtle but important problem. Standard Gaussian noise $\varepsilon \sim \mathcal{N}(0, I)$ has <strong>zero mean per channel</strong>. Every noise sample's red, green, and blue channels each average to approximately zero. This means:</p>
+
+    <ul>
+      <li>During training, $x_t$ always has roughly the same mean brightness as $x_0$</li>
+      <li>The model learns that "average brightness doesn't change much"</li>
+      <li>At inference, starting from $z_T \sim \mathcal{N}(0, I)$ (zero mean), the model <strong>can't generate images that are entirely dark or entirely bright</strong></li>
+    </ul>
+
+    <p>You might notice this as a bias toward medium-brightness outputs, or an inability to produce dramatic lighting.</p>
+
+    <p>The fix (Lin et al., 2023) is elegant&mdash;two lines of code:</p>
+
+    <div class="pseudocode">
+<span class="comment"># Standard noise (zero mean per channel)</span>
+noise = torch.randn_like(x)
+
+<span class="comment"># Offset noise: add a per-channel mean shift</span>
+noise = torch.randn_like(x) + 0.1 * torch.randn(B, C, 1, 1)
+<span class="comment">#                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
+<span class="comment">#                             This shifts the channel mean,</span>
+<span class="comment">#                             allowing dark/bright generation</span>
+    </div>
+
+    <p>The <code>randn(B, C, 1, 1)</code> term is a single random value per channel per sample, broadcast across all spatial positions. It shifts the entire channel up or down, teaching the model that brightness can change. The $0.1$ scaling is a hyperparameter&mdash;too large and you distort the diffusion process, too small and the effect is negligible.</p>
+
+    <h3 id="zero-terminal-snr">Zero Terminal SNR</h3>
+
+    <p>The <strong>signal-to-noise ratio (SNR)</strong> at timestep $t$ is:</p>
+
+    $$\text{SNR}(t) = \frac{\bar\alpha_t}{1 - \bar\alpha_t}$$
+
+    <p>Here's the problem: many noise schedules don't actually reach $\text{SNR} = 0$ at $t = T$. There's a tiny bit of residual signal&mdash;$\bar\alpha_T$ is very small but not exactly zero. This creates a <strong>train-test mismatch</strong>:</p>
+
+    <ul>
+      <li><strong>Training:</strong> at $t = T$, the model sees $x_T$ with a faint trace of signal</li>
+      <li><strong>Inference:</strong> we start from pure $\mathcal{N}(0, I)$&mdash;no signal at all</li>
+    </ul>
+
+    <p>The model was never trained on the exact distribution it encounters at the start of sampling. This mismatch can cause subtle artifacts, especially in color distribution and global structure.</p>
+
+    <p>The fix (Lin et al., 2023): enforce $\bar\alpha_T = 0$ exactly, so $\text{SNR}(T) = 0$. Now the last timestep during training uses pure noise, matching the inference starting point perfectly.</p>
+
+    <div class="callout definition">
+      <div class="callout-label">Definition</div>
+      <strong>Zero terminal SNR</strong> means enforcing $\bar\alpha_T = 0$ so that $x_T$ at the final timestep is pure noise $\mathcal{N}(0, I)$, exactly matching the inference starting distribution. This eliminates the train-test distribution gap.
+    </div>
+
+    <p>There's a catch: when $\bar\alpha_T = 0$, $\varepsilon$-prediction becomes <strong>undefined</strong> at $t = T$ because the conversion $x_0 = (x_t - \sqrt{1-\bar\alpha_T} \cdot \varepsilon) / \sqrt{\bar\alpha_T}$ requires dividing by zero. This is one of the key reasons <strong>$v$-prediction pairs naturally with zero terminal SNR</strong>&mdash;the $v$ formulation remains well-defined across the entire range.</p>
+
+    <h3 id="continuous-time">Continuous-Time Schedules</h3>
+
+    <p>All our schedules so far use discrete timesteps $t \in \{0, 1, \ldots, T-1\}$. But we can also define schedules over continuous time $t \in [0, 1]$, where $\bar\alpha(t)$ is a smooth function:</p>
+
+    <ul>
+      <li>Training: sample $t \sim \mathcal{U}(0, 1)$ uniformly</li>
+      <li>Inference: choose any set of timesteps $t_1 > t_2 > \cdots > t_N$ with any $N$</li>
+    </ul>
+
+    <p>The big advantage: you can use <strong>arbitrary step counts at inference</strong> without modifying the schedule. Train once, sample with 10 steps or 1000 steps. This is the natural formulation for flow matching (Lecture 13), where the continuous-time perspective simplifies everything.</p>
+
+    <h3 id="log-snr-schedule">Log-SNR Linear Schedule</h3>
+
+    <p>A schedule that's linear in <strong>log-SNR space</strong> rather than in $\beta$ or $\bar\alpha$ space. Since $\log \text{SNR}(t)$ decreases linearly, each timestep represents an equal "difficulty" step for the model. This produces a more uniform training signal&mdash;no timesteps are much harder or easier than others.</p>
+
+    <!-- Section 6: Practical Guidance -->
+    <h2 id="practical-guidance">Putting It All Together</h2>
+
+    <p>Here's a decision table for choosing prediction targets and schedules based on your use case:</p>
+
+    <div class="algorithm">
+      <div class="algorithm-title">Practical Configuration Guide</div>
+      <p><strong>Just getting started (MNIST, learning):</strong></p>
+      <ul>
+        <li>Prediction: $\varepsilon$</li>
+        <li>Schedule: linear or cosine</li>
+        <li>Why: simplest, most documented, easiest to debug</li>
+      </ul>
+      <p><strong>Production model (quality matters):</strong></p>
+      <ul>
+        <li>Prediction: $v$</li>
+        <li>Schedule: cosine + zero terminal SNR</li>
+        <li>Why: stable gradients, no train-test mismatch</li>
+      </ul>
+      <p><strong>Dark/bright image generation:</strong></p>
+      <ul>
+        <li>Prediction: $v$ + offset noise</li>
+        <li>Schedule: cosine + zero terminal SNR</li>
+        <li>Why: offset noise fixes the brightness bias</li>
+      </ul>
+      <p><strong>Few-step sampling (speed matters):</strong></p>
+      <ul>
+        <li>Prediction: $v$</li>
+        <li>Schedule: cosine + zero terminal SNR</li>
+        <li>Why: $v$-prediction + DDIM produces the best results with fewer steps</li>
+      </ul>
+    </div>
+
+    <!-- Section 7: Training with v-prediction -->
+    <h2 id="v-prediction-training">Training with $v$-Prediction</h2>
+
+    <p>Switching from $\varepsilon$-prediction to $v$-prediction requires remarkably few code changes. Here's the diff:</p>
+
+    <div class="pseudocode">
+<span class="comment"># ε-prediction training step (what we've been doing)</span>
+noise = torch.randn_like(x_0)
+x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
+predicted_noise = model(x_t, t)
+loss = F.mse_loss(predicted_noise, noise)
+
+<span class="comment"># v-prediction training step (what changes)</span>
+noise = torch.randn_like(x_0)
+x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
+<span class="keyword">v_target = sqrt_alpha_bar[t] * noise - sqrt_one_minus_alpha_bar[t] * x_0</span>  <span class="comment"># NEW</span>
+<span class="keyword">predicted_v = model(x_t, t)</span>                                               <span class="comment"># same model</span>
+<span class="keyword">loss = F.mse_loss(predicted_v, v_target)</span>                                   <span class="comment"># NEW target</span>
+    </div>
+
+    <p>Three lines change. The model architecture is identical&mdash;it still takes $(x_t, t)$ and outputs a tensor of the same shape. Only the target and the loss computation change. The sampling loop needs corresponding updates to convert the predicted $v$ back to $\varepsilon$ or $x_0$ at each step, using the formulas from the conversion table above.</p>
+
+    <!-- Section 8: Looking Ahead -->
+    <h2 id="looking-ahead">Looking Ahead</h2>
+
+    <p>We've now covered the complete toolkit of modern diffusion model design: U-Net architecture, noise schedules, training, sampling, conditioning, guidance, latent diffusion, prediction targets, and schedule refinements. That's the full DDPM/DDIM/LDM stack.</p>
+
+    <p>But the field didn't stop there. In Lecture 12, we'll replace the U-Net entirely with a <strong>Diffusion Transformer (DiT)</strong>&mdash;bringing the transformer revolution to the diffusion backbone. Then in Lecture 13, we'll rethink the entire framework with <strong>flow matching</strong>, a simpler formulation that learns velocity fields along straight paths from noise to data.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture10.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Latent Diffusion &amp; Stable Diffusion</span>
+    </a>
+    <a class="next" href="lecture12.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">Diffusion Transformers (DiT)</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 13: Flow Matching &amp; Rectified Flows &mdash; Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 13</div>
+    <h2>Flow Matching &amp; Rectified Flows</h2>
+    <p class="lecture-desc">Dropping the noise schedule, the ELBO, and the cumulative alpha products &mdash; learning straight-line velocity fields from noise to data.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">Flow Matching</span>
+      <span class="lecture-tag">Rectified Flows</span>
+      <span class="lecture-tag">Velocity Fields</span>
+      <span class="lecture-tag">ODE Sampling</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 13.1 -->
+    <h2 id="ddpm-baggage">DDPM's Baggage &mdash; What We're Trying to Escape</h2>
+
+    <p>Let's take a step back and appreciate just how much machinery DDPM requires. We've built all of it through this course, piece by piece, and each part made sense on its own. But look at the full stack:</p>
+
+    <ul>
+      <li><strong>A noise schedule</strong> &mdash; choose $\beta_t$ values (linear? cosine? sigmoid?), then compute cumulative products $\bar{\alpha}_t = \prod_{s=1}^{t}(1 - \beta_s)$</li>
+      <li><strong>A zoo of precomputed tensors</strong> &mdash; $\sqrt{\bar{\alpha}_t}$, $\sqrt{1 - \bar{\alpha}_t}$, posterior variance $\tilde{\beta}_t$, and more. We built a whole <code>prepare_schedule()</code> function just to manage them.</li>
+      <li><strong>A long derivation chain</strong> &mdash; forward process &rarr; Bayes' rule for the posterior &rarr; variational lower bound (ELBO) &rarr; KL between Gaussians &rarr; noise reparameterization &rarr; simplified loss</li>
+      <li><strong>1000 discrete timesteps</strong> for full-quality sampling (or DDIM tricks to reduce it)</li>
+      <li><strong>Schedule sensitivity</strong> &mdash; the choice between linear, cosine, and sigmoid schedules meaningfully affects results. The schedule <em>is</em> a hyperparameter, and a finicky one.</li>
+    </ul>
+
+    <p>All of this works &mdash; we've proven that through this entire course. But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
+
+    <p>What if we could do the same thing with dramatically less scaffolding?</p>
+
+    <!-- Section 13.2 — THE BRIDGE -->
+    <h2 id="velocity-fields-bridge">Velocity Fields &mdash; The Bridge from DDPM to Flow Matching</h2>
+
+    <p>This is the key section of this lecture. To understand why flow matching exists, you need to see how a series of ideas &mdash; from noise prediction to velocity prediction to flow matching &mdash; form a natural progression, each one stripping away complexity that turned out to be unnecessary.</p>
+
+    <h3 id="epsilon-problem">The Problem with Noise Prediction</h3>
+
+    <p>Recall from Lecture 11: DDPM's standard prediction target is $\epsilon$-prediction &mdash; the model learns to predict the noise that was added. This works, but it has a problem at the <strong>boundary timesteps</strong>:</p>
+
+    <ul>
+      <li>At $t \approx 0$: the image is barely noised. The noise component is tiny, so the loss signal for predicting it is weak and the gradient updates are small.</li>
+      <li>At $t \approx T$: the image is almost pure noise. The model has almost no signal from the original image to work with.</li>
+    </ul>
+
+    <p>The prediction difficulty is <em>uneven</em> across timesteps &mdash; too easy in the middle, unstable at the extremes.</p>
+
+    <h3 id="v-prediction-partial-fix">v-Prediction: The Right Idea, the Wrong Framework</h3>
+
+    <p>Salimans &amp; Ho (2022) proposed <strong>v-prediction</strong> to fix this. Instead of predicting the noise $\epsilon$, predict a velocity:</p>
+
+    $$v = \sqrt{\bar{\alpha}_t} \cdot \epsilon - \sqrt{1 - \bar{\alpha}_t} \cdot x_0$$
+
+    <p>This was a real improvement. The prediction target balances the difficulty across all timesteps &mdash; no more extreme behavior at the boundaries. Imagen and Stable Diffusion 2.x adopted v-prediction for exactly this reason.</p>
+
+    <p>But here's what v-prediction <em>didn't</em> fix:</p>
+
+    <ul>
+      <li>You still need a noise schedule ($\beta_t$ values)</li>
+      <li>You still need cumulative products ($\bar{\alpha}_t$)</li>
+      <li>You still need the full ELBO-derived loss structure</li>
+      <li>You still sample in 50&ndash;1000 discrete steps through the schedule</li>
+      <li>The entire forward/reverse process machinery stays intact</li>
+    </ul>
+
+    <p>v-prediction fixed the <em>prediction target</em>, but it didn't simplify the <em>framework</em>. It was the right <strong>concept</strong> &mdash; think in terms of velocities &mdash; trapped in the wrong <strong>framework</strong> &mdash; DDPM's schedule-driven noising process.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      v-prediction showed that thinking in terms of velocities was more natural than predicting noise. But the DDPM framework constrained what "velocity" could mean &mdash; it was a specific linear combination of $x_0$ and $\epsilon$, tied to the noise schedule's $\bar{\alpha}_t$ values. What if we designed a framework where velocity was the <em>fundamental</em> concept, not a derived one?
+    </div>
+
+    <h3 id="particle-transport">Reframing Generation as Particle Transport</h3>
+
+    <p>Let's throw away the DDPM lens entirely and think from first principles.</p>
+
+    <p>We have two distributions: a data distribution $p_{\text{data}}$ (images of digits, faces, whatever) and a noise distribution $\mathcal{N}(0, I)$ (easy to sample from). We want to learn a mapping from one to the other.</p>
+
+    <p>Imagine each sample as a <strong>particle</strong>. Generation means moving particles from their starting positions (noise) to their destinations (data). Each particle follows a path through space, and at every point along that path, it has a <strong>velocity</strong> &mdash; a direction and speed.</p>
+
+    <p>A <strong>velocity field</strong> $v(x, t)$ tells each particle which direction to move at each moment in time. If we know the velocity field, generating a sample is just solving an ordinary differential equation:</p>
+
+    $$\frac{dx}{dt} = v_\theta(x_t, t)$$
+
+    <p>Start at a noise sample, follow the velocity field, arrive at a data sample. That's it.</p>
+
+    <h3 id="what-this-needs">What This Framework Needs</h3>
+
+    <p>To make this concrete, we need just three things:</p>
+
+    <ol>
+      <li><strong>A path</strong> connecting each noise sample to each data sample (the interpolation)</li>
+      <li><strong>A target velocity</strong> along that path (what the model learns to predict)</li>
+      <li><strong>An ODE solver</strong> to follow the learned velocity field at inference</li>
+    </ol>
+
+    <p>That's the complete list. No schedule. No ELBO. No reverse process derivation. No cumulative alpha products.</p>
+
+    <p>The question is: <strong>what paths should we use?</strong></p>
+
+    <!-- Section 13.3 -->
+    <h2 id="straight-line-interpolation">Straight-Line Interpolation</h2>
+
+    <p>Flow matching (Lipman et al., 2023) makes the simplest possible choice: <strong>straight lines</strong>.</p>
+
+    <p>Define the interpolation path between data $x_0$ and noise $x_1$:</p>
+
+    $$x_t = (1 - t) \cdot x_0 + t \cdot x_1 \qquad t \in [0, 1]$$
+
+    <p>Let's verify this does what we want:</p>
+
+    <ul>
+      <li>At $t = 0$: $x_t = x_0$ (pure data)</li>
+      <li>At $t = 1$: $x_t = x_1$ (pure noise)</li>
+      <li>In between: a linear blend of data and noise</li>
+    </ul>
+
+    <p>The velocity along this straight path is trivially computed:</p>
+
+    $$\frac{dx}{dt} = x_1 - x_0$$
+
+    <p>That's a <strong>constant velocity</strong> &mdash; it doesn't depend on $t$ at all. Each particle just moves in a straight line from data to noise at uniform speed.</p>
+
+    <div class="callout note">
+      <div class="callout-label">Convention Warning</div>
+      <p>In this lecture, we use $t = 0$ for data and $t = 1$ for noise. <strong>Some papers use the opposite convention.</strong> Always check! The original DDPM convention has $t = 0$ as clean and $t = T$ as noise, which is consistent with what we use here (if you think of $t = 1$ as the "end"). But other flow matching papers flip this, with $t = 0$ as noise and $t = 1$ as data.</p>
+    </div>
+
+    <!-- Section 13.4 -->
+    <h2 id="training-objective">The Flow Matching Training Objective</h2>
+
+    <p>Here's where flow matching's simplicity really shines. The entire training algorithm is six lines:</p>
+
+    <div class="algorithm">
+      <div class="algorithm-title">Flow Matching Training</div>
+      <ol>
+        <li>Sample data: $x_0 \sim p_{\text{data}}$</li>
+        <li>Sample noise: $x_1 \sim \mathcal{N}(0, I)$</li>
+        <li>Sample time: $t \sim \text{Uniform}(0, 1)$</li>
+        <li>Interpolate: $x_t = (1 - t) \cdot x_0 + t \cdot x_1$</li>
+        <li>Target velocity: $u = x_1 - x_0$</li>
+        <li>Loss: $\mathcal{L} = \| v_\theta(x_t, t) - u \|^2$</li>
+      </ol>
+    </div>
+
+    <p>Read that again. There are no cumulative alpha products. No schedule tensors. No reparameterization trick. Just: interpolate between data and noise along a straight line, and train the model to predict the velocity of that line.</p>
+
+    <h3 id="pseudocode-training">Pseudocode: Flow Matching Training Step</h3>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> <span class="function">flow_matching_train_step</span>(model, x_0):
+    x_1 = randn_like(x_0)                          <span class="comment"># sample noise</span>
+    t = rand(batch_size)                             <span class="comment"># t ~ Uniform(0, 1)</span>
+    x_t = (1 - t) * x_0 + t * x_1                  <span class="comment"># straight-line interpolation</span>
+    target_velocity = x_1 - x_0                      <span class="comment"># constant velocity along the path</span>
+    velocity_pred = model(x_t, t)                    <span class="comment"># neural network predicts velocity</span>
+    loss = mse_loss(velocity_pred, target_velocity)
+    <span class="keyword">return</span> loss
+    </div>
+
+    <h3 id="side-by-side">Side-by-Side: DDPM vs. Flow Matching</h3>
+
+    <p>The difference in complexity is stark. Here's the interpolation step for each:</p>
+
+    <div class="code-block">
+<span class="comment"># DDPM: schedule-dependent, needs precomputed tensors</span>
+alphas_cumprod = cumprod(1 - betas)                 <span class="comment"># schedule computation</span>
+sqrt_alpha_bar = sqrt(alphas_cumprod[t])             <span class="comment"># schedule indexing</span>
+sqrt_one_minus = sqrt(1 - alphas_cumprod[t])         <span class="comment"># more schedule indexing</span>
+x_t = sqrt_alpha_bar * x_0 + sqrt_one_minus * noise <span class="comment"># weighted combination</span>
+
+<span class="comment"># Flow matching: schedule-free, just linear interpolation</span>
+x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that's it</span>
+    </div>
+
+    <p>DDPM's interpolation coefficients ($\sqrt{\bar{\alpha}_t}$ and $\sqrt{1 - \bar{\alpha}_t}$) are nonlinear functions of the noise schedule, precomputed and stored in dictionaries. Flow matching's coefficients are $(1 - t)$ and $t$ &mdash; literally just the time variable.</p>
+
+    <!-- Section 13.5 -->
+    <h2 id="sampling">Sampling via ODE Integration</h2>
+
+    <p>To generate images, we start from pure noise and follow the learned velocity field backward in time. This is an ordinary differential equation (ODE), and we solve it with numerical integration.</p>
+
+    <h3 id="euler-sampling">Euler Method</h3>
+
+    <p>The simplest approach: take fixed-size steps along the velocity field.</p>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> <span class="function">flow_matching_sample</span>(model, shape, num_steps=50):
+    x = randn(shape)                                <span class="comment"># x_1 ~ N(0, I)</span>
+    dt = 1.0 / num_steps
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> range(num_steps):
+        t = 1.0 - i * dt                            <span class="comment"># t goes from 1 -> 0</span>
+        velocity = model(x, t)
+        x = x - dt * velocity                       <span class="comment"># Euler step</span>
+
+    <span class="keyword">return</span> x                                         <span class="comment"># x_0 (generated data)</span>
+    </div>
+
+    <p>At each step, we ask the model "given this current state $x$ at time $t$, what's the velocity?" and take a small step in that direction. After enough steps, we arrive at data.</p>
+
+    <h3 id="better-solvers">Better ODE Solvers</h3>
+
+    <p>Euler's method works but is first-order &mdash; errors accumulate, and you need many steps for accuracy. Better options include:</p>
+
+    <ul>
+      <li><strong>Heun's method</strong> (2nd-order) &mdash; takes a trial step, evaluates the velocity at the new position, then averages. Roughly halves the steps needed for the same quality.</li>
+      <li><strong>RK4</strong> (4th-order Runge-Kutta) &mdash; the classic ODE solver. Four velocity evaluations per step, but far more accurate.</li>
+      <li><strong>Adaptive step-size solvers</strong> &mdash; automatically choose step sizes based on local error estimates. More function evaluations where the flow is complex, fewer where it's simple.</li>
+    </ul>
+
+    <p>In practice, 20&ndash;50 Euler steps produce good results for flow matching. Compare this to DDPM's 1000 steps &mdash; or even DDIM's 50&ndash;100.</p>
+
+    <!-- Section 13.6 -->
+    <h2 id="why-it-works">Why Flow Matching Works Better</h2>
+
+    <p>Flow matching isn't just simpler to implement &mdash; it has genuine advantages over DDPM in several dimensions:</p>
+
+    <h3 id="no-schedule">No Schedule to Design</h3>
+
+    <p>There are no $\beta_t$ values, no $\alpha_t$, no $\bar{\alpha}_t$. The interpolation path <em>is</em> the "schedule," and it's always a straight line. One less hyperparameter to tune, one less thing to get wrong.</p>
+
+    <h3 id="simpler-math">Simpler Math</h3>
+
+    <p>No ELBO derivation, no KL divergence between Gaussians, no reparameterization trick. The loss is direct: predict the velocity, minimize MSE. A first-year grad student can derive the entire framework in ten minutes.</p>
+
+    <h3 id="stable-training">More Stable Training</h3>
+
+    <p>The target velocity $(x_1 - x_0)$ has roughly <strong>constant magnitude</strong> regardless of $t$. Compare this to $\epsilon$-prediction, where the signal-to-noise ratio changes dramatically across timesteps. Constant-magnitude targets mean the loss landscape is smoother and gradients are more uniform.</p>
+
+    <h3 id="fewer-steps">Straight Paths Need Fewer Steps</h3>
+
+    <p>Because the learned flow approximately follows straight lines, ODE solvers can take larger steps without losing accuracy. Curved paths (like DDPM's) require small steps to stay on track. Straight paths are easier to follow &mdash; literally.</p>
+
+    <!-- Section 13.7 -->
+    <h2 id="rectified-flows">Rectified Flows</h2>
+
+    <p>There's a subtlety we've been glossing over. Even though each individual training pair $(x_0, x_1)$ defines a straight path, the <em>aggregate</em> learned flow isn't perfectly straight. Why? Because different data-noise pairs share regions of space, and their flows interact. Imagine two straight arrows crossing through the same point &mdash; the average velocity at that point is a compromise between the two directions, creating curvature.</p>
+
+    <h3 id="rectification-idea">The Rectification Idea</h3>
+
+    <p>Liu et al. (2023) proposed <strong>rectified flows</strong> to fix this. The idea is to iteratively straighten the learned trajectories:</p>
+
+    <div class="algorithm">
+      <div class="algorithm-title">Rectified Flow Training</div>
+      <ol>
+        <li>Train an initial flow matching model $v_\theta$</li>
+        <li>Generate coupled pairs $(x_0, x_1)$ by running the model forward and backward &mdash; these are <em>matched</em> noise-data pairs, not independent samples</li>
+        <li>Retrain on these coupled pairs &mdash; because the pairs are now correlated (each noise sample is matched to the data sample it would generate), the new flow is straighter</li>
+        <li>Repeat (typically 1&ndash;2 rounds is enough)</li>
+      </ol>
+    </div>
+
+    <p>The key insight: in the first round, each data point $x_0$ is paired with a <em>random</em> noise sample $x_1$ &mdash; there's no correspondence between them. After one round of training and generation, we have pairs where the noise and data are <em>linked by the learned flow</em>. Retraining on these linked pairs produces straighter trajectories because the crossing problem is reduced.</p>
+
+    <h3 id="rectification-results">The Payoff: Fewer Steps</h3>
+
+    <p>Straighter trajectories mean the ODE solver can take larger steps without deviating from the true path. The practical impact is dramatic:</p>
+
+    <ul>
+      <li><strong>Without rectification:</strong> 20&ndash;50 steps for good quality</li>
+      <li><strong>With 1&ndash;2 rounds of rectification:</strong> as few as <strong>1&ndash;4 steps</strong> for comparable quality</li>
+    </ul>
+
+    <p>This is used in Stable Diffusion 3 and InstaFlow for fast, high-quality generation.</p>
+
+    <!-- Section 13.8 -->
+    <h2 id="connection-to-diffusion">Connection to Diffusion</h2>
+
+    <p>Flow matching isn't a <em>replacement</em> for diffusion &mdash; it's a <strong>continuous generalization</strong>. Let's make the connection explicit.</p>
+
+    <h3 id="interpolation-paths">The Interpolation Path Is the Difference</h3>
+
+    <p>Both DDPM and flow matching define a path from data to noise. The paths are different:</p>
+
+    <div class="code-block">
+<span class="comment"># DDPM path (curved, schedule-dependent)</span>
+x_t = &radic;&alpha;&#772;_t &middot; x_0 + &radic;(1 - &alpha;&#772;_t) &middot; &epsilon;    <span class="comment"># discrete t &isin; {0, ..., T-1}</span>
+
+<span class="comment"># Flow matching path (straight, schedule-free)</span>
+x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># continuous t &isin; [0, 1]</span>
+    </div>
+
+    <p>DDPM's coefficients $\sqrt{\bar{\alpha}_t}$ and $\sqrt{1 - \bar{\alpha}_t}$ are nonlinear functions of the schedule &mdash; they trace a <em>curved</em> path through the space between data and noise. Flow matching's coefficients $(1 - t)$ and $t$ trace a <em>straight</em> line.</p>
+
+    <h3 id="time-mapping">Time Conventions</h3>
+
+    <p>The time mapping is also different:</p>
+
+    <ul>
+      <li><strong>DDPM:</strong> discrete timesteps $t \in \{0, 1, \ldots, T-1\}$, typically $T = 1000$</li>
+      <li><strong>Flow matching:</strong> continuous time $t \in [0, 1]$</li>
+    </ul>
+
+    <p>Roughly, DDPM's discrete timestep $t_{\text{ddpm}}$ corresponds to flow matching's continuous $t_{\text{fm}} \approx t_{\text{ddpm}} / T$. But the interpolation coefficients are fundamentally different &mdash; DDPM uses schedule-derived nonlinear weights, while flow matching uses linear weights.</p>
+
+    <h3 id="unified-picture">The Unified Picture</h3>
+
+    <p>Diffusion, score matching, and flow matching are all ways to learn a mapping from noise to data. They differ in three dimensions:</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--rule-strong);">
+          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);"></th>
+          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">DDPM</th>
+          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">Score Matching</th>
+          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">Flow Matching</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid var(--rule);">
+          <td style="padding: 10px 16px; color: var(--text-secondary);"><strong>Interpolation path</strong></td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Curved (schedule-dependent)</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Curved (SDE drift)</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Straight (linear)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--rule);">
+          <td style="padding: 10px 16px; color: var(--text-secondary);"><strong>Training target</strong></td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">$\epsilon$ (noise)</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">$\nabla_x \log p_t(x)$ (score)</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">$v$ (velocity)</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 16px; color: var(--text-secondary);"><strong>Sampling</strong></td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Discrete SDE/DDIM</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">SDE or probability flow ODE</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">ODE (Euler, Heun, RK4)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>The deep connection: DDPM can be viewed as flow matching with a specific <em>non-straight</em> interpolation path. The probability flow ODE from Lecture 7 is the bridge &mdash; it showed that DDPM's discrete sampling process has a continuous ODE equivalent. Flow matching takes this insight and asks: why not use a simpler ODE in the first place?</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      The progression from DDPM to flow matching isn't a revolution &mdash; it's a simplification. DDPM proved that the "noise to data" idea works. Score matching showed it has a continuous formulation. v-prediction showed that velocity is a better prediction target. Flow matching completed the arc: build the <em>entire framework</em> around velocity and straight-line transport, dropping everything that was incidental to the core idea.
+    </div>
+
+    <!-- Section 13.9 -->
+    <h2 id="practical-impact">Practical Impact</h2>
+
+    <p>Flow matching with rectified flows is now the default framework for frontier generative models:</p>
+
+    <ul>
+      <li><strong>Stable Diffusion 3</strong> (Stability AI) &mdash; uses flow matching with rectified flows, not DDPM. Combined with the MM-DiT architecture from Lecture 12.</li>
+      <li><strong>Flux</strong> (Black Forest Labs) &mdash; flow matching + DiT, from the original Stable Diffusion creators.</li>
+      <li><strong>Training recipe</strong> &mdash; simpler than DDPM. Fewer hyperparameters (no schedule choice), more robust to configuration changes.</li>
+      <li><strong>Sampling</strong> &mdash; 20&ndash;50 Euler steps for good quality. With rectification, as few as 4 steps.</li>
+    </ul>
+
+    <p>The trend is clear: flow matching is to DDPM what transformers were to RNNs &mdash; a simpler framework that does the same job with less overhead, and scales better to boot.</p>
+
+    <!-- Looking Ahead -->
+    <h2 id="looking-ahead">Looking Ahead</h2>
+
+    <p>Over the last thirteen lectures, we've built diffusion models from the ground up. We started with forward noising and learned to reverse it. We built U-Nets and replaced them with transformers. We experimented with noise schedules and then threw them away entirely. Each step was a simplification &mdash; stripping away complexity that turned out to be incidental to the core idea of learning to transport noise into data.</p>
+
+    <p>In the assessment, you'll put all of this together &mdash; from foundational concepts through modern architectures &mdash; demonstrating that you can reason about and implement the full stack of generative modeling with diffusion.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture12.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Diffusion Transformers (DiT)</span>
+    </a>
+    <a class="next" href="assessment.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">Assessment</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

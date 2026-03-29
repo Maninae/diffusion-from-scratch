@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 5: Time Conditioning &amp; Spatial Attention — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 5</div>
+    <h2>Time Conditioning &amp; Spatial Attention</h2>
+    <p class="lecture-desc">Sinusoidal timestep embeddings, time injection into ResBlocks, and self-attention that gives the network a global receptive field &mdash; completing the U-Net architecture.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">Time Embedding</span>
+      <span class="lecture-tag">Sinusoidal Encoding</span>
+      <span class="lecture-tag">Self-Attention</span>
+      <span class="lecture-tag">AdaGN</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 1: Why t matters -->
+    <h2 id="why-time-matters">Why the Network Needs to Know $t$</h2>
+
+    <p>The U-Net from Lecture 4 can take a noisy image and produce a noise prediction. But right now, it's blind to an absolutely critical piece of information: <em>how much noise is in the image</em>.</p>
+
+    <p>Consider three different scenarios:</p>
+
+    <ul>
+      <li><strong>$t = 10$:</strong> The image is nearly clean. Only a faint haze of noise has been added. The network should make tiny, careful corrections &mdash; most of the image is already signal.</li>
+      <li><strong>$t = 500$:</strong> Half signal, half noise. The underlying digit is visible but degraded. The network must separate genuine structure from noise at every pixel.</li>
+      <li><strong>$t = 990$:</strong> Almost pure Gaussian static. The original image is essentially destroyed. The network must <em>hallucinate</em> plausible structure from nearly zero signal.</li>
+    </ul>
+
+    <p>These are fundamentally different tasks. A network that doesn't know the current timestep would produce the same prediction regardless of noise level &mdash; and that prediction would be wrong for almost every $t$. We need to inject a representation of the timestep into every layer of the network.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      Time conditioning is what turns a single network into a <em>family</em> of denoisers &mdash; one for each noise level. The same weights handle all 1000 timesteps, but the time embedding modulates the network's behavior at each one.
+    </div>
+
+
+    <!-- Section 2: Sinusoidal Embeddings -->
+    <h2 id="sinusoidal-embeddings">Sinusoidal Timestep Embeddings</h2>
+
+    <p>We could pass the timestep as a raw scalar &mdash; concatenate $t$ to the input or feed it as an extra feature. But a single number doesn't give the network enough structure to modulate its behavior across hundreds of distinct noise levels. We need a <strong>high-dimensional, structured representation</strong> of each timestep.</p>
+
+    <p>The solution comes from an unexpected place: the positional encoding used in transformers (Vaswani et al., 2017). The same formula that tells a transformer "this token is at position 42 in the sequence" can tell our U-Net "this image has noise level $t = 42$."</p>
+
+    <h3 id="embedding-formula">The Formula</h3>
+
+    <p>Given a timestep $t$ and an embedding dimension $d$, the sinusoidal embedding is:</p>
+
+    $$\text{emb}[2i] = \sin\!\left(\frac{t}{10000^{2i/d}}\right), \qquad \text{emb}[2i+1] = \cos\!\left(\frac{t}{10000^{2i/d}}\right)$$
+
+    <p>for $i = 0, 1, \ldots, d/2 - 1$. Each pair of dimensions oscillates at a different frequency:</p>
+
+    <ul>
+      <li><strong>Low dimensions</strong> ($i$ small): high frequency &mdash; oscillates rapidly, capturing fine distinctions between nearby timesteps.</li>
+      <li><strong>High dimensions</strong> ($i$ large): low frequency &mdash; oscillates slowly, capturing the broad "early vs. late" distinction.</li>
+    </ul>
+
+    <p>The result is a unique "fingerprint" for every timestep &mdash; a vector in $\mathbb{R}^d$ where nearby timesteps have similar (but distinct) embeddings, and distant timesteps have very different embeddings.</p>
+
+    <div class="callout example">
+      <div class="callout-label">Example</div>
+      With $d = 128$, the sinusoidal embedding maps each integer $t$ to a 128-dimensional vector. The embedding for $t = 500$ is close to the embedding for $t = 501$ (the denoising task is similar), but far from the embedding for $t = 50$ (the denoising task is very different). This smoothness is exactly what we want &mdash; the network's behavior should change gradually as $t$ varies.
+    </div>
+
+    <div class="pseudocode">
+      <div class="pseudocode-title">Sinusoidal Timestep Embedding</div>
+<pre>def sinusoidal_embedding(t, dim):
+    half_dim = dim // 2
+    frequencies = 1 / (10000 ** (range(half_dim) / half_dim))
+    angles = t[:, None] * frequencies[None, :]   # (B, half_dim)
+    embedding = concat(sin(angles), cos(angles), dim=-1)  # (B, dim)
+    return embedding</pre>
+    </div>
+
+    <p>Input: a batch of integer timesteps, shape $(B,)$. Output: a batch of embedding vectors, shape $(B, d)$. No spatial dimensions &mdash; this is a single vector per sample.</p>
+
+
+    <!-- Section 3: MLP Projection -->
+    <h2 id="mlp-projection">The Time MLP</h2>
+
+    <p>The raw sinusoidal embedding is a fixed, deterministic function &mdash; no learnable parameters. To give the network flexibility in how it uses the timestep information, we pass the embedding through a small MLP:</p>
+
+    $$t \;\xrightarrow{\text{sinusoidal}}\; \mathbb{R}^d \;\xrightarrow{\text{Linear}}\; \mathbb{R}^{4d} \;\xrightarrow{\text{SiLU}}\; \mathbb{R}^{4d} \;\xrightarrow{\text{Linear}}\; \mathbb{R}^{4d}$$
+
+    <p>The MLP learns to transform the raw sinusoidal features into whatever representation is most useful for the downstream ResBlocks. The expansion to $4d$ (typically $4 \times 64 = 256$) gives the MLP enough capacity to learn complex, nonlinear functions of the timestep.</p>
+
+    <div class="pseudocode">
+      <div class="pseudocode-title">TimestepMLP</div>
+<pre>class TimestepMLP:
+    def forward(t):
+        emb = sinusoidal_embedding(t, base_dim)    # (B, base_dim)
+        emb = linear_1(emb)                         # (B, 4 * base_dim)
+        emb = silu(emb)
+        emb = linear_2(emb)                         # (B, 4 * base_dim)
+        return emb</pre>
+    </div>
+
+    <p>This MLP is computed <strong>once per forward pass</strong>, and the resulting time embedding is shared across all ResBlocks in the network.</p>
+
+
+    <!-- Section 4: Time Injection -->
+    <h2 id="time-injection">Injecting Time into ResBlocks</h2>
+
+    <p>Now we have a rich time embedding vector of shape $(B, C_\text{emb})$. How do we get it into the convolutional layers that operate on feature maps of shape $(B, C, H, W)$? There are two main approaches.</p>
+
+    <h3 id="additive-injection">Method 1: Additive Injection</h3>
+
+    <p>The simplest approach: project the time embedding to match the channel count, then <strong>add</strong> it to the feature map after the first convolution. The time vector is broadcast over the spatial dimensions $H$ and $W$.</p>
+
+    <div class="code-block">
+<pre><span style="color: var(--text-muted)"># Inside ResBlock &mdash; additive time injection</span>
+h = conv1(silu(group_norm1(x)))          <span style="color: var(--text-muted)"># (B, C, H, W)</span>
+time_proj = linear(time_emb)              <span style="color: var(--text-muted)"># (B, C_emb) &rarr; (B, C)</span>
+h = h + time_proj[:, :, None, None]       <span style="color: var(--text-muted)"># broadcast over H, W</span>
+h = conv2(silu(group_norm2(h)))           <span style="color: var(--text-muted)"># (B, C, H, W)</span></pre>
+    </div>
+
+    <p>This is the method used in the original DDPM. The <code>[:, :, None, None]</code> adds two dimensions to turn $(B, C)$ into $(B, C, 1, 1)$, which PyTorch broadcasts to match $(B, C, H, W)$. The same time signal is added to every spatial position.</p>
+
+    <h3 id="scale-shift-injection">Method 2: Scale-Shift (AdaGN)</h3>
+
+    <p>A more expressive approach: predict both a <strong>scale</strong> $\gamma$ and a <strong>shift</strong> $\beta$ from the time embedding, then modulate the features after GroupNorm:</p>
+
+    $$y = (1 + \gamma) \cdot \text{GroupNorm}(h) + \beta$$
+
+    <p>where $[\gamma, \beta] = \text{Linear}(\text{time\_emb})$, each of shape $(B, C)$.</p>
+
+    <div class="code-block">
+<pre><span style="color: var(--text-muted)"># Inside ResBlock &mdash; scale-shift (AdaGN) time injection</span>
+h = conv1(silu(group_norm1(x)))                        <span style="color: var(--text-muted)"># (B, C, H, W)</span>
+scale, shift = linear(time_emb).chunk(2, dim=1)        <span style="color: var(--text-muted)"># each (B, C)</span>
+h = group_norm2(h) * (1 + scale[:,:,None,None]) + shift[:,:,None,None]
+h = conv2(silu(h))                                     <span style="color: var(--text-muted)"># (B, C, H, W)</span></pre>
+    </div>
+
+    <p>Why is this more expressive? With additive injection, the time signal can only <em>shift</em> feature values. With scale-shift, it can also <em>amplify or suppress</em> entire channels. The network might learn to turn off certain feature channels at high noise levels and activate them at low noise levels.</p>
+
+    <div class="callout definition">
+      <div class="callout-label">Definition</div>
+      <strong>Adaptive Group Normalization (AdaGN).</strong> A conditioning mechanism where an external signal (here, the timestep) predicts per-channel scale and shift parameters that modulate the output of GroupNorm. Introduced by Dhariwal &amp; Nichol (2021) in their "Diffusion Models Beat GANs" paper, where it led to measurable improvements in image quality.
+    </div>
+
+
+    <!-- Section 5: Complete ResBlock -->
+    <h2 id="complete-resblock">The Complete ResBlock with Time</h2>
+
+    <p>Combining what we've covered, here's the complete data flow through a single ResBlock with time conditioning:</p>
+
+    <ol>
+      <li><strong>First half:</strong> GroupNorm &rarr; SiLU &rarr; Conv</li>
+      <li><strong>Time injection:</strong> project time embedding, add (or scale-shift) into features</li>
+      <li><strong>Second half:</strong> GroupNorm &rarr; SiLU &rarr; Dropout &rarr; Conv</li>
+      <li><strong>Residual:</strong> add shortcut connection (1&times;1 conv if channels change)</li>
+    </ol>
+
+    <div class="pseudocode">
+      <div class="pseudocode-title">ResBlock with Time Embedding</div>
+<pre>class ResBlock:
+    def forward(x, time_emb):
+        h = conv1(silu(group_norm1(x)))             # (B, C_out, H, W)
+        h = h + time_proj(silu(time_emb))[:,:,None,None]  # inject time
+        h = conv2(dropout(silu(group_norm2(h))))     # (B, C_out, H, W)
+        return h + shortcut(x)                       # residual connection</pre>
+    </div>
+
+    <p>This is the core building block. The entire U-Net is built by stacking these ResBlocks, two per encoder level and two per decoder level. Every ResBlock receives the same time embedding, so every layer of the network is time-aware.</p>
+
+
+    <!-- Section 6: Where Attention Goes -->
+    <h2 id="attention-placement">Where Attention Goes in the U-Net</h2>
+
+    <p>Convolutions are inherently local &mdash; a 3&times;3 kernel sees only its immediate neighborhood. For denoising, we often need <strong>global context</strong>: "the top-left of this digit should be consistent with the bottom-right." Self-attention provides this global receptive field, but it comes at a steep computational cost.</p>
+
+    <h3 id="attention-cost">The Quadratic Cost Problem</h3>
+
+    <p>Self-attention is $O(n^2)$ where $n = H \times W$ is the number of spatial tokens. The attention matrix has $n^2$ entries:</p>
+
+    <ul>
+      <li>At $7 \times 7$: $n = 49$ tokens, attention matrix = $2{,}401$ entries &mdash; <strong>trivially cheap</strong></li>
+      <li>At $14 \times 14$: $n = 196$ tokens, attention matrix $\approx 38$K entries &mdash; <strong>cheap</strong></li>
+      <li>At $28 \times 28$: $n = 784$ tokens, attention matrix $\approx 615$K entries &mdash; <strong>feasible</strong></li>
+      <li>At $256 \times 256$: $n = 65{,}536$ tokens, attention matrix $\approx 4.3$ <strong>billion</strong> entries &mdash; <strong>infeasible</strong></li>
+    </ul>
+
+    <p>This is why attention is used strategically, not everywhere:</p>
+
+    <ul>
+      <li><strong>Original DDPM:</strong> attention only at $16 \times 16$ resolution</li>
+      <li><strong>Improved DDPM / ADM:</strong> attention at $32 \times 32$, $16 \times 16$, and $8 \times 8$</li>
+      <li><strong>Our MNIST model:</strong> attention at $7 \times 7$ (bottleneck) &mdash; cheap and effective</li>
+    </ul>
+
+    <div class="callout note">
+      <div class="callout-label">Note</div>
+      The quadratic cost of attention is one reason why high-resolution diffusion models use latent diffusion (Lecture 10) &mdash; by operating in a compressed latent space ($32 \times 32$ or $64 \times 64$), attention becomes computationally feasible even for 512&times;512 images.
+    </div>
+
+
+    <!-- Section 7: Spatial Self-Attention -->
+    <h2 id="spatial-attention">Spatial Self-Attention</h2>
+
+    <p>Images aren't sequences &mdash; but we can reshape them into one. The core trick of spatial self-attention: treat each spatial position $(h, w)$ as a "token" and apply standard multi-head self-attention.</p>
+
+    <h3 id="attention-steps">Step by Step</h3>
+
+    <ol>
+      <li><strong>Normalize:</strong> apply GroupNorm to the feature map (normalize <em>before</em> attention, not after)</li>
+      <li><strong>Reshape:</strong> $(B, C, H, W) \to (B, H \times W, C)$ &mdash; each spatial position becomes a token with $C$ features</li>
+      <li><strong>Attend:</strong> apply multi-head self-attention on the sequence of $H \times W$ tokens</li>
+      <li><strong>Reshape back:</strong> $(B, H \times W, C) \to (B, C, H, W)$ &mdash; fold tokens back into a spatial grid</li>
+      <li><strong>Residual:</strong> add the original input (the attention output is a correction)</li>
+    </ol>
+
+    <h3 id="attention-formula">The Attention Formula</h3>
+
+    <p>Each attention head computes:</p>
+
+    $$\text{Attention}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V$$
+
+    <p>where $Q$, $K$, $V$ are linear projections of the input tokens, and $d_k$ is the dimension per head. The $\sqrt{d_k}$ scaling prevents the dot products from growing too large as the dimension increases (which would push the softmax into saturation, killing gradients).</p>
+
+    <div class="callout example">
+      <div class="callout-label">Example</div>
+      At our $7 \times 7$ bottleneck with 256 channels and 4 attention heads: each token has $256 / 4 = 64$ features per head. The attention matrix is $49 \times 49$ per head. Token at position $(3, 5)$ can directly attend to token at position $(0, 0)$ &mdash; a global receptive field in a single layer, something that would require stacking many 3&times;3 convolutions to achieve.
+    </div>
+
+    <div class="pseudocode">
+      <div class="pseudocode-title">Spatial Self-Attention</div>
+<pre>class SpatialSelfAttention:
+    def forward(x):
+        B, C, H, W = x.shape
+        h = group_norm(x)                                # normalize first
+        h = h.reshape(B, C, H*W).transpose(1, 2)        # (B, H*W, C)
+        attn_out = multi_head_attention(h, h, h)         # (B, H*W, C)
+        attn_out = attn_out.transpose(1, 2).reshape(B, C, H, W)
+        return x + attn_out                              # residual connection</pre>
+    </div>
+
+    <p>Note the residual connection: the attention output is <em>added</em> to the original input. This means attention acts as a refinement &mdash; the feature map already has useful information from the convolutions, and attention adds global context on top.</p>
+
+
+    <!-- Section 8: Cross-Attention Preview -->
+    <h2 id="cross-attention-preview">Cross-Attention Preview</h2>
+
+    <p>Everything we've discussed so far is <strong>self-attention</strong>: the query, key, and value all come from the same feature map. But there's a powerful variant used in conditional generation.</p>
+
+    <p>In <strong>cross-attention</strong>, the queries still come from the image features, but the keys and values come from an <em>external conditioning signal</em> &mdash; like a text embedding from CLIP. This is exactly how Stable Diffusion injects text prompts into the U-Net: the image features "ask questions" (queries) about the text (keys and values).</p>
+
+    <ul>
+      <li><strong>Self-attention:</strong> $Q, K, V$ all from image features &mdash; "how do different parts of this image relate to each other?"</li>
+      <li><strong>Cross-attention:</strong> $Q$ from image, $K, V$ from text &mdash; "what does the text tell us about this region of the image?"</li>
+    </ul>
+
+    <p>We'll cover cross-attention in detail in Lecture 9. For now, the mechanism is identical &mdash; the only difference is where $K$ and $V$ come from.</p>
+
+
+    <!-- Section 9: Complete Architecture -->
+    <h2 id="complete-architecture">The Complete U-Net &mdash; All Pieces Connected</h2>
+
+    <p>Let's assemble everything we've built across Lectures 4 and 5 into the complete architecture:</p>
+
+    <ol>
+      <li><strong>Initial conv:</strong> image_channels &rarr; base_channels</li>
+      <li><strong>Time embedding:</strong> $t \xrightarrow{\text{sinusoidal}} \mathbb{R}^d \xrightarrow{\text{MLP}} \mathbb{R}^{4d}$</li>
+      <li><strong>Down blocks:</strong> [ResBlock(+time), ResBlock(+time), (optional Attention), Downsample] &times; $N$</li>
+      <li><strong>Middle:</strong> ResBlock(+time) &rarr; Attention &rarr; ResBlock(+time)</li>
+      <li><strong>Up blocks:</strong> [Upsample, concat skip, ResBlock(+time), ResBlock(+time), (optional Attention)] &times; $N$</li>
+      <li><strong>Final:</strong> GroupNorm &rarr; SiLU &rarr; Conv &rarr; image_channels</li>
+    </ol>
+
+    <p>The forward signature: <code>model(x_t, t) &rarr; noise_pred</code>, where $x_t$ is the noisy image at timestep $t$ and the output is $\varepsilon_\theta(x_t, t)$ &mdash; the predicted noise. Optionally, <code>model(x_t, t, class_label)</code> for conditional generation (Lecture 8).</p>
+
+    <h3 id="parameter-distribution">Where Do the Parameters Live?</h3>
+
+    <p>Not all parts of the U-Net are created equal in terms of parameter count:</p>
+
+    <ul>
+      <li><strong>Lower-resolution blocks</strong> (128 and 256 channels) contain the bulk of parameters &mdash; convolutions with more channels have quadratically more weights.</li>
+      <li><strong>Attention layers</strong> add significant parameters at each resolution where they're applied.</li>
+      <li><strong>The time MLP</strong> is relatively small &mdash; typically a few thousand parameters.</li>
+      <li><strong>Higher-resolution blocks</strong> (64 channels) are cheap per-block but process the largest feature maps, so they dominate compute time.</li>
+    </ul>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      The U-Net concentrates its representational capacity at low resolutions (many channels, attention) where the computational cost per operation is low, and keeps high-resolution processing lightweight (fewer channels, no attention). This is an elegant trade-off between model expressiveness and computational efficiency.
+    </div>
+
+
+    <!-- Section 10: Verification -->
+    <h2 id="verification">Putting It to the Test</h2>
+
+    <p>Here's the moment of truth. We can now verify that our complete U-Net produces output with the correct shape:</p>
+
+    <div class="code-block">
+<pre>from utils.unet import UNet
+import torch
+
+model = UNet(
+    in_channels=1,
+    base_channels=64,
+    channel_mults=(1, 2, 4),
+    num_res_blocks=2,
+    time_emb_dim=256,
+    attention_resolutions=(7,),     <span style="color: var(--text-muted)"># attention at 7&times;7 only</span>
+)
+
+<span style="color: var(--text-muted)"># Count parameters</span>
+n_params = sum(p.numel() for p in model.parameters())
+print(f"Parameters: {n_params:,}")   <span style="color: var(--text-muted)"># ~7M for this config</span>
+
+<span style="color: var(--text-muted)"># Verify input/output shapes match</span>
+x_t = torch.randn(4, 1, 28, 28)
+t = torch.randint(0, 1000, (4,))
+noise_pred = model(x_t, t)
+
+assert noise_pred.shape == x_t.shape
+print(f"Input:  {tuple(x_t.shape)}")        <span style="color: var(--text-muted)"># (4, 1, 28, 28)</span>
+print(f"Output: {tuple(noise_pred.shape)}")  <span style="color: var(--text-muted)"># (4, 1, 28, 28) &mdash; same!</span></pre>
+    </div>
+
+    <p>The network is ready. It takes a noisy image and a timestep, and outputs a noise prediction of the same shape. In Lecture 6, we'll use this architecture to actually <em>train</em> a diffusion model &mdash; implementing the DDPM training algorithm from scratch and watching it learn to denoise MNIST digits.</p>
+
+
+    <!-- Section 11: Looking Ahead -->
+    <h2 id="looking-ahead">Looking Ahead</h2>
+
+    <p>Across Lectures 4 and 5, we've built the complete denoising network &mdash; the U-Net with time conditioning and spatial attention. We know how every tensor flows through the architecture, where skip connections carry spatial detail, how the timestep modulates every ResBlock, and why attention is placed strategically at low resolutions.</p>
+
+    <p>Now it's time to <em>use</em> this architecture. In Lecture 6, we'll implement the full DDPM training loop: sample random timesteps, add noise to clean images, have the U-Net predict the noise, and backpropagate the loss. We'll train on MNIST and watch the model learn to generate digits from pure noise.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture04.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">U-Net: Encoder, Decoder &amp; Skips</span>
+    </a>
+    <a class="next" href="lecture06.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">Training a Diffusion Model</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

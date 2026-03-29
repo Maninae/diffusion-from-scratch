@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 1: Why Diffusion? — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu"><span></span></button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+<div class="progress-bar"><div class="bar"></div></div>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer"><a href="../index.html">&larr; All Modules</a></div>
+</aside>
+
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 1</div>
+    <h2>Why Diffusion? The Generative Models Landscape</h2>
+    <p class="lecture-desc">Every generative framework makes a tradeoff. Diffusion models found a way to avoid the worst of them&mdash;by learning to reverse destruction instead of creating from scratch.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">Foundations</span>
+      <span class="lecture-tag">Generative Models</span>
+      <span class="lecture-tag">Motivation</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 1.1 -->
+    <h2 id="generative-modeling">The Generative Modeling Problem</h2>
+
+    <p>Here's the setup. You have a dataset of images&mdash;say, a million photographs of faces. These images were drawn from some true distribution $p_{\text{data}}(x)$ that we can never write down in closed form. We want to do two things: (1) <strong>learn</strong> a model that captures this distribution, and (2) <strong>sample</strong> new images from it that look like they belong in the original dataset.</p>
+
+    <p>This is the generative modeling problem, and it's deceptively hard. Images live in extremely high-dimensional spaces&mdash;a 256&times;256 RGB image has 196,608 pixel values. The distribution over these values is incredibly complex: most random configurations of 196K numbers look like static, not faces. The "face manifold" is a thin, winding surface in a vast space, and we need to find it from examples alone.</p>
+
+    <p>When evaluating a generative model, we care about several things:</p>
+
+    <ul>
+      <li><strong>Sample quality</strong> &mdash; Do generated images look realistic? Are they sharp and diverse?</li>
+      <li><strong>Training stability</strong> &mdash; Can we reliably train the model without it collapsing or diverging?</li>
+      <li><strong>Mode coverage</strong> &mdash; Does the model capture the full diversity of the data, or does it only produce a few types of output?</li>
+      <li><strong>Likelihood</strong> &mdash; Can the model tell us how probable a given image is?</li>
+    </ul>
+
+    <p>No framework gets all of these for free. Every approach makes a tradeoff&mdash;and understanding those tradeoffs is the key to understanding why diffusion models exist.</p>
+
+    <!-- Section 1.2 -->
+    <h2 id="generative-zoo">The Generative Models Zoo</h2>
+
+    <p>Before diffusion models, four major frameworks dominated generative modeling. Each one found a clever way to learn $p(x)$&mdash;and each one paid a price.</p>
+
+    <h3 id="gans">GANs &mdash; Generative Adversarial Networks</h3>
+
+    <p>GANs (Goodfellow et al., 2014) frame generation as a game between two networks. A <strong>generator</strong> $G$ tries to produce realistic images from random noise. A <strong>discriminator</strong> $D$ tries to distinguish real images from generated ones. They train against each other: $G$ improves at fooling $D$, and $D$ improves at catching $G$.</p>
+
+    <p>The result? GANs produce <strong>stunningly sharp images</strong>&mdash;for years, they held the crown for visual quality. But the adversarial training dynamic is fragile. Generators frequently suffer from <strong>mode collapse</strong>, where they learn to produce only a few types of output that fool the discriminator. Training requires careful hyperparameter tuning, and there's no reliable way to measure convergence. You also get no density estimation&mdash;GANs can't tell you how likely a given image is.</p>
+
+    <h3 id="vaes">VAEs &mdash; Variational Autoencoders</h3>
+
+    <p>VAEs (Kingma &amp; Welling, 2013) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the ELBO).</p>
+
+    <p>VAEs give you a proper probabilistic framework&mdash;smooth latent spaces, meaningful interpolations, and a principled training objective. The price? <strong>Blurry samples.</strong> The reconstruction loss (typically MSE) encourages the decoder to hedge its bets, producing the average of possible outputs rather than committing to sharp details.</p>
+
+    <h3 id="flows">Normalizing Flows</h3>
+
+    <p>Normalizing flows (Rezende &amp; Mohamed, 2015) build a chain of <strong>invertible transformations</strong> that map a simple distribution (Gaussian) to the data distribution. Because every transformation is invertible, you can compute exact log-likelihoods using the change-of-variables formula.</p>
+
+    <p>This is mathematically elegant&mdash;exact density evaluation is a powerful tool. But the <strong>invertibility constraint</strong> severely limits what architectures you can use. You can't use standard convolutions, attention, or most modern building blocks. This architectural straitjacket limits the expressiveness of the model.</p>
+
+    <h3 id="autoregressive">Autoregressive Models</h3>
+
+    <p>Autoregressive models (van den Oord et al., 2016) factor the joint distribution as a product of conditionals: $p(x) = \prod_i p(x_i \mid x_1, \ldots, x_{i-1})$. They predict one pixel (or token) at a time, conditioned on everything generated so far.</p>
+
+    <p>This gives you <strong>exact likelihoods</strong> and powerful density estimation&mdash;PixelCNN and its variants are excellent at capturing fine-grained dependencies. The fatal weakness: <strong>generation is sequential</strong>. To produce a 256&times;256 image, you need 65,536 sequential forward passes. You can't parallelize this. For large images, generation is painfully slow.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      <p>Notice the pattern: every framework trades something essential. GANs sacrifice stability and mode coverage. VAEs sacrifice sharpness. Flows sacrifice architectural freedom. Autoregressive models sacrifice generation speed. Is there a framework that avoids the worst of these tradeoffs?</p>
+    </div>
+
+    <!-- Section 1.3 -->
+    <h2 id="enter-diffusion">Enter Diffusion Models</h2>
+
+    <p>Diffusion models take a completely different angle. Instead of trying to learn the data distribution in one shot&mdash;through a generator, a decoder, an invertible transform, or a sequential factorization&mdash;they learn to <strong>gradually reverse a simple destruction process</strong>.</p>
+
+    <p>The core intuition is disarmingly simple:</p>
+
+    <div class="callout definition">
+      <div class="callout-label">Core Idea</div>
+      <p><strong>Destroying an image is easy&mdash;just add noise.</strong> If we add Gaussian noise step by step, any image eventually becomes pure static. What if we could train a neural network to <em>undo</em> each step of that destruction?</p>
+    </div>
+
+    <p>This gives us two processes:</p>
+
+    <ul>
+      <li><strong>The forward process</strong> &mdash; Gradually add Gaussian noise over $T$ steps (typically $T = 1000$). A clean image $x_0$ becomes progressively noisier: $x_0 \to x_1 \to x_2 \to \cdots \to x_T$. By step $T$, the image is indistinguishable from pure random noise.</li>
+      <li><strong>The reverse process</strong> &mdash; Train a neural network to predict and remove the noise at each step. Starting from pure noise $x_T \sim \mathcal{N}(0, I)$, the network iteratively denoises: $x_T \to x_{T-1} \to \cdots \to x_0$. The result is a clean, generated image.</li>
+    </ul>
+
+    <p>Why does this work so well? Because <strong>each denoising step is a small, learnable problem</strong>. The network doesn't have to generate an entire image from scratch&mdash;it just has to remove a tiny bit of noise at each step. A thousand easy problems instead of one impossible one.</p>
+
+    <p>And the tradeoffs? Diffusion models deliver:</p>
+
+    <ul>
+      <li><strong>Stable training</strong> &mdash; The loss is a simple MSE (predict the noise that was added). No adversarial dynamics, no mode collapse.</li>
+      <li><strong>State-of-the-art sample quality</strong> &mdash; Diffusion models match or exceed GANs on FID scores while maintaining full mode coverage.</li>
+      <li><strong>Flexible architecture</strong> &mdash; No invertibility constraints. You can use any architecture: U-Nets, transformers, attention&mdash;whatever works best.</li>
+      <li><strong>Principled framework</strong> &mdash; Built on a variational bound with a clean probabilistic interpretation.</li>
+    </ul>
+
+    <p>The cost? <strong>Sampling is slow.</strong> Generating an image requires iterating through hundreds or thousands of denoising steps. This is the main weakness, and much of the research since 2020 has focused on reducing the number of steps needed. We'll cover accelerated sampling in later lectures.</p>
+
+    <!-- Section 1.4 -->
+    <h2 id="timeline">Historical Timeline</h2>
+
+    <p>Diffusion models didn't appear overnight. The journey from theoretical curiosity to the backbone of modern generative AI spans nearly a decade.</p>
+
+    <h3 id="origins">2015 &mdash; The Original Idea</h3>
+
+    <p>Sohl-Dickstein et al. published <em>"Deep Unsupervised Learning using Nonequilibrium Thermodynamics"</em>&mdash;the paper that started it all. They drew on ideas from statistical physics: a diffusion process that gradually destroys data, paired with a learned reverse process. The framework was theoretically elegant but produced modest results. It wasn't competitive with GANs, and the community largely moved on.</p>
+
+    <h3 id="ddpm">2020 &mdash; The DDPM Breakthrough</h3>
+
+    <p>Five years later, Ho, Jain, and Abbeel published <em>"Denoising Diffusion Probabilistic Models"</em> (DDPM). They stripped the framework to its essentials: a simple noise schedule, a U-Net architecture, and an MSE loss on predicted noise. The result was competitive image quality with remarkably stable training. Two algorithms&mdash;Algorithm 1 (training) and Algorithm 2 (sampling)&mdash;became the foundation of everything in this course.</p>
+
+    <h3 id="beat-gans">2021 &mdash; Beating GANs</h3>
+
+    <p>Dhariwal and Nichol at OpenAI showed that diffusion models could <strong>surpass GANs on ImageNet FID</strong>&mdash;a watershed moment. Their key contributions: classifier guidance (steering generation with a classifier's gradients) and improved architecture choices. In the same year, Song et al. unified diffusion models and score matching into a continuous-time SDE framework.</p>
+
+    <h3 id="latent-diffusion">2022&ndash;Present &mdash; The Diffusion Explosion</h3>
+
+    <p>Rombach et al. introduced <strong>Latent Diffusion</strong>&mdash;running the diffusion process in a compressed latent space instead of pixel space. This made high-resolution generation practical and became <strong>Stable Diffusion</strong>, one of the most widely used generative models in history. Since then: DALL-E 2, Imagen, SDXL, Sora, Flux. Diffusion is now the default backbone for image, video, and audio generation.</p>
+
+    <div class="callout example">
+      <div class="callout-label">Perspective</div>
+      <p>From a niche physics-inspired paper in 2015 to the engine behind Stable Diffusion and Sora in under a decade. The core algorithm is nearly identical&mdash;what changed was the engineering: better architectures, better schedules, better conditioning, and the latent space trick. Understanding the fundamentals gives you access to all of it.</p>
+    </div>
+
+    <!-- Section 1.5 -->
+    <h2 id="whats-ahead">What's Ahead in This Course</h2>
+
+    <p>This course builds your understanding of diffusion models from the ground up&mdash;math, architecture, training, sampling, conditioning, and scaling.</p>
+
+    <p>Here's the roadmap:</p>
+
+    <ul>
+      <li><strong>Lectures 2&ndash;3</strong> &mdash; The forward and reverse processes. The math that makes diffusion work: noise schedules, the ELBO, and the simplified loss.</li>
+      <li><strong>Lectures 4&ndash;5</strong> &mdash; The U-Net architecture and noise schedules. How to build the neural network that powers denoising, and how the noise schedule shapes training.</li>
+      <li><strong>Lectures 6&ndash;7</strong> &mdash; Training and sampling. DDPM Algorithm 1 in practice, plus DDIM and accelerated sampling methods.</li>
+      <li><strong>Lectures 8&ndash;9</strong> &mdash; Conditioning and guidance. Class-conditional generation, classifier guidance, and classifier-free guidance.</li>
+      <li><strong>Lectures 10&ndash;11</strong> &mdash; Latent diffusion and modern directions. VAE encoders, flow matching, and the techniques behind Stable Diffusion 3 and beyond.</li>
+    </ul>
+
+    <p>By the end, you'll have built a working diffusion model on MNIST with classifier-free guidance, and you'll have the foundation to read and understand any modern diffusion paper.</p>
+
+    <p>Let's start with the math. Next up: the forward process.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <span></span>
+    <a class="next" href="lecture02.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">The Forward Process &amp; Noise Schedules</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

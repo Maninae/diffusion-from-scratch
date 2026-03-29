@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 7: Sampling &mdash; DDPM, DDIM &amp; Beyond &mdash; Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 7</div>
+    <h2>Sampling &mdash; DDPM, DDIM &amp; Beyond</h2>
+    <p class="lecture-desc">Starting from pure noise and iteratively denoising to generate images &mdash; the stochastic DDPM reverse process, deterministic DDIM, and why fewer steps can work just as well.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">Algorithm 2</span>
+      <span class="lecture-tag">DDPM Sampling</span>
+      <span class="lecture-tag">DDIM</span>
+      <span class="lecture-tag">Accelerated Generation</span>
+      <span class="lecture-tag optional">Probability Flow ODE</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 0: Dependencies & Setup -->
+    <h2 id="setup">Loading the Trained Model</h2>
+
+    <p>This lecture picks up exactly where Lecture 6 left off. We trained a diffusion model on MNIST digits and saved a checkpoint containing both the training weights and the smoothed EMA weights. Now we load that checkpoint and use the model to actually <em>generate</em> images.</p>
+
+    <p><strong>Dependencies:</strong> You'll need concepts from <strong>Lecture 3</strong> (the posterior mean formula $\mu_\theta$ from Section 3.5) and the trained checkpoint from <strong>Lecture 6</strong>.</p>
+
+    <div class="pseudocode">
+<span class="comment"># Load the checkpoint from Lecture 6</span>
+checkpoint = torch.load('diffusion_mnist.pt', map_location=device)
+model.load_state_dict(checkpoint['ema'])   <span class="comment"># use EMA weights for sampling</span>
+schedule = checkpoint['schedule']
+    </div>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      We load the <strong>EMA weights</strong>, not the raw training weights. As we discussed in Lecture 6, EMA weights are smoothed over thousands of training steps and produce noticeably higher-quality samples. Always use EMA for generation.
+    </div>
+
+    <!-- Section 1: DDPM Sampling -->
+    <h2 id="ddpm-sampling">DDPM Sampling &mdash; Algorithm 2</h2>
+
+    <p>Training taught the model to predict noise at any timestep. Sampling reverses the process: start from pure Gaussian noise $\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ and iteratively denoise, one step at a time, until we arrive at a clean image $\mathbf{x}_0$.</p>
+
+    <div class="algorithm">
+      <div class="algorithm-title">Algorithm 2 &mdash; DDPM Sampling (Ho et al., 2020)</div>
+      <ol>
+        <li>$\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ <span class="comment">&mdash; start from pure noise</span></li>
+        <li><span class="keyword">for</span> $t = T, T-1, \ldots, 1$ <span class="keyword">do</span></li>
+        <li style="list-style: none; padding-left: 1.5em;">$\mathbf{z} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ if $t > 1$, else $\mathbf{z} = \mathbf{0}$</li>
+        <li style="list-style: none; padding-left: 1.5em;">$\boldsymbol{\epsilon}_\theta = \text{model}(\mathbf{x}_t, t)$ <span class="comment">&mdash; predict noise</span></li>
+        <li style="list-style: none; padding-left: 1.5em;">$\boldsymbol{\mu}_\theta = \frac{1}{\sqrt{\alpha_t}}\left(\mathbf{x}_t - \frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}} \boldsymbol{\epsilon}_\theta\right)$ <span class="comment">&mdash; compute mean</span></li>
+        <li style="list-style: none; padding-left: 1.5em;">$\mathbf{x}_{t-1} = \boldsymbol{\mu}_\theta + \sigma_t \mathbf{z}$ <span class="comment">&mdash; sample</span></li>
+        <li><span class="keyword">end for</span></li>
+        <li><span class="keyword">return</span> $\mathbf{x}_0$</li>
+      </ol>
+    </div>
+
+    <h3 id="step-by-step">Step by Step</h3>
+
+    <p>Let's unpack what happens at each timestep. The model sees a noisy image $\mathbf{x}_t$ and outputs its best guess of what noise was added: $\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)$. We then use this prediction to compute the <strong>posterior mean</strong> &mdash; the expected value of $\mathbf{x}_{t-1}$ given $\mathbf{x}_t$ and the predicted noise:</p>
+
+    $$\boldsymbol{\mu}_\theta(\mathbf{x}_t, t) = \frac{1}{\sqrt{\alpha_t}}\left(\mathbf{x}_t - \frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}} \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)\right)$$
+
+    <p>This formula comes directly from Lecture 3 (Section 3.5). The mean tells us: "given the current noisy image and our noise prediction, here's the most likely slightly-less-noisy image." Then we add a controlled amount of fresh noise $\sigma_t \mathbf{z}$ and repeat.</p>
+
+    <h3 id="variance-choices">Two Variance Choices</h3>
+
+    <p>The standard deviation $\sigma_t$ controls how much fresh noise we inject at each step. DDPM offers two options:</p>
+
+    <ul>
+      <li><strong>$\sigma_t^2 = \beta_t$</strong> &mdash; the DDPM default. Simple, works well.</li>
+      <li><strong>$\sigma_t^2 = \tilde{\beta}_t = \frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t} \cdot \beta_t$</strong> &mdash; the true posterior variance. Often produces slightly better samples.</li>
+    </ul>
+
+    <p>Both are valid. The difference is subtle for MNIST; it matters more for higher-resolution images.</p>
+
+    <h3 id="ddpm-pseudocode">Pseudocode</h3>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> ddpm_sample(model, shape, schedule, T=1000):
+    x = randn(shape).to(device)              <span class="comment"># x_T ~ N(0, I)</span>
+
+    <span class="keyword">for</span> t <span class="keyword">in</span> reversed(range(1, T+1)):
+        noise_pred = model(x, t)             <span class="comment"># predict noise</span>
+
+        <span class="comment"># Compute posterior mean</span>
+        coeff1 = 1 / sqrt(schedule.alphas[t])
+        coeff2 = schedule.betas[t] / sqrt(1 - schedule.alphas_cumprod[t])
+        mean = coeff1 * (x - coeff2 * noise_pred)
+
+        <span class="comment"># Add noise (except at final step)</span>
+        <span class="keyword">if</span> t > 1:
+            noise = randn_like(x)
+            sigma = sqrt(schedule.betas[t])
+            x = mean + sigma * noise
+        <span class="keyword">else</span>:
+            x = mean
+
+    <span class="keyword">return</span> x                                 <span class="comment"># x_0 prediction</span>
+    </div>
+
+    <div class="callout example">
+      <div class="callout-label">Example</div>
+      <strong>Concrete numbers for MNIST.</strong> With $T = 1000$ and a cosine schedule, the model runs 1,000 sequential forward passes through the U-Net. On an M1 MacBook (MPS), this takes about 15&ndash;30 seconds per batch of 16 images. On a GPU, it's 2&ndash;5 seconds. This is why accelerated sampling (Section 7.4) matters.
+    </div>
+
+    <!-- Section 2: Why Add Noise During Sampling? -->
+    <h2 id="why-add-noise">Why We Add Noise During Sampling</h2>
+
+    <p>This is the most counterintuitive part of diffusion sampling. We're trying to <em>remove</em> noise, so why do we add <em>more</em> noise at each step?</p>
+
+    <h3 id="error-correction">Stochastic Sampling as Error Correction</h3>
+
+    <p>The noise injection serves as a form of <strong>error correction</strong>. The model's noise prediction at each step isn't perfect &mdash; it's an approximation. Without the injected noise, these small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. The fresh noise at each step gives the model a chance to "re-randomize" and correct its trajectory.</p>
+
+    <p>Think of it like this: if you're navigating through fog with a slightly miscalibrated compass, occasionally re-randomizing your direction (within a shrinking radius) keeps you closer to the target than blindly following the compass for 1,000 steps.</p>
+
+    <h3 id="diversity">Diversity</h3>
+
+    <p>The noise also produces <strong>sample diversity</strong>. Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. Run DDPM twice from the same starting noise and you'll get two different digits. This stochasticity is what makes the model a proper generative model &mdash; it doesn't memorize a fixed mapping.</p>
+
+    <h3 id="deterministic-alternative">The Deterministic Alternative</h3>
+
+    <p>What happens if we set $\sigma_t = 0$ &mdash; no noise at all? We get a <strong>deterministic</strong> mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$. The same starting noise always produces the same image. This loses diversity but gains something valuable: <strong>reproducibility and interpolation</strong>. And as we'll see next, it also enables step-skipping.</p>
+
+    <!-- Section 3: DDIM -->
+    <h2 id="ddim">DDIM &mdash; Deterministic Sampling</h2>
+
+    <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps &mdash; the noise magnitudes would be wrong, and sample quality collapses.</p>
+
+    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, Song et al. 2020) solves this by reformulating the reverse process with a tunable noise parameter $\eta$:</p>
+
+    <ul>
+      <li>$\eta = 1$: equivalent to DDPM (full stochastic sampling)</li>
+      <li>$\eta = 0$: fully deterministic &mdash; no noise injection at all</li>
+      <li>$0 < \eta < 1$: interpolation between the two</li>
+    </ul>
+
+    <h3 id="ddim-update">The DDIM Update Rule</h3>
+
+    <p>Instead of computing a posterior mean and adding noise, DDIM takes a different approach. At each step:</p>
+
+    <ol>
+      <li><strong>Predict $\mathbf{x}_0$</strong> directly from the current $\mathbf{x}_t$ and the noise prediction:
+        $$\hat{\mathbf{x}}_0 = \frac{\mathbf{x}_t - \sqrt{1-\bar{\alpha}_t} \cdot \boldsymbol{\epsilon}_\theta}{\sqrt{\bar{\alpha}_t}}$$
+      </li>
+      <li><strong>Compute the "direction pointing to $\mathbf{x}_t$":</strong>
+        $$\text{dir} = \sqrt{1 - \bar{\alpha}_{t-1} - \sigma_t^2} \cdot \boldsymbol{\epsilon}_\theta$$
+      </li>
+      <li><strong>Compute the noise magnitude:</strong>
+        $$\sigma_t = \eta \cdot \sqrt{\frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}} \cdot \sqrt{1-\frac{\bar{\alpha}_t}{\bar{\alpha}_{t-1}}}$$
+      </li>
+      <li><strong>Take the DDIM step:</strong>
+        $$\mathbf{x}_{t-1} = \sqrt{\bar{\alpha}_{t-1}} \cdot \hat{\mathbf{x}}_0 + \text{dir} + \sigma_t \cdot \mathbf{z}$$
+      </li>
+    </ol>
+
+    <div class="callout definition">
+      <div class="callout-label">Definition</div>
+      <strong>DDIM (Song et al., 2020).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling &mdash; no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
+    </div>
+
+    <h3 id="ddim-pseudocode">Pseudocode</h3>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> ddim_sample(model, shape, schedule, num_steps=50, eta=0.0):
+    <span class="comment"># Select timestep subsequence</span>
+    timesteps = linspace(0, T-1, num_steps, dtype=int)
+
+    x = randn(shape).to(device)              <span class="comment"># x_T ~ N(0, I)</span>
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> reversed(range(len(timesteps))):
+        t = timesteps[i]
+        t_prev = timesteps[i-1] <span class="keyword">if</span> i > 0 <span class="keyword">else</span> 0
+
+        noise_pred = model(x, t)
+
+        <span class="comment"># Predict x_0</span>
+        alpha_bar_t = schedule.alphas_cumprod[t]
+        alpha_bar_prev = schedule.alphas_cumprod[t_prev]
+        x0_pred = (x - sqrt(1 - alpha_bar_t) * noise_pred) / sqrt(alpha_bar_t)
+
+        <span class="comment"># Compute sigma</span>
+        sigma = eta * sqrt((1 - alpha_bar_prev) / (1 - alpha_bar_t)) * \
+                      sqrt(1 - alpha_bar_t / alpha_bar_prev)
+
+        <span class="comment"># Direction pointing to x_t</span>
+        direction = sqrt(1 - alpha_bar_prev - sigma**2) * noise_pred
+
+        <span class="comment"># DDIM step</span>
+        noise = randn_like(x) <span class="keyword">if</span> t > 0 <span class="keyword">else</span> 0
+        x = sqrt(alpha_bar_prev) * x0_pred + direction + sigma * noise
+
+    <span class="keyword">return</span> x
+    </div>
+
+    <!-- Section 4: Accelerated Sampling -->
+    <h2 id="fewer-steps">Fewer Steps &mdash; Accelerated Sampling</h2>
+
+    <p>This is the real payoff of DDIM. When $\eta = 0$, the sampling trajectory is a smooth, deterministic curve from $\mathbf{x}_T$ to $\mathbf{x}_0$. Smooth curves can be traversed at any resolution &mdash; you don't need to visit every one of 1,000 points along the way.</p>
+
+    <h3 id="timestep-subselection">Timestep Sub-Selection</h3>
+
+    <p>Instead of stepping through every timestep $[999, 998, 997, \ldots, 1, 0]$, we select a subset: $[999, 979, 959, \ldots, 19, 0]$. The model evaluates at each selected timestep and skips the ones in between. Two common strategies:</p>
+
+    <ul>
+      <li><strong>Uniform spacing:</strong> <code>timesteps = linspace(0, T-1, num_steps)</code> &mdash; evenly distributed across the schedule</li>
+      <li><strong>Quadratic spacing:</strong> more steps concentrated near $t = 0$, where fine details emerge and accuracy matters most</li>
+    </ul>
+
+    <h3 id="quality-speed">Quality vs. Speed</h3>
+
+    <p>Here's the tradeoff in practice:</p>
+
+    <ul>
+      <li><strong>1000 steps</strong> &mdash; best quality (the DDPM baseline)</li>
+      <li><strong>200 steps</strong> &mdash; nearly identical quality, hard to tell the difference</li>
+      <li><strong>50 steps</strong> &mdash; minimal quality loss. <strong>This is the sweet spot.</strong></li>
+      <li><strong>20 steps</strong> &mdash; visible degradation but still recognizable digits</li>
+      <li><strong>10 steps</strong> &mdash; significant quality loss, blurry outputs</li>
+    </ul>
+
+    <p>Going from 1,000 to 50 steps is a <strong>20&times; speedup</strong> with nearly the same output quality. This is why DDIM was a breakthrough &mdash; it made diffusion models practical for interactive use.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      DDIM doesn't require a different model or any retraining. It's purely a change to the <em>sampling</em> procedure. You can train once with DDPM's Algorithm 1 and sample with either DDPM (1000 steps, stochastic, diverse) or DDIM (50 steps, deterministic, fast) depending on your needs.
+    </div>
+
+    <!-- Section 5: Dynamic Thresholding -->
+    <h2 id="dynamic-thresholding">Dynamic Thresholding</h2>
+
+    <p>At each DDIM step, we compute a prediction of $\hat{\mathbf{x}}_0$. Ideally this prediction stays in the $[-1, 1]$ range (since our training data was normalized there), but in practice it can overshoot &mdash; especially at high guidance scales (which we'll encounter in Lecture 9).</p>
+
+    <h3 id="static-clipping">Static Clipping</h3>
+
+    <p>The simplest fix: <code>x0_pred.clamp(-1, 1)</code>. This works but can create color banding artifacts when predictions significantly exceed the range.</p>
+
+    <h3 id="dynamic-clip">Dynamic Thresholding (Imagen)</h3>
+
+    <p><strong>Dynamic thresholding</strong> (Saharia et al., 2022) is smarter. At each step, compute the $p$-th percentile of $|\hat{\mathbf{x}}_0|$ (typically $p = 99.5$). If that percentile exceeds 1, clip to that value and rescale to $[-1, 1]$. This allows higher guidance scales without saturation artifacts.</p>
+
+    <p>For MNIST with standard DDPM/DDIM (no guidance), static clipping is perfectly fine. Dynamic thresholding becomes important in Lecture 9 when we add classifier-free guidance.</p>
+
+    <!-- Section 6: Full Sampling Pipeline -->
+    <h2 id="full-pipeline">The Full Sampling Pipeline</h2>
+
+    <p>Let's put the complete end-to-end pipeline together &mdash; from random noise to displayable images:</p>
+
+    <ol>
+      <li><strong>Generate starting noise:</strong> $\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ with shape $(B, C, H, W)$</li>
+      <li><strong>Iterative denoising:</strong> Run DDPM (1000 steps) or DDIM (50 steps)</li>
+      <li><strong>Clamp:</strong> $\mathbf{x}_0 = \text{clamp}(\mathbf{x}_0, -1, 1)$ &mdash; ensure valid range</li>
+      <li><strong>Denormalize:</strong> $\mathbf{x}_{\text{display}} = (\mathbf{x}_0 + 1) / 2$ &mdash; map from $[-1, 1]$ to $[0, 1]$</li>
+      <li><strong>Display:</strong> Show as an image grid using <code>show_images()</code></li>
+    </ol>
+
+    <div class="pseudocode">
+<span class="comment"># Generate 16 MNIST digits with DDIM (50 steps)</span>
+<span class="keyword">with</span> torch.no_grad():
+    samples = ddim_sample(model, shape=(16, 1, 28, 28), schedule, num_steps=50)
+    samples = samples.clamp(-1, 1)
+    samples = (samples + 1) / 2       <span class="comment"># denormalize to [0, 1]</span>
+    show_images(samples, nrow=4)
+    </div>
+
+    <h3 id="stochastic-vs-deterministic">Stochastic vs. Deterministic: A Side-by-Side</h3>
+
+    <p>A revealing experiment: take the <strong>same</strong> starting noise $\mathbf{x}_T$ and generate images with both methods.</p>
+
+    <ul>
+      <li><strong>DDPM (stochastic):</strong> Run it three times &mdash; you get three different digits each time. The noise injected at each step makes each run unique.</li>
+      <li><strong>DDIM (deterministic, $\eta = 0$):</strong> Run it three times &mdash; you get the <em>exact same digit</em> every time. The mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$ is fixed.</li>
+    </ul>
+
+    <p>This determinism is what makes DDIM useful beyond just speed. It enables <strong>latent space interpolation</strong>: smoothly blend between two starting noises $\mathbf{x}_T^{(1)}$ and $\mathbf{x}_T^{(2)}$ and the generated images smoothly morph between the two outputs.</p>
+
+    <!-- Section 7: Probability Flow ODE -->
+    <h2 id="probability-flow-ode">The Probability Flow ODE <span class="lecture-tag optional" style="font-size: 11px; vertical-align: middle;">Optional / Advanced</span></h2>
+
+    <p>If you want to understand <em>why</em> DDIM works &mdash; and where the field is heading &mdash; this section provides the theoretical perspective. Feel free to skip it on a first reading.</p>
+
+    <h3 id="two-views">Two Views of the Same Process</h3>
+
+    <p>There are two equivalent mathematical descriptions of diffusion sampling:</p>
+
+    <ol>
+      <li><strong>SDE (Stochastic Differential Equation):</strong> DDPM sampling. The reverse process includes a random noise term &mdash; it's a stochastic trajectory from $\mathbf{x}_T$ to $\mathbf{x}_0$.</li>
+      <li><strong>ODE (Ordinary Differential Equation):</strong> A deterministic trajectory. No randomness &mdash; the path from noise to data is a smooth curve defined by the model's predictions.</li>
+    </ol>
+
+    <p>The ODE form is:</p>
+
+    $$d\mathbf{x} = \left[f(\mathbf{x}, t) - \frac{1}{2}g(t)^2 \nabla_{\mathbf{x}} \log p_t(\mathbf{x})\right] dt$$
+
+    <p>The key term is the <strong>score function</strong> $\nabla_{\mathbf{x}} \log p_t(\mathbf{x})$ &mdash; the gradient of the log-probability of the data at noise level $t$. Our trained model gives us this for free:</p>
+
+    $$\nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \approx -\frac{\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)}{\sqrt{1-\bar{\alpha}_t}}$$
+
+    <p>In other words, predicting noise $\boldsymbol{\epsilon}$ is equivalent to estimating the score function. This connection is profound &mdash; it unifies diffusion models with score-based generative models (Song &amp; Ermon, 2019) and explains why DDIM works.</p>
+
+    <h3 id="ddim-as-euler">DDIM as Euler Discretization</h3>
+
+    <p>DDIM with $\eta = 0$ is exactly the <strong>Euler method</strong> applied to this ODE. And just like in numerical methods, we can use better ODE solvers to get the same quality in fewer steps:</p>
+
+    <ul>
+      <li><strong>Heun's method</strong> (second-order): roughly halves the required steps vs. Euler</li>
+      <li><strong>DPM-Solver</strong> (Lu et al., 2022): purpose-built for diffusion ODEs, achieves good quality in 10&ndash;20 steps</li>
+      <li><strong>DPM-Solver++</strong>: further improvements, used in Stable Diffusion</li>
+    </ul>
+
+    <p>This ODE perspective also connects to <strong>flow matching</strong> (Lecture 10), which directly learns the velocity field of the ODE rather than deriving it from a noise prediction model.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      The progression from DDPM &rarr; DDIM &rarr; DPM-Solver &rarr; flow matching is really a story about better ODE solvers. Each step realizes that the "reverse diffusion" process is an ODE, and applies increasingly sophisticated numerical methods to traverse it efficiently.
+    </div>
+
+    <!-- Section 8: PyTorch Reference -->
+    <h2 id="pytorch-reference">PyTorch Reference</h2>
+
+    <p>The complete sampling implementations live in the Module 7 notebook and in <code>utils/diffusion.py</code>. The key functions:</p>
+
+    <div class="code-block">
+      <div class="code-block-label">PyTorch</div>
+<span class="keyword">from</span> utils.diffusion <span class="keyword">import</span> ddpm_sample, ddim_sample
+<span class="keyword">from</span> utils.visualization <span class="keyword">import</span> show_images, show_denoising_trajectory, denormalize
+
+<span class="comment"># DDPM: 1000 steps, stochastic, diverse samples</span>
+samples_ddpm = ddpm_sample(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule=schedule)
+show_images(denormalize(samples_ddpm), nrow=<span class="number">4</span>)
+
+<span class="comment"># DDIM: 50 steps, deterministic, 20x faster</span>
+samples_ddim = ddim_sample(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule=schedule, num_steps=<span class="number">50</span>)
+show_images(denormalize(samples_ddim), nrow=<span class="number">4</span>)
+
+<span class="comment"># Denoising trajectory: watch an image emerge from noise</span>
+show_denoising_trajectory(model, schedule, shape=(<span class="number">1</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>))
+    </div>
+
+    <!-- Section 9: Looking Ahead -->
+    <h2 id="looking-ahead">Looking Ahead</h2>
+
+    <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> digits &mdash; we have no control over what it produces. You might get a 7, a 3, or a 0. There's no way to say "generate a 5."</p>
+
+    <p>The next lecture introduces <strong>conditioning</strong> &mdash; feeding class labels, text, or other signals into the model so it generates specific outputs on demand. This is the leap from an interesting mathematical framework to a practical tool: text-to-image generation, class-conditional synthesis, and everything that makes diffusion models useful in the real world.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture06.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Training a Diffusion Model</span>
+    </a>
+    <a class="next" href="lecture08.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">Conditioning &amp; Classifier Guidance</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

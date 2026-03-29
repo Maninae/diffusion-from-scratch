@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 3: The Reverse Process — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu"><span></span></button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+<div class="progress-bar"><div class="bar"></div></div>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer"><a href="../index.html">&larr; All Modules</a></div>
+</aside>
+
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 3</div>
+    <h2>The Reverse Process &amp; the Simplified Loss</h2>
+    <p class="lecture-desc">From intractable posteriors to six lines of training code&mdash;the mathematical journey that makes diffusion models work.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">Reverse Process</span>
+      <span class="lecture-tag">ELBO</span>
+      <span class="lecture-tag">Simplified Loss</span>
+      <span class="lecture-tag">DDPM Algorithm 1</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 3.1 -->
+    <h2 id="reverse-process">The Reverse Process &mdash; What We Need</h2>
+
+    <p>We know how to destroy images (Lecture 2). Now comes the real question: how do we generate new ones?</p>
+
+    <p>The plan is simple in concept. Start with pure noise $x_T \sim \mathcal{N}(0, I)$ and iteratively denoise, one step at a time: $x_T \to x_{T-1} \to \cdots \to x_1 \to x_0$. Each step reverses one forward noising step, gradually transforming random static into a clean image.</p>
+
+    <p>To do this, we need a model that defines the reverse step:</p>
+
+    $$p_\theta(x_{t-1} \mid x_t) = \mathcal{N}\!\left(x_{t-1};\; \mu_\theta(x_t, t),\; \sigma_t^2\, I\right)$$
+
+    <p>The model takes a noisy image $x_t$ and a timestep $t$, and outputs the parameters of a Gaussian distribution over the slightly-less-noisy image $x_{t-1}$. In practice, the model predicts the <strong>mean</strong> $\mu_\theta$, and we fix the variance $\sigma_t^2$ to a known schedule (following DDPM).</p>
+
+    <p>There's a deep result by Feller (1949) that justifies this: when the forward steps are small enough (small $\beta_t$), the reverse steps are also approximately Gaussian. So our Gaussian parameterization isn't just convenient&mdash;it's theoretically grounded.</p>
+
+    <!-- Section 3.2 -->
+    <h2 id="intractable-reverse">Why the True Reverse Is Intractable</h2>
+
+    <p>Here's the catch. The <strong>true</strong> reverse distribution $q(x_{t-1} \mid x_t)$ requires marginalizing over all possible clean images:</p>
+
+    $$q(x_{t-1} \mid x_t) = \int q(x_{t-1} \mid x_t, x_0)\, q(x_0 \mid x_t)\, dx_0$$
+
+    <p>Think about what this means. Given a noisy image $x_t$, the true reverse step considers <strong>every possible clean image $x_0$</strong> that could have produced it, weights each by its likelihood $q(x_0 \mid x_t)$, and averages the resulting denoising steps. But $q(x_0 \mid x_t)$ depends on the data distribution&mdash;the very thing we're trying to learn.</p>
+
+    <p>This is intractable. We can't compute this integral analytically or even approximate it directly. That's why we need a neural network: we'll train $p_\theta(x_{t-1} \mid x_t)$ to approximate $q(x_{t-1} \mid x_t)$ from data.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      <p>The intractability comes from $q(x_0 \mid x_t)$&mdash;knowing which clean images could have produced a given noisy image. If we <em>did</em> know $x_0$, the reverse step becomes tractable. This observation is the foundation of the entire derivation.</p>
+    </div>
+
+    <!-- Section 3.3 -->
+    <h2 id="tractable-posterior">The Tractable Posterior &mdash; $q(x_{t-1} \mid x_t, x_0)$</h2>
+
+    <p>Here's the saving grace. If we condition on <strong>both</strong> $x_t$ and $x_0$&mdash;the noisy image and the clean original&mdash;the posterior becomes tractable. Using Bayes' rule:</p>
+
+    $$q(x_{t-1} \mid x_t, x_0) \propto q(x_t \mid x_{t-1}) \cdot q(x_{t-1} \mid x_0)$$
+
+    <p>Both terms on the right are Gaussians that we know from the forward process. The product of two Gaussians is another Gaussian, so we can compute the result in closed form.</p>
+
+    <p>After working through the algebra (completing the square on the Gaussian exponents), we get:</p>
+
+    <div class="callout definition">
+      <div class="callout-label">Tractable Posterior</div>
+      <p>$q(x_{t-1} \mid x_t, x_0) = \mathcal{N}(x_{t-1};\; \tilde{\mu}_t,\; \tilde{\beta}_t\, I)$ where:</p>
+      <p><strong>Posterior mean:</strong></p>
+      $$\tilde{\mu}_t = \frac{\sqrt{\bar{\alpha}_{t-1}}\, \beta_t}{1 - \bar{\alpha}_t}\, x_0 + \frac{\sqrt{\alpha_t}\, (1 - \bar{\alpha}_{t-1})}{1 - \bar{\alpha}_t}\, x_t$$
+      <p><strong>Posterior variance:</strong></p>
+      $$\tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t} \cdot \beta_t$$
+    </div>
+
+    <p>Look at the posterior mean carefully. It's a <strong>weighted average of $x_0$ and $x_t$</strong>&mdash;the model's best guess for $x_{t-1}$ lies somewhere between the clean image and the noisy image. The weights depend on the schedule: at early timesteps (low noise), $x_t$ dominates; at late timesteps (high noise), $x_0$ dominates.</p>
+
+    <p>The variance $\tilde{\beta}_t$ is small&mdash;the posterior is a tight Gaussian. This makes sense: knowing both the clean and noisy images pins down the intermediate state precisely.</p>
+
+    <p>But wait&mdash;we don't have $x_0$ at test time. That's the whole point: we're trying to <em>generate</em> $x_0$. So why is this useful? Because it tells us what the model should <strong>aim for</strong>. If the model can estimate $x_0$ from $x_t$, it can compute this posterior and take the reverse step. The ELBO derivation makes this precise.</p>
+
+    <!-- Section 3.4 -->
+    <h2 id="elbo">The ELBO Derivation</h2>
+
+    <p>How do we train the model? We want to maximize the log-likelihood of the data: $\log p_\theta(x_0)$. The ELBO (Evidence Lower BOund) gives us a tractable training objective.</p>
+
+    <details class="collapsible">
+      <summary>Expand full ELBO derivation</summary>
+      <div class="collapsible-content">
+        <h4>Step 1: Start with log-likelihood</h4>
+
+        <p>We want to maximize $\log p_\theta(x_0)$&mdash;the probability the model assigns to real training images. We can't compute this directly because it requires marginalizing over all latent variables $x_1, \ldots, x_T$.</p>
+
+        <h4>Step 2: Introduce the forward process as a variational bound</h4>
+
+        <p>Using Jensen's inequality with the forward process $q(x_{1:T} \mid x_0)$ as the variational distribution:</p>
+
+        $$\log p_\theta(x_0) \geq \mathbb{E}_q\!\left[\log \frac{p_\theta(x_{0:T})}{q(x_{1:T} \mid x_0)}\right]$$
+
+        <p>This is the ELBO&mdash;a lower bound on the log-likelihood that we <em>can</em> optimize.</p>
+
+        <h4>Step 3: Decompose into per-timestep KL terms</h4>
+
+        <p>The ELBO can be rewritten as a sum of terms, one per timestep:</p>
+
+        $$\mathcal{L} = \underbrace{D_\text{KL}(q(x_T \mid x_0) \,\|\, p(x_T))}_{L_T} + \sum_{t=2}^{T} \underbrace{D_\text{KL}(q(x_{t-1} \mid x_t, x_0) \,\|\, p_\theta(x_{t-1} \mid x_t))}_{L_{t-1}} - \underbrace{\log p_\theta(x_0 \mid x_1)}_{L_0}$$
+
+        <p>The $L_T$ term is a constant (no learnable parameters). The $L_0$ term is the final reconstruction step. The interesting terms are $L_1, \ldots, L_{T-1}$: each one measures how well the learned reverse step $p_\theta$ matches the true posterior $q$ at that timestep.</p>
+
+        <h4>Step 4: KL between two Gaussians has a closed form</h4>
+
+        <p>Both $q(x_{t-1} \mid x_t, x_0)$ and $p_\theta(x_{t-1} \mid x_t)$ are Gaussian. The KL divergence between two Gaussians with the same (fixed) variance reduces to the squared difference of their means:</p>
+
+        $$L_{t-1} = \frac{1}{2\sigma_t^2} \left\| \tilde{\mu}_t(x_t, x_0) - \mu_\theta(x_t, t) \right\|^2$$
+
+        <h4>Step 5: The loss is about matching means</h4>
+
+        <p>Training the model means making $\mu_\theta(x_t, t)$ as close as possible to $\tilde{\mu}_t(x_t, x_0)$ at every timestep. The model sees the noisy image $x_t$ and must predict the posterior mean&mdash;the optimal denoising direction.</p>
+      </div>
+    </details>
+
+    <p><strong>The takeaway:</strong> the ELBO tells us to make the learned reverse step match the true posterior at every timestep. When both are Gaussian with fixed variance, this reduces to matching their means. The training objective is a sum of mean-squared errors, one per timestep.</p>
+
+    <!-- Section 3.5 -->
+    <h2 id="epsilon-prediction">The $\varepsilon$-Prediction Reparameterization</h2>
+
+    <p>We could train the model to predict $\tilde{\mu}_t$ directly. But Ho et al. (2020) found a much better parameterization.</p>
+
+    <p>Recall from Lecture 2 that $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. We can rearrange this to express $x_0$ in terms of $x_t$ and $\varepsilon$:</p>
+
+    $$x_0 = \frac{x_t - \sqrt{1 - \bar{\alpha}_t}\, \varepsilon}{\sqrt{\bar{\alpha}_t}}$$
+
+    <p>Now substitute this into the posterior mean formula. After simplification, the posterior mean becomes a function of $x_t$, $t$, and $\varepsilon$:</p>
+
+    $$\tilde{\mu}_t = \frac{1}{\sqrt{\alpha_t}}\left(x_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\, \varepsilon\right)$$
+
+    <p>This suggests a natural parameterization: instead of predicting $\mu_\theta$ directly, have the network predict $\varepsilon_\theta(x_t, t)$&mdash;the <strong>noise</strong> that was added&mdash;and compute the mean from it:</p>
+
+    $$\mu_\theta(x_t, t) = \frac{1}{\sqrt{\alpha_t}}\left(x_t - \frac{\beta_t}{\sqrt{1 - \bar{\alpha}_t}}\, \varepsilon_\theta(x_t, t)\right)$$
+
+    <p>Substituting into the MSE loss, the training objective becomes:</p>
+
+    <div class="callout theorem">
+      <div class="callout-label">Core Result</div>
+      $$L = \mathbb{E}_{t, x_0, \varepsilon}\!\left[\left\| \varepsilon - \varepsilon_\theta(x_t, t) \right\|^2\right]$$
+      <p>Sample noise. Add it to an image. Ask the model to predict that noise. Minimize MSE. That's it.</p>
+    </div>
+
+    <p>Why is $\varepsilon$-prediction better than $\mu$-prediction? Empirically, it produces better samples. Intuitively, predicting noise is a more "uniform" task across timesteps: at every noise level, the target $\varepsilon$ is a standard Gaussian. Predicting $\mu$ or $x_0$ directly has wildly different scales and difficulties across timesteps.</p>
+
+    <!-- Section 3.6 -->
+    <h2 id="simplified-loss">The Simplified Loss ($L_\text{simple}$)</h2>
+
+    <p>The full ELBO loss has <strong>timestep-dependent weights</strong> in front of each $L_t$ term (related to $1/\text{SNR}(t)$). These weights emphasize high-noise timesteps where the KL divergence is largest.</p>
+
+    <p>Ho et al. made a surprising empirical finding: <strong>dropping these weights and using uniform weighting works better.</strong> The simplified loss is:</p>
+
+    $$L_\text{simple} = \mathbb{E}_{t, x_0, \varepsilon}\!\left[\left\| \varepsilon - \varepsilon_\theta\!\left(\sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon,\; t\right) \right\|^2\right]$$
+
+    <p>where $t$ is sampled uniformly from $\{1, \ldots, T\}$.</p>
+
+    <p>Why does uniform weighting help? The ELBO weights upweight high-noise timesteps (large $t$), where the model is essentially predicting noise from noise&mdash;not very useful for sample quality. Uniform weighting gives more training signal to the perceptually important <strong>mid-range timesteps</strong>, where the model learns the structure that matters most for sharp, realistic outputs.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      <p>$L_\text{simple}$ is not the theoretically optimal ELBO loss&mdash;it's a practical modification that produces better samples. This is a common pattern in deep learning: the "correct" objective isn't always the best one. Diffusion research continues to explore better loss weightings, including min-SNR weighting and progressive noise level emphasis.</p>
+    </div>
+
+    <!-- Section 3.7 -->
+    <h2 id="algorithm-1">DDPM Algorithm 1 &mdash; The Training Procedure</h2>
+
+    <p>Everything we've derived collapses into a training procedure of remarkable simplicity.</p>
+
+    <div class="algorithm">
+      <div class="algorithm-title">Algorithm 1: Training (DDPM)</div>
+      <ol>
+        <li><span class="keyword">repeat</span> until converged:</li>
+        <li style="padding-left: 2em;">$x_0 \sim \text{dataset}$ <span class="comment">// sample a training image</span></li>
+        <li style="padding-left: 2em;">$t \sim \text{Uniform}(\{1, \ldots, T\})$ <span class="comment">// random timestep</span></li>
+        <li style="padding-left: 2em;">$\varepsilon \sim \mathcal{N}(0, I)$ <span class="comment">// sample noise</span></li>
+        <li style="padding-left: 2em;">$x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$ <span class="comment">// noise the image</span></li>
+        <li style="padding-left: 2em;">$\text{loss} = \left\| \varepsilon - \varepsilon_\theta(x_t, t) \right\|^2$ <span class="comment">// predict noise, MSE loss</span></li>
+        <li style="padding-left: 2em;">Take gradient step on loss <span class="comment">// update the network</span></li>
+      </ol>
+    </div>
+
+    <p>Six lines. That's the entire training procedure for the model architecture behind Stable Diffusion 1.5 and DALL-E 2. The same core idea&mdash;with variations like v-prediction and flow matching&mdash;underlies everything since, including Stable Diffusion 3 and Sora.</p>
+
+    <p>Let's walk through each line:</p>
+
+    <ul>
+      <li><strong>Line 2:</strong> Sample a batch of images from the training set. These are normalized to $[-1, 1]$.</li>
+      <li><strong>Line 3:</strong> Pick a random timestep for each image. The model must handle all noise levels.</li>
+      <li><strong>Line 4:</strong> Sample fresh Gaussian noise. This is both the corruption we'll apply and the target we'll predict.</li>
+      <li><strong>Line 5:</strong> Apply the closed-form forward process (from Lecture 2) to get $x_t$ in one shot.</li>
+      <li><strong>Line 6:</strong> Feed $x_t$ and $t$ into the neural network. Compare its output to the true noise $\varepsilon$. MSE loss.</li>
+      <li><strong>Line 7:</strong> Standard gradient descent. Adam optimizer, learning rate ~$10^{-4}$, done.</li>
+    </ul>
+
+    <p>The simplicity is remarkable&mdash;and it all follows from the math. The ELBO decomposition, the Gaussian posterior, the $\varepsilon$-reparameterization, and the uniform weighting simplification all conspire to produce this clean training loop.</p>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> train_step(model, x_0, schedule):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># The entire DDPM training step</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;t = random_integers(0, T, batch_size)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># random timesteps</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise = sample_gaussian(x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt(schedule.alpha_bar[t]) * x_0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ sqrt(1 - schedule.alpha_bar[t]) * noise&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># forward process</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise_pred = model(x_t, t)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># predict the noise</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss = mean_squared_error(noise, noise_pred)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># L_simple</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> loss
+    </div>
+
+    <!-- Section 3.8 -->
+    <h2 id="parameterizations">Alternative Parameterizations (Preview)</h2>
+
+    <p>$\varepsilon$-prediction isn't the only way to parameterize the model. Three options are common in practice, and they're all <strong>mathematically equivalent</strong>&mdash;you can convert between them given $(x_t, t)$.</p>
+
+    <h3 id="eps-pred">$\varepsilon$-prediction</h3>
+    <p>Predict the noise $\varepsilon$ that was added. This is the DDPM standard and our focus in this lecture. It works well across most settings and is conceptually clean: the model is a denoiser.</p>
+
+    <h3 id="x0-pred">$x_0$-prediction</h3>
+    <p>Predict the clean image $x_0$ directly. This can be better for low-noise timesteps (where the image is mostly intact and predicting it directly is natural), but struggles at high-noise timesteps where the model must hallucinate the entire image from almost no signal.</p>
+
+    <h3 id="v-pred">$v$-prediction</h3>
+    <p>Predict the "velocity" $v = \sqrt{\bar{\alpha}_t}\, \varepsilon - \sqrt{1 - \bar{\alpha}_t}\, x_0$. This interpolates between noise prediction and image prediction, and is <strong>numerically stable across all timesteps</strong>&mdash;the target magnitude stays roughly constant regardless of $t$. Used in Stable Diffusion 2.0+ and many modern models.</p>
+
+    <div class="callout note">
+      <div class="callout-label">Looking Ahead</div>
+      <p>We'll revisit these parameterizations in detail in Lecture 11, where we compare their training dynamics, loss landscapes, and empirical performance. For now, the important thing is that $\varepsilon$-prediction is the foundation&mdash;understand it well, and the alternatives are straightforward variations.</p>
+    </div>
+
+    <h3 id="pytorch-reference">PyTorch Reference</h3>
+
+    <p>Here's a complete training step in PyTorch, grounding all the derivations in real code.</p>
+
+    <div class="code-block">
+      <div class="code-block-label">PyTorch</div>
+<span class="keyword">import</span> torch<br>
+<span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F<br>
+<br>
+<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule, optimizer):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""One training step of DDPM (Algorithm 1)."""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;B = x_0.shape[<span class="number">0</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;device = x_0.device<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Sample random timesteps</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;t = torch.randint(<span class="number">0</span>, schedule[<span class="string">'T'</span>], (B,), device=device)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Sample noise ε ~ N(0, I)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise = torch.randn_like(x_0)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B, C, H, W)</span><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Forward process: noise x_0 to timestep t</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = schedule[<span class="string">'sqrt_alphas_cumprod'</span>][t]&nbsp;&nbsp;&nbsp;<span class="comment"># (B,)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = schedule[<span class="string">'sqrt_one_minus_ac'</span>][t]&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B,)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">while</span> sqrt_ab.dim() &lt; x_0.dim():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = sqrt_ab.unsqueeze(-<span class="number">1</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = sqrt_om.unsqueeze(-<span class="number">1</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt_ab * x_0 + sqrt_om * noise&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B, C, H, W)</span><br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Predict noise and compute loss</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise_pred = model(x_t, t)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B, C, H, W)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss = F.mse_loss(noise, noise_pred)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Gradient step</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;optimizer.zero_grad()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss.backward()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;optimizer.step()<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> loss.item()
+    </div>
+
+    <p>We now have the complete mathematical foundation: the forward process (Lecture 2) and the reverse process with its training objective (this lecture). Next, we'll build the neural network architecture&mdash;the U-Net&mdash;that actually does the denoising.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture02.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">The Forward Process &amp; Noise Schedules</span>
+    </a>
+    <a class="next" href="lecture04.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">The U-Net Architecture</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

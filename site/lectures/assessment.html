@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assessment Track — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Assessment Track</div>
+    <h2>Self-Evaluation Exercises</h2>
+    <p class="lecture-desc">Coding challenges, conceptual questions, a debugging exercise, and a system design discussion. Four formats that test different skills&mdash;implementation speed, conceptual clarity, code reading, and architectural reasoning.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag optional">Coding Challenges</span>
+      <span class="lecture-tag optional">Conceptual Q&amp;A</span>
+      <span class="lecture-tag optional">Debug Challenge</span>
+      <span class="lecture-tag optional">System Design</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <div class="callout insight">
+      <div class="callout-label">Before You Begin</div>
+      These challenges test your understanding of diffusion models from first principles. They are designed for <strong>self-evaluation</strong>, not performance anxiety. Work through them honestly to identify gaps in your knowledge&mdash;then go back and review the relevant lectures. Getting stuck is the point: it tells you exactly what to study next.
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PART 1: CODING CHALLENGES
+         ═══════════════════════════════════════════════════════════ -->
+    <h2 id="coding">Part 1: Coding Challenges</h2>
+
+    <p>Three timed implementation exercises. For each one, set a timer and work through it as if you were implementing from scratch. Don't look at the solution until your timer runs out.</p>
+
+    <p><strong>General tips:</strong> Spend 2&ndash;3 minutes planning before you code. Write down: schedule &rarr; model &rarr; training &rarr; sampling. Know your tensor shapes at every step. Start simple, get it working, then refine.</p>
+
+    <!-- Challenge 1 -->
+    <h3 id="challenge-1">Challenge 1: Minimal Diffusion on 2D Point Clouds</h3>
+
+    <p><strong>Time limit:</strong> 45 minutes</p>
+
+    <div class="callout example">
+      <div class="callout-label">The Prompt</div>
+      "Implement a diffusion model that learns to generate samples from a 2D spiral distribution. Implement: the noise schedule, a simple MLP denoiser, the training loop, and the sampling loop."
+    </div>
+
+    <p><strong>What this tests:</strong></p>
+    <ul>
+      <li>Core diffusion understanding stripped of image complexity</li>
+      <li>Can you implement the full algorithm from memory, without architecture distractions?</li>
+    </ul>
+
+    <p><strong>Starter code:</strong></p>
+    <div class="code-block">
+      <div class="code-block-label">Python</div>
+<span class="keyword">import</span> torch
+<span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn
+<span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt
+
+<span class="keyword">def</span> <span class="function">make_spiral</span>(n_points=<span class="number">1000</span>):
+    t = torch.linspace(<span class="number">0</span>, <span class="number">4</span> * torch.pi, n_points)
+    x = t * torch.cos(t) / (<span class="number">4</span> * torch.pi)
+    y = t * torch.sin(t) / (<span class="number">4</span> * torch.pi)
+    <span class="keyword">return</span> torch.stack([x, y], dim=<span class="number">1</span>) + <span class="number">0.05</span> * torch.randn(n_points, <span class="number">2</span>)
+
+data = make_spiral(<span class="number">2000</span>)
+<span class="comment"># Your implementation below...</span>
+    </div>
+
+    <p><strong>Expected deliverables:</strong></p>
+    <ol>
+      <li>Noise schedule (linear or cosine) &mdash; precomputed $\beta$, $\alpha$, $\bar{\alpha}$ tensors</li>
+      <li>MLP denoiser with sinusoidal timestep conditioning &mdash; input is $(x_t \| t_\text{emb})$, output shape $(B, 2)$</li>
+      <li>Training loop that converges in ~5000 steps</li>
+      <li>DDPM sampling function: $x_T \to$ iterative denoising $\to x_0$</li>
+      <li>Visualization: generated samples overlaid on training data</li>
+    </ol>
+
+    <p><strong>Evaluation criteria:</strong></p>
+    <ul>
+      <li>Correct implementation of core diffusion mechanics</li>
+      <li>Clean code structure with meaningful variable names</li>
+      <li>Working end-to-end: training converges, samples match the spiral distribution</li>
+    </ul>
+
+    <details class="collapsible">
+      <summary>Show Solution</summary>
+      <div class="collapsible-content">
+        <p><strong>Step 1: Noise schedule.</strong> Precompute all derived quantities from $\beta$:</p>
+        <div class="code-block">
+<span class="keyword">import</span> torch
+<span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn
+<span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt
+
+T = <span class="number">300</span>
+betas = torch.linspace(<span class="number">1e-4</span>, <span class="number">0.02</span>, T)
+alphas = <span class="number">1.0</span> - betas
+alpha_bar = torch.cumprod(alphas, dim=<span class="number">0</span>)          <span class="comment"># (T,)</span>
+sqrt_alpha_bar = torch.sqrt(alpha_bar)              <span class="comment"># (T,)</span>
+sqrt_one_minus_alpha_bar = torch.sqrt(<span class="number">1.0</span> - alpha_bar)  <span class="comment"># (T,)</span>
+        </div>
+
+        <p><strong>Step 2: MLP denoiser with sinusoidal timestep embedding.</strong></p>
+        <div class="code-block">
+<span class="keyword">class</span> <span class="type">SinusoidalEmbedding</span>(nn.Module):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, dim):
+        <span class="keyword">super</span>().__init__()
+        self.dim = dim
+
+    <span class="keyword">def</span> <span class="function">forward</span>(self, t):
+        half = self.dim // <span class="number">2</span>
+        freqs = torch.exp(-torch.log(torch.tensor(<span class="number">10000.0</span>)) * torch.arange(half, device=t.device) / half)
+        args = t[:, None].float() * freqs[None, :]  <span class="comment"># (B, half)</span>
+        <span class="keyword">return</span> torch.cat([args.sin(), args.cos()], dim=-<span class="number">1</span>)  <span class="comment"># (B, dim)</span>
+
+<span class="keyword">class</span> <span class="type">Denoiser</span>(nn.Module):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, t_dim=<span class="number">64</span>, hidden=<span class="number">256</span>):
+        <span class="keyword">super</span>().__init__()
+        self.time_emb = SinusoidalEmbedding(t_dim)
+        self.net = nn.Sequential(
+            nn.Linear(<span class="number">2</span> + t_dim, hidden), nn.GELU(),
+            nn.Linear(hidden, hidden), nn.GELU(),
+            nn.Linear(hidden, hidden), nn.GELU(),
+            nn.Linear(hidden, <span class="number">2</span>),
+        )
+
+    <span class="keyword">def</span> <span class="function">forward</span>(self, x, t):
+        t_emb = self.time_emb(t)        <span class="comment"># (B, t_dim)</span>
+        inp = torch.cat([x, t_emb], -<span class="number">1</span>)  <span class="comment"># (B, 2 + t_dim)</span>
+        <span class="keyword">return</span> self.net(inp)              <span class="comment"># (B, 2)</span>
+        </div>
+
+        <p><strong>Step 3: Training loop.</strong></p>
+        <div class="code-block">
+model = Denoiser()
+optimizer = torch.optim.Adam(model.parameters(), lr=<span class="number">3e-4</span>)
+data = make_spiral(<span class="number">2000</span>)
+
+<span class="keyword">for</span> step <span class="keyword">in</span> range(<span class="number">5000</span>):
+    idx = torch.randint(<span class="number">0</span>, len(data), (<span class="number">256</span>,))
+    x_0 = data[idx]                                    <span class="comment"># (B, 2)</span>
+    t = torch.randint(<span class="number">0</span>, T, (x_0.shape[<span class="number">0</span>],))            <span class="comment"># (B,)</span>
+    noise = torch.randn_like(x_0)                      <span class="comment"># (B, 2)</span>
+
+    <span class="comment"># Forward process: x_t = sqrt(alpha_bar_t) * x_0 + sqrt(1 - alpha_bar_t) * noise</span>
+    x_t = sqrt_alpha_bar[t, None] * x_0 + sqrt_one_minus_alpha_bar[t, None] * noise
+
+    noise_pred = model(x_t, t)
+    loss = nn.functional.mse_loss(noise_pred, noise)
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    <span class="keyword">if</span> step % <span class="number">1000</span> == <span class="number">0</span>:
+        print(<span class="string">f"Step {step}, Loss: {loss.item():.4f}"</span>)
+        </div>
+
+        <p><strong>Step 4: DDPM sampling loop.</strong></p>
+        <div class="code-block">
+@torch.no_grad()
+<span class="keyword">def</span> <span class="function">sample</span>(model, n_samples=<span class="number">1000</span>):
+    x = torch.randn(n_samples, <span class="number">2</span>)  <span class="comment"># Start from pure noise</span>
+
+    <span class="keyword">for</span> t_idx <span class="keyword">in</span> reversed(range(T)):
+        t = torch.full((n_samples,), t_idx, dtype=torch.long)
+        noise_pred = model(x, t)
+
+        <span class="comment"># DDPM reverse step</span>
+        alpha_t = alphas[t_idx]
+        alpha_bar_t = alpha_bar[t_idx]
+        beta_t = betas[t_idx]
+
+        mean = (<span class="number">1.0</span> / torch.sqrt(alpha_t)) * (
+            x - (beta_t / torch.sqrt(<span class="number">1.0</span> - alpha_bar_t)) * noise_pred
+        )
+
+        <span class="keyword">if</span> t_idx > <span class="number">0</span>:
+            noise = torch.randn_like(x)
+            x = mean + torch.sqrt(beta_t) * noise
+        <span class="keyword">else</span>:
+            x = mean  <span class="comment"># No noise at final step</span>
+
+    <span class="keyword">return</span> x
+
+samples = sample(model)
+        </div>
+
+        <p><strong>Step 5: Visualize.</strong></p>
+        <div class="code-block">
+fig, (ax1, ax2) = plt.subplots(<span class="number">1</span>, <span class="number">2</span>, figsize=(<span class="number">12</span>, <span class="number">5</span>))
+ax1.scatter(data[:, <span class="number">0</span>], data[:, <span class="number">1</span>], alpha=<span class="number">0.3</span>, s=<span class="number">5</span>)
+ax1.set_title(<span class="string">"Training data"</span>)
+ax2.scatter(samples[:, <span class="number">0</span>], samples[:, <span class="number">1</span>], alpha=<span class="number">0.3</span>, s=<span class="number">5</span>, c=<span class="string">"orange"</span>)
+ax2.set_title(<span class="string">"Generated samples"</span>)
+plt.show()
+        </div>
+
+        <p><strong>Key things to check:</strong> Does $x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1 - \bar\alpha_t} \cdot \epsilon$ use the <em>cumulative</em> product $\bar\alpha_t$, not just $\alpha_t$? Is the sampling loop going from $T$ down to $1$ (not to $0$)? Is there no noise added at the final step $t=0$?</p>
+      </div>
+    </details>
+
+    <!-- Challenge 2 -->
+    <h3 id="challenge-2">Challenge 2: DDIM Sampling with Classifier-Free Guidance</h3>
+
+    <p><strong>Time limit:</strong> 45 minutes</p>
+
+    <div class="callout example">
+      <div class="callout-label">The Prompt</div>
+      "Given a pre-trained class-conditional diffusion model, implement DDIM sampling with classifier-free guidance."
+    </div>
+
+    <p><strong>What this tests:</strong></p>
+    <ul>
+      <li>Sampling algorithm implementation (the inference side, not training)</li>
+      <li>CFG formula and batched forward passes</li>
+      <li>Timestep sub-selection for accelerated sampling</li>
+    </ul>
+
+    <p><strong>Starter code:</strong></p>
+    <div class="code-block">
+      <div class="code-block-label">Python</div>
+model = load_pretrained_model()    <span class="comment"># model(x_t, t, class_label) -> noise_pred</span>
+schedule = load_schedule()          <span class="comment"># Contains alphas_cumprod, etc.</span>
+NUM_CLASSES = <span class="number">10</span>
+NULL_CLASS = NUM_CLASSES
+
+<span class="keyword">def</span> <span class="function">ddim_sample_cfg</span>(model, schedule, shape, class_label,
+                     guidance_scale=<span class="number">4.0</span>, num_steps=<span class="number">50</span>):
+    <span class="comment"># Your implementation here...</span>
+    <span class="keyword">pass</span>
+    </div>
+
+    <p><strong>Expected deliverables:</strong></p>
+    <ol>
+      <li>Timestep sub-selection (uniform spacing from $T$ down to $0$)</li>
+      <li>DDIM sampling loop with $x_0$ prediction step</li>
+      <li>CFG: batched conditional + unconditional forward passes</li>
+      <li>Working generation of class-conditional samples</li>
+      <li>Grid visualization at different guidance scales</li>
+    </ol>
+
+    <p><strong>Evaluation criteria:</strong></p>
+    <ul>
+      <li>Correct DDIM formula (not just DDPM with fewer steps)</li>
+      <li>CFG combination is correct: $\epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$</li>
+      <li>Handles edge cases: no noise at final step, proper clamping</li>
+    </ul>
+
+    <details class="collapsible">
+      <summary>Show Solution</summary>
+      <div class="collapsible-content">
+        <p><strong>Step 1: Timestep sub-selection.</strong> Uniformly space $N$ steps across the full schedule of $T$ timesteps:</p>
+        <div class="code-block">
+<span class="keyword">def</span> <span class="function">get_ddim_timesteps</span>(T, num_steps):
+    <span class="comment"># Uniform spacing: [T-1, T-1-step, ..., 0]</span>
+    step_size = T // num_steps
+    timesteps = list(range(<span class="number">0</span>, T, step_size))  <span class="comment"># ascending</span>
+    <span class="keyword">return</span> list(reversed(timesteps))            <span class="comment"># descending for sampling</span>
+        </div>
+
+        <p><strong>Step 2: Full DDIM + CFG implementation.</strong></p>
+        <div class="code-block">
+@torch.no_grad()
+<span class="keyword">def</span> <span class="function">ddim_sample_cfg</span>(model, schedule, shape, class_label,
+                     guidance_scale=<span class="number">4.0</span>, num_steps=<span class="number">50</span>, device=<span class="string">"cpu"</span>):
+    alpha_bar = schedule[<span class="string">"alphas_cumprod"</span>].to(device)  <span class="comment"># (T,)</span>
+    T = len(alpha_bar)
+
+    timesteps = get_ddim_timesteps(T, num_steps)
+    x = torch.randn(shape, device=device)  <span class="comment"># (B, C, H, W)</span>
+    B = shape[<span class="number">0</span>]
+
+    <span class="keyword">for</span> i <span class="keyword">in</span> range(len(timesteps)):
+        t_cur = timesteps[i]
+        t_next = timesteps[i + <span class="number">1</span>] <span class="keyword">if</span> i + <span class="number">1</span> < len(timesteps) <span class="keyword">else</span> <span class="number">0</span>
+
+        t_batch = torch.full((B,), t_cur, device=device, dtype=torch.long)
+
+        <span class="comment"># ── CFG: batched conditional + unconditional ──</span>
+        x_double = torch.cat([x, x], dim=<span class="number">0</span>)               <span class="comment"># (2B, C, H, W)</span>
+        t_double = torch.cat([t_batch, t_batch], dim=<span class="number">0</span>)  <span class="comment"># (2B,)</span>
+        labels = torch.cat([
+            torch.full((B,), class_label, device=device, dtype=torch.long),
+            torch.full((B,), NULL_CLASS, device=device, dtype=torch.long),
+        ], dim=<span class="number">0</span>)  <span class="comment"># (2B,)</span>
+
+        noise_pred_double = model(x_double, t_double, labels)
+        eps_cond, eps_uncond = noise_pred_double.chunk(<span class="number">2</span>, dim=<span class="number">0</span>)
+
+        <span class="comment"># CFG formula: eps = eps_uncond + s * (eps_cond - eps_uncond)</span>
+        eps = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
+
+        <span class="comment"># ── DDIM update ──</span>
+        alpha_bar_t = alpha_bar[t_cur]
+        alpha_bar_next = alpha_bar[t_next] <span class="keyword">if</span> t_next > <span class="number">0</span> <span class="keyword">else</span> torch.tensor(<span class="number">1.0</span>)
+
+        <span class="comment"># Predict x_0 from x_t and predicted noise</span>
+        x0_pred = (x - torch.sqrt(<span class="number">1</span> - alpha_bar_t) * eps) / torch.sqrt(alpha_bar_t)
+        x0_pred = x0_pred.clamp(-<span class="number">1</span>, <span class="number">1</span>)  <span class="comment"># Stability clamp</span>
+
+        <span class="comment"># Direction pointing to x_t</span>
+        dir_xt = torch.sqrt(<span class="number">1</span> - alpha_bar_next) * eps
+
+        <span class="comment"># DDIM step (deterministic, eta=0)</span>
+        x = torch.sqrt(alpha_bar_next) * x0_pred + dir_xt
+
+    <span class="keyword">return</span> x.clamp(-<span class="number">1</span>, <span class="number">1</span>)
+        </div>
+
+        <p><strong>Key differences from DDPM:</strong></p>
+        <ul>
+          <li>DDIM predicts $x_0$ at each step, then jumps to the next $\bar\alpha$ level. DDPM adds noise at each step.</li>
+          <li>With $\eta = 0$, DDIM is <strong>deterministic</strong>&mdash;same initial noise gives the same output.</li>
+          <li>Timestep sub-selection lets you skip steps (e.g., 50 steps instead of 1000) because you're not constrained to the Markov chain.</li>
+        </ul>
+        <p><strong>Common mistakes:</strong> Using $\alpha_t$ instead of $\bar\alpha_t$. Getting the CFG formula wrong ($\epsilon_\text{uncond} + s \cdot \epsilon_\text{cond}$ instead of the extrapolation form). Forgetting to clamp $x_0$ predictions.</p>
+      </div>
+    </details>
+
+    <!-- Challenge 3 -->
+    <h3 id="challenge-3">Challenge 3: Training Step from Scratch</h3>
+
+    <p><strong>Time limit:</strong> 45 minutes</p>
+
+    <div class="callout example">
+      <div class="callout-label">The Prompt</div>
+      "Implement the complete training step for a DDPM-style diffusion model. Given a batch of images and a model, implement: noise schedule setup, the noising process, loss computation, and a training loop."
+    </div>
+
+    <p><strong>What this tests:</strong></p>
+    <ul>
+      <li>Schedule computation (precomputing all derived quantities)</li>
+      <li>Forward process implementation (correct tensor indexing and broadcasting)</li>
+      <li>Training mechanics (optimizer, gradient clipping, loss verification)</li>
+    </ul>
+
+    <p><strong>Starter code:</strong></p>
+    <div class="code-block">
+      <div class="code-block-label">Python</div>
+model = UNet(...)
+optimizer = torch.optim.Adam(model.parameters(), lr=<span class="number">2e-4</span>)
+dataloader = DataLoader(mnist_dataset, batch_size=<span class="number">64</span>, shuffle=<span class="keyword">True</span>)
+T = <span class="number">1000</span>
+
+<span class="comment"># Implement: setup_schedule(), train_step(), run training loop</span>
+    </div>
+
+    <p><strong>Expected deliverables:</strong></p>
+    <ol>
+      <li>Schedule computation function &mdash; $\beta \to \alpha \to \bar\alpha \to \sqrt{\bar\alpha} \to \sqrt{1-\bar\alpha}$, all as tensors</li>
+      <li><code>train_step(model, x_0, optimizer, schedule)</code> function</li>
+      <li>Training loop with loss logging</li>
+      <li>Verify loss decreases over the first 100 steps</li>
+    </ol>
+
+    <details class="collapsible">
+      <summary>Show Solution</summary>
+      <div class="collapsible-content">
+        <p><strong>Step 1: Schedule setup.</strong></p>
+        <div class="code-block">
+<span class="keyword">def</span> <span class="function">setup_schedule</span>(T=<span class="number">1000</span>, beta_start=<span class="number">1e-4</span>, beta_end=<span class="number">0.02</span>, device=<span class="string">"cpu"</span>):
+    betas = torch.linspace(beta_start, beta_end, T, device=device)
+    betas = betas.clamp(max=<span class="number">0.999</span>)  <span class="comment"># Clip for numerical stability</span>
+    alphas = <span class="number">1.0</span> - betas
+    alpha_bar = torch.cumprod(alphas, dim=<span class="number">0</span>)
+    <span class="keyword">return</span> {
+        <span class="string">"betas"</span>: betas,                                  <span class="comment"># (T,)</span>
+        <span class="string">"alphas"</span>: alphas,                                <span class="comment"># (T,)</span>
+        <span class="string">"alphas_cumprod"</span>: alpha_bar,                     <span class="comment"># (T,)</span>
+        <span class="string">"sqrt_alphas_cumprod"</span>: torch.sqrt(alpha_bar),    <span class="comment"># (T,)</span>
+        <span class="string">"sqrt_one_minus_alphas_cumprod"</span>: torch.sqrt(<span class="number">1.0</span> - alpha_bar),
+    }
+        </div>
+
+        <p><strong>Step 2: Training step.</strong> The core of DDPM training in one function:</p>
+        <div class="code-block">
+<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, optimizer, schedule):
+    <span class="string">"""One DDPM training step. Returns scalar loss."""</span>
+    B = x_0.shape[<span class="number">0</span>]
+    device = x_0.device
+    T = len(schedule[<span class="string">"betas"</span>])
+
+    <span class="comment"># 1. Sample random timesteps</span>
+    t = torch.randint(<span class="number">0</span>, T, (B,), device=device)
+
+    <span class="comment"># 2. Sample noise</span>
+    noise = torch.randn_like(x_0)  <span class="comment"># (B, C, H, W)</span>
+
+    <span class="comment"># 3. Forward process — noise the images</span>
+    sqrt_ab = schedule[<span class="string">"sqrt_alphas_cumprod"</span>][t]                  <span class="comment"># (B,)</span>
+    sqrt_1_ab = schedule[<span class="string">"sqrt_one_minus_alphas_cumprod"</span>][t]      <span class="comment"># (B,)</span>
+
+    <span class="comment"># Reshape for broadcasting: (B,) -> (B, 1, 1, 1) for image tensors</span>
+    sqrt_ab = sqrt_ab[:, None, None, None]
+    sqrt_1_ab = sqrt_1_ab[:, None, None, None]
+
+    x_t = sqrt_ab * x_0 + sqrt_1_ab * noise  <span class="comment"># (B, C, H, W)</span>
+
+    <span class="comment"># 4. Predict noise</span>
+    noise_pred = model(x_t, t)  <span class="comment"># (B, C, H, W)</span>
+
+    <span class="comment"># 5. Simple MSE loss on noise</span>
+    loss = nn.functional.mse_loss(noise_pred, noise)
+
+    <span class="comment"># 6. Gradient step</span>
+    optimizer.zero_grad()
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), <span class="number">1.0</span>)
+    optimizer.step()
+
+    <span class="keyword">return</span> loss.item()
+        </div>
+
+        <p><strong>Step 3: Training loop with loss logging.</strong></p>
+        <div class="code-block">
+device = torch.device(<span class="string">"cuda"</span> <span class="keyword">if</span> torch.cuda.is_available() <span class="keyword">else</span> <span class="string">"cpu"</span>)
+model = model.to(device)
+schedule = setup_schedule(T=<span class="number">1000</span>, device=device)
+
+losses = []
+<span class="keyword">for</span> epoch <span class="keyword">in</span> range(<span class="number">5</span>):
+    <span class="keyword">for</span> batch_idx, (x_0, _) <span class="keyword">in</span> enumerate(dataloader):
+        x_0 = x_0.to(device)
+        x_0 = x_0 * <span class="number">2</span> - <span class="number">1</span>  <span class="comment"># Normalize [0,1] -> [-1,1]</span>
+
+        loss = train_step(model, x_0, optimizer, schedule)
+        losses.append(loss)
+
+        <span class="keyword">if</span> batch_idx % <span class="number">100</span> == <span class="number">0</span>:
+            print(<span class="string">f"Epoch {epoch}, Step {batch_idx}, Loss: {loss:.4f}"</span>)
+        </div>
+
+        <p><strong>Critical details:</strong></p>
+        <ul>
+          <li><strong>Broadcasting:</strong> Schedule values indexed by $t$ have shape $(B,)$, but images have shape $(B, C, H, W)$. You must reshape to $(B, 1, 1, 1)$ for correct broadcasting.</li>
+          <li><strong>Normalization:</strong> Data must be in $[-1, 1]$. If your DataLoader returns $[0, 1]$, transform with $x \cdot 2 - 1$.</li>
+          <li><strong>Gradient clipping:</strong> Clip to norm 1.0 for stability.</li>
+          <li><strong>zero_grad before backward:</strong> Forgetting this causes gradient accumulation&mdash;loss will explode.</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PART 2: CONCEPTUAL QUESTIONS
+         ═══════════════════════════════════════════════════════════ -->
+    <h2 id="conceptual">Part 2: Conceptual Questions</h2>
+
+    <p>Practice explaining these clearly and concisely. For each question, <strong>try to answer before revealing the model answer.</strong> Imagine you're explaining to a fellow student who has a strong math background but hasn't studied diffusion models.</p>
+
+    <h3 id="core-understanding">Core Understanding</h3>
+
+    <!-- Q1 -->
+    <h4>1. "Walk me through the forward diffusion process. What happens to an image at each step?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>The forward process gradually adds Gaussian noise to a clean image over $T$ timesteps. At each step $t$, the image $x_t$ is a mixture of the original signal and noise:</p>
+        <p>$$x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1 - \bar\alpha_t} \cdot \epsilon, \quad \epsilon \sim \mathcal{N}(0, I)$$</p>
+        <p>Concretely: pixel values slowly get erased as noise increases. At $t = 0$, the image is fully intact. At $t = T$, it's indistinguishable from pure Gaussian noise. The key insight is the <strong>closed-form shortcut</strong>&mdash;we can jump from $x_0$ directly to any $x_t$ without iterating through intermediate steps, thanks to the cumulative product $\bar\alpha_t = \prod_{i=1}^{t} \alpha_i$.</p>
+        <p><strong>Common mistake:</strong> Forgetting the signal scaling factor $\sqrt{\bar\alpha_t}$. Without it, the variance of $x_t$ would grow unbounded instead of staying calibrated.</p>
+      </div>
+    </details>
+
+    <!-- Q2 -->
+    <h4>2. "Why do we predict noise instead of predicting the clean image directly?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>There are three reasons, building from theory to practice:</p>
+        <ul>
+          <li><strong>Mathematical justification:</strong> The ELBO derivation shows that maximizing the variational lower bound on log-likelihood reduces to matching the <em>mean</em> of the reverse process Gaussians. The $\epsilon$-reparameterization converts mean-matching into noise-prediction, yielding the simple MSE loss $\|\epsilon - \epsilon_\theta(x_t, t)\|^2$.</li>
+          <li><strong>Uniform difficulty:</strong> Predicting $\epsilon$ makes the task roughly equally hard across all timesteps. Predicting $x_0$ directly would be trivial at low noise ($t$ near 0) and impossibly hard at high noise ($t$ near $T$).</li>
+          <li><strong>Simplified loss:</strong> Ho et al. showed that dropping the per-timestep weighting from the ELBO (giving uniform weight to all timesteps) actually <em>improves</em> sample quality, and this simplification is natural in the $\epsilon$-parameterization.</li>
+        </ul>
+        <p><strong>Common mistake:</strong> Saying "it's just a design choice." There's mathematical justification grounded in the ELBO.</p>
+      </div>
+    </details>
+
+    <!-- Q3 -->
+    <h4>3. "What is the reparameterization trick and why do we need it?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>The reparameterization trick separates the randomness from the learned parameters. Instead of sampling $z \sim \mathcal{N}(\mu_\theta, \sigma_\theta^2)$ (which blocks gradient flow because sampling is non-differentiable), we write $z = \mu_\theta + \sigma_\theta \cdot \epsilon$ where $\epsilon \sim \mathcal{N}(0, I)$.</p>
+        <p>Now gradients can flow through $\mu_\theta$ and $\sigma_\theta$ because $\epsilon$ is a fixed sample&mdash;the stochastic node has been moved outside the computational graph. In diffusion models, this is exactly how we express the forward process: $x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1-\bar\alpha_t} \cdot \epsilon$.</p>
+        <p><strong>Common mistake:</strong> Confusing the reparameterization trick (separating randomness for gradient flow) with the noise schedule computation (precomputing $\bar\alpha_t$ values).</p>
+      </div>
+    </details>
+
+    <!-- Q4 -->
+    <h4>4. "Explain the simplified DDPM loss. Why does MSE on noise work?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>The chain of reasoning:</p>
+        <ol>
+          <li><strong>ELBO:</strong> We can't maximize $\log p(x_0)$ directly, so we maximize a variational lower bound (the ELBO).</li>
+          <li><strong>KL decomposition:</strong> The ELBO decomposes into a sum of KL divergences between consecutive reverse steps.</li>
+          <li><strong>Gaussians:</strong> Because both the forward and reverse processes are Gaussian, each KL reduces to a comparison of means (the variances are fixed).</li>
+          <li><strong>Mean matching → $\epsilon$-prediction:</strong> Matching the means is equivalent to predicting the noise $\epsilon$ that was added, giving: $\mathcal{L}_t = \|\epsilon - \epsilon_\theta(x_t, t)\|^2$.</li>
+          <li><strong>Simplification:</strong> The full ELBO has per-timestep weights $\lambda_t$. Ho et al. found that setting $\lambda_t = 1$ for all $t$ (i.e., the unweighted "simple" loss) produces better samples, even though it's no longer a tight bound.</li>
+        </ol>
+        <p><strong>Common mistake:</strong> Not connecting the simplified loss back to the ELBO. The simple MSE isn't ad hoc&mdash;it's a deliberate simplification of a principled objective.</p>
+      </div>
+    </details>
+
+    <!-- Q5 -->
+    <h4>5. "What's the difference between DDPM and DDIM sampling?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p><strong>DDPM</strong> sampling is stochastic: at each step, we predict the noise, compute the denoised mean, then add fresh noise (controlled by $\beta_t$). Each reverse step is a random draw from a Gaussian, making the full chain a Markov process with $T$ mandatory steps.</p>
+        <p><strong>DDIM</strong> sampling is deterministic (when $\eta = 0$): it rewrites the reverse process as a non-Markovian update that predicts $x_0$ at each step, then jumps to the next noise level. Because the updates aren't constrained to adjacent timesteps, DDIM can <strong>skip steps</strong>&mdash;sampling in 50 steps instead of 1000.</p>
+        <p><strong>Key facts:</strong></p>
+        <ul>
+          <li>Both use the <strong>same trained model</strong>. DDIM doesn't require retraining.</li>
+          <li>DDIM with $\eta = 0$ is deterministic: same noise → same output, enabling interpolation in latent space.</li>
+          <li>DDIM with $\eta = 1$ recovers DDPM.</li>
+          <li>In practice, DDIM with 50 steps often matches DDPM quality at 1000 steps.</li>
+        </ul>
+        <p><strong>Common mistake:</strong> Saying DDIM requires a different model or retraining. It doesn't.</p>
+      </div>
+    </details>
+
+    <h3 id="architecture-questions">Architecture</h3>
+
+    <!-- Q6 -->
+    <h4>6. "Why does the diffusion U-Net use GroupNorm instead of BatchNorm?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>BatchNorm computes statistics <em>across the batch dimension</em>. During training with batch size 64, the mean and variance estimates are stable. But during sampling, you typically generate one image at a time (batch size 1), so BatchNorm statistics become degenerate&mdash;the "batch mean" is just a single sample.</p>
+        <p>GroupNorm computes statistics <em>within each sample</em>, dividing channels into groups and normalizing per-group. This makes it completely independent of batch size, so behavior is consistent between training (large batches) and inference (single images).</p>
+        <p>This is especially important for diffusion models because sampling quality is directly affected by normalization consistency across the iterative denoising chain.</p>
+      </div>
+    </details>
+
+    <!-- Q7 -->
+    <h4>7. "Where do you put attention layers in the U-Net and why?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>Self-attention has $O(n^2)$ cost where $n$ is the number of spatial tokens (pixels or patches). For a $32 \times 32$ feature map, that's $1024^2 = 1M$ attention entries&mdash;expensive but feasible. For $256 \times 256$, it's $65536^2$&mdash;completely impractical.</p>
+        <p>So attention is placed only at <strong>lower resolutions</strong> in the U-Net, typically at $16 \times 16$ and $8 \times 8$ feature map sizes. At these resolutions:</p>
+        <ul>
+          <li>The computational cost is manageable</li>
+          <li>Each spatial position has a large receptive field, so attention captures <strong>global structure</strong> (overall composition, symmetry, coherent object shapes)</li>
+          <li>Local details (textures, edges) are handled by convolutions at higher resolutions</li>
+        </ul>
+        <p>Without attention at any resolution, the model can only learn local patterns&mdash;leading to images with realistic textures but incoherent global structure.</p>
+      </div>
+    </details>
+
+    <!-- Q8 -->
+    <h4>8. "How does timestep conditioning work?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>The model needs to know <em>how much noise</em> is present at each step, so it can adjust its denoising behavior. A single model handles all timesteps $t \in \{0, \ldots, T-1\}$, and timestep conditioning tells it which regime it's operating in.</p>
+        <p>The pipeline is:</p>
+        <ol>
+          <li><strong>Sinusoidal embedding:</strong> Map integer $t$ to a high-dimensional vector using fixed sine/cosine frequencies (same idea as positional encoding in Transformers). This gives the model a smooth, continuous representation of time.</li>
+          <li><strong>MLP projection:</strong> Pass through a small MLP to learn a task-specific representation.</li>
+          <li><strong>Injection into ResBlocks:</strong> The timestep embedding is added to the feature maps inside each residual block (after a linear projection to match dimensions). Some architectures use Adaptive Group Normalization (AdaGN) instead, where $t$ modulates the scale and shift of GroupNorm.</li>
+        </ol>
+        <p>The key insight: passing raw integer $t$ directly would give the model almost no information. The sinusoidal embedding provides a rich, continuous signal that the model can use to distinguish between nearby timesteps.</p>
+      </div>
+    </details>
+
+    <!-- Q9 -->
+    <h4>9. "What are skip connections and why are they important?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>Skip connections in the U-Net concatenate encoder feature maps with the corresponding decoder feature maps at the same spatial resolution. They serve two critical roles:</p>
+        <ul>
+          <li><strong>Fine spatial detail:</strong> The encoder's high-resolution features carry precise spatial information (edges, textures, positions) that would be lost after downsampling to the bottleneck. Skip connections carry this information directly to the decoder.</li>
+          <li><strong>Gradient highway:</strong> They provide a short path for gradients to flow from the loss to early layers, preventing vanishing gradients in deep networks.</li>
+        </ul>
+        <p>Without skip connections, the decoder would have to reconstruct all spatial detail from the compressed bottleneck representation alone&mdash;resulting in blurry, spatially imprecise outputs. This is particularly devastating for diffusion models, where the model must predict noise at the pixel level.</p>
+      </div>
+    </details>
+
+    <h3 id="guidance-questions">Guidance &amp; Conditioning</h3>
+
+    <!-- Q10 -->
+    <h4>10. "Explain classifier-free guidance. How does training differ?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p><strong>Training:</strong> During training, the class label is randomly replaced with a null token (e.g., <code>NULL_CLASS = num_classes</code>) with some probability, typically 10&ndash;20%. This means the <em>same model</em> learns both conditional generation ($p(x | c)$) and unconditional generation ($p(x)$).</p>
+        <p><strong>Inference:</strong> At sampling time, we run two forward passes for each step:</p>
+        <ol>
+          <li>$\epsilon_\text{cond}$: prediction with the real class label</li>
+          <li>$\epsilon_\text{uncond}$: prediction with the null class label</li>
+        </ol>
+        <p>Then we <strong>extrapolate</strong> in the direction of the class signal:</p>
+        <p>$$\epsilon = \epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$$</p>
+        <p>When $s = 1$, this is standard conditional generation. When $s > 1$, we amplify the class signal beyond what the model learned&mdash;trading diversity for fidelity.</p>
+        <p><strong>Key advantage over classifier guidance:</strong> No separate classifier needed. The guidance signal comes from the diffusion model itself.</p>
+        <p><strong>Common mistake:</strong> Confusing CFG with classifier guidance, which requires training a separate noise-aware classifier and using its gradients to steer sampling.</p>
+      </div>
+    </details>
+
+    <!-- Q11 -->
+    <h4>11. "What does the guidance scale control?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>The guidance scale $s$ controls the <strong>diversity&ndash;fidelity tradeoff</strong>:</p>
+        <ul>
+          <li>$s = 1$: Standard conditional generation. Natural diversity, but samples may not strongly express the conditioning.</li>
+          <li>$s > 1$ (e.g., 4.0 for MNIST, 7.5 for text-to-image): Amplified conditioning. Sharper, more class-typical samples, but reduced diversity. Acts like an <strong>inverse temperature</strong> on the conditional distribution.</li>
+          <li>$s < 1$: Weakened conditioning. More diverse but less coherent.</li>
+          <li>Very high $s$ (e.g., 20+): Oversaturated, artifact-prone outputs. The model is being pushed far from its learned distribution.</li>
+        </ul>
+        <p>Intuitively, the guidance scale determines how aggressively the model "steers" toward the condition. Cranking it up makes every "3" look like a textbook "3," but at the cost of all looking the same.</p>
+      </div>
+    </details>
+
+    <!-- Q12 -->
+    <h4>12. "How do negative prompts work mechanically?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>In the standard CFG formula, the unconditional prediction $\epsilon_\text{uncond}$ acts as the baseline. Negative prompts replace this baseline:</p>
+        <p>$$\epsilon = \epsilon_\text{neg} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{neg})$$</p>
+        <p>Instead of extrapolating away from "no condition," we extrapolate away from the <em>negative condition</em>. This steers the sample away from whatever the negative prompt describes. For example, a negative prompt of "blurry" causes the model to actively move in the opposite direction from "blurry" predictions, resulting in sharper outputs.</p>
+        <p>Mechanically, the only change is swapping which embedding gets used for the "unconditional" forward pass. The rest of the pipeline is identical.</p>
+      </div>
+    </details>
+
+    <h3 id="advanced-questions">Advanced</h3>
+
+    <!-- Q13 -->
+    <h4>13. "What's the difference between pixel-space and latent diffusion?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p><strong>Pixel-space diffusion</strong> operates directly on raw pixels. For a $256 \times 256 \times 3$ image, the diffusion process runs on a $256 \times 256 \times 3$ tensor at every step. This is conceptually simple but computationally expensive&mdash;especially because attention is $O(n^2)$ in spatial dimensions.</p>
+        <p><strong>Latent diffusion</strong> (Rombach et al., 2022) first trains a VAE to compress images into a smaller latent space (e.g., $256 \times 256 \to 32 \times 32$ with 4 channels), then runs the entire diffusion process in that compressed space. At generation time, the final latent is decoded back to pixel space by the VAE decoder.</p>
+        <p><strong>Tradeoffs:</strong></p>
+        <ul>
+          <li><strong>Speed:</strong> Latent diffusion is ~10&times; faster because the spatial dimensions are 8&times; smaller in each direction ($64\times$ fewer spatial tokens).</li>
+          <li><strong>Quality:</strong> Slight quality loss from VAE compression, but the diffusion model can focus on semantic content rather than imperceptible pixel-level detail.</li>
+          <li><strong>Complexity:</strong> Requires training a separate VAE first, adding a two-stage pipeline.</li>
+        </ul>
+        <p>Stable Diffusion is the canonical example of latent diffusion in practice.</p>
+      </div>
+    </details>
+
+    <!-- Q14 -->
+    <h4>14. "What are the tradeoffs between $\epsilon$-prediction, $x_0$-prediction, and $v$-prediction?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>All three parameterizations are mathematically equivalent&mdash;you can convert between them given $x_t$ and $\bar\alpha_t$. The difference is in <strong>training dynamics</strong>:</p>
+        <ul>
+          <li><strong>$\epsilon$-prediction:</strong> The model predicts the noise. Stable at high noise levels (large $t$) because the target $\epsilon$ has constant variance regardless of $t$. But at low noise (small $t$), the signal-to-noise ratio is high, and predicting noise becomes an afterthought.</li>
+          <li><strong>$x_0$-prediction:</strong> The model predicts the clean image directly. Natural at low noise, but unstable at high noise because the model must hallucinate an entire image from near-pure noise.</li>
+          <li><strong>$v$-prediction:</strong> The model predicts $v = \sqrt{\bar\alpha_t} \cdot \epsilon - \sqrt{1-\bar\alpha_t} \cdot x_0$, a linear combination that balances the difficulty across all timesteps. This gives more uniform gradient magnitudes and is especially useful with cosine schedules.</li>
+        </ul>
+        <p>In practice, $\epsilon$-prediction is the most common (DDPM, Stable Diffusion v1). $v$-prediction is used in newer models (Stable Diffusion v2, Imagen Video) for better training stability.</p>
+      </div>
+    </details>
+
+    <!-- Q15 -->
+    <h4>15. "What is flow matching and how does it differ from diffusion?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>Flow matching learns a <strong>velocity field</strong> that transports samples from noise to data along straight (or near-straight) paths. Instead of the diffusion framework of gradual corruption and iterative denoising, flow matching defines a continuous trajectory:</p>
+        <p>$$x_t = (1 - t) \cdot x_0 + t \cdot \epsilon, \quad t \in [0, 1]$$</p>
+        <p>The model learns the velocity $v_\theta(x_t, t)$ that moves $x_t$ along this path. The training objective is simply:</p>
+        <p>$$\mathcal{L} = \|v_\theta(x_t, t) - (\epsilon - x_0)\|^2$$</p>
+        <p><strong>Key differences from diffusion:</strong></p>
+        <ul>
+          <li><strong>Simpler objective:</strong> No noise schedule, no $\bar\alpha_t$ bookkeeping, no ELBO derivation.</li>
+          <li><strong>Straighter paths:</strong> The interpolation between noise and data is (approximately) linear, which means fewer ODE steps are needed at inference.</li>
+          <li><strong>Fewer steps:</strong> Models like Stable Diffusion 3 use flow matching and generate high-quality images in 20&ndash;30 steps.</li>
+          <li><strong>Same model architectures:</strong> U-Nets and DiTs work with flow matching; only the training target changes.</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- Q16 -->
+    <h4>16. "How would you scale this model to generate 512&times;512 images?"</h4>
+    <details class="collapsible">
+      <summary>Show Model Answer</summary>
+      <div class="collapsible-content">
+        <p>This is a system design question&mdash;see <a href="#design">Part 4</a> for the full discussion. In brief:</p>
+        <ul>
+          <li><strong>Latent diffusion:</strong> Train a VAE to compress $512 \to 64$ spatially, then run diffusion in latent space.</li>
+          <li><strong>Architecture:</strong> Consider DiT for better scaling properties. Attention only at $32 \times 32$ and below.</li>
+          <li><strong>Training:</strong> Mixed precision (bf16), gradient checkpointing, distributed training, EMA weights.</li>
+          <li><strong>Inference:</strong> DDIM with 50 steps, classifier-free guidance, dynamic thresholding.</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PART 3: DEBUG CHALLENGE
+         ═══════════════════════════════════════════════════════════ -->
+    <h2 id="debug">Part 3: Debug Challenge</h2>
+
+    <p>The code below implements a complete diffusion pipeline&mdash;schedule setup, model definition, training, and sampling. It compiles, it runs, and it even produces <em>something</em>. But there are <strong>10 bugs</strong> hidden throughout. Some are subtle, some are catastrophic. None are labeled.</p>
+
+    <p>Read the code carefully, find all 10 bugs, and explain what each one causes and how to fix it. This tests your ability to read diffusion code critically&mdash;a skill you'll need when debugging your own implementations.</p>
+
+    <div class="code-block">
+      <div class="code-block-label">Python &mdash; Find the 10 bugs</div>
+<span class="keyword">import</span> torch
+<span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn
+<span class="keyword">from</span> torch.utils.data <span class="keyword">import</span> DataLoader
+<span class="keyword">from</span> torchvision <span class="keyword">import</span> datasets, transforms
+<span class="keyword">import</span> copy
+
+<span class="comment"># ── Config ──</span>
+T = <span class="number">1000</span>
+IMG_SIZE = <span class="number">28</span>
+BATCH_SIZE = <span class="number">64</span>
+NUM_CLASSES = <span class="number">10</span>
+NULL_CLASS = NUM_CLASSES
+DEVICE = torch.device(<span class="string">"cuda"</span> <span class="keyword">if</span> torch.cuda.is_available() <span class="keyword">else</span> <span class="string">"cpu"</span>)
+
+<span class="comment"># ── Data ──</span>
+transform = transforms.Compose([
+    transforms.ToTensor(),
+])
+dataset = datasets.MNIST(root=<span class="string">"./data"</span>, train=<span class="keyword">True</span>, download=<span class="keyword">True</span>, transform=transform)
+dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=<span class="keyword">True</span>)
+
+<span class="comment"># ── Schedule ──</span>
+betas = torch.linspace(<span class="number">1e-4</span>, <span class="number">0.06</span>, T)
+alphas = <span class="number">1.0</span> - betas
+alpha_bar = torch.cumprod(alphas, dim=<span class="number">0</span>)
+
+<span class="comment"># ── Timestep Embedding ──</span>
+<span class="keyword">class</span> <span class="type">TimestepEmbedding</span>(nn.Module):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, dim):
+        <span class="keyword">super</span>().__init__()
+        self.dim = dim
+
+    <span class="keyword">def</span> <span class="function">forward</span>(self, t):
+        <span class="keyword">return</span> t.float().unsqueeze(-<span class="number">1</span>).expand(-<span class="number">1</span>, self.dim)
+
+<span class="comment"># ── Simple U-Net ──</span>
+<span class="keyword">class</span> <span class="type">SimpleUNet</span>(nn.Module):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, in_ch=<span class="number">1</span>, base_ch=<span class="number">64</span>, t_dim=<span class="number">128</span>, num_classes=<span class="number">11</span>):
+        <span class="keyword">super</span>().__init__()
+        self.time_emb = TimestepEmbedding(t_dim)
+        self.time_mlp = nn.Sequential(nn.Linear(t_dim, base_ch), nn.GELU())
+        self.class_emb = nn.Embedding(num_classes, base_ch)
+
+        self.down1 = nn.Sequential(
+            nn.Conv2d(in_ch, base_ch, <span class="number">3</span>, padding=<span class="number">1</span>),
+            nn.GroupNorm(<span class="number">8</span>, base_ch), nn.GELU(),
+            nn.Conv2d(base_ch, base_ch, <span class="number">3</span>, padding=<span class="number">1</span>),
+            nn.GroupNorm(<span class="number">8</span>, base_ch), nn.GELU(),
+        )
+        self.pool = nn.MaxPool2d(<span class="number">2</span>)
+        self.bot = nn.Sequential(
+            nn.Conv2d(base_ch, base_ch * <span class="number">2</span>, <span class="number">3</span>, padding=<span class="number">1</span>),
+            nn.GroupNorm(<span class="number">8</span>, base_ch * <span class="number">2</span>), nn.GELU(),
+        )
+        self.up = nn.ConvTranspose2d(base_ch * <span class="number">2</span>, base_ch, <span class="number">2</span>, stride=<span class="number">2</span>)
+        self.out = nn.Sequential(
+            nn.Conv2d(base_ch * <span class="number">2</span>, base_ch, <span class="number">3</span>, padding=<span class="number">1</span>),
+            nn.GroupNorm(<span class="number">8</span>, base_ch), nn.GELU(),
+            nn.Conv2d(base_ch, in_ch, <span class="number">1</span>),
+        )
+
+    <span class="keyword">def</span> <span class="function">forward</span>(self, x, t, class_label=<span class="keyword">None</span>):
+        t_emb = self.time_mlp(self.time_emb(t))
+        <span class="keyword">if</span> class_label <span class="keyword">is not</span> <span class="keyword">None</span>:
+            t_emb = t_emb + self.class_emb(class_label)
+        d1 = self.down1(x) + t_emb[:, :, <span class="keyword">None</span>, <span class="keyword">None</span>]
+        d2 = self.pool(d1)
+        b = self.bot(d2)
+        u = self.up(b)
+        <span class="keyword">return</span> self.out(torch.cat([u, d1], dim=<span class="number">1</span>))
+
+<span class="comment"># ── Forward process ──</span>
+<span class="keyword">def</span> <span class="function">q_sample</span>(x_0, t, noise):
+    alpha_t = alphas[t]
+    alpha_t = alpha_t[:, <span class="keyword">None</span>, <span class="keyword">None</span>, <span class="keyword">None</span>]
+    <span class="keyword">return</span> alpha_t * x_0 + (<span class="number">1</span> - alpha_t) * noise
+
+<span class="comment"># ── Training setup ──</span>
+model = SimpleUNet().to(DEVICE)
+ema_model = copy.deepcopy(model)
+optimizer = torch.optim.Adam(model.parameters(), lr=<span class="number">2e-4</span>)
+
+<span class="comment"># ── Training loop ──</span>
+<span class="keyword">for</span> epoch <span class="keyword">in</span> range(<span class="number">10</span>):
+    <span class="keyword">for</span> x_0, labels <span class="keyword">in</span> dataloader:
+        x_0 = x_0.to(DEVICE)
+        labels = labels.to(DEVICE)
+
+        t = torch.randint(<span class="number">0</span>, T, (x_0.shape[<span class="number">0</span>],), device=DEVICE)
+        noise = torch.randn_like(x_0)
+        x_t = q_sample(x_0, t, noise)
+
+        noise_pred = model(x_t, t, labels)
+        loss = nn.functional.mse_loss(noise_pred, noise)
+
+        loss.backward()
+        optimizer.step()
+
+        <span class="comment"># Update EMA</span>
+        <span class="keyword">with</span> torch.no_grad():
+            <span class="keyword">for</span> p, p_ema <span class="keyword">in</span> zip(model.parameters(), ema_model.parameters()):
+                p_ema.data.mul_(<span class="number">0.999</span>).add_(p.data, alpha=<span class="number">0.001</span>)
+
+<span class="comment"># ── Sampling ──</span>
+@torch.no_grad()
+<span class="keyword">def</span> <span class="function">sample</span>(model, n=<span class="number">16</span>, class_label=<span class="number">3</span>, guidance_scale=<span class="number">4.0</span>):
+    x = torch.randn(n, <span class="number">1</span>, IMG_SIZE, IMG_SIZE, device=DEVICE)
+
+    <span class="keyword">for</span> t_idx <span class="keyword">in</span> reversed(range(T)):
+        t = torch.full((n,), t_idx, device=DEVICE, dtype=torch.long)
+
+        cond_labels = torch.full((n,), class_label, device=DEVICE, dtype=torch.long)
+        uncond_labels = torch.full((n,), NULL_CLASS, device=DEVICE, dtype=torch.long)
+
+        eps_cond = model(x, t, cond_labels)
+        eps_uncond = model(x, t, uncond_labels)
+
+        eps = eps_uncond + guidance_scale * eps_cond
+
+        alpha_t = alphas[t_idx]
+        alpha_bar_t = alpha_bar[t_idx]
+        beta_t = betas[t_idx]
+
+        mean = (<span class="number">1.0</span> / torch.sqrt(alpha_t)) * (
+            x - (beta_t / torch.sqrt(<span class="number">1.0</span> - alpha_bar_t)) * eps
+        )
+
+        <span class="keyword">if</span> t_idx >= <span class="number">0</span>:
+            x = mean + torch.sqrt(beta_t) * torch.randn_like(x)
+
+    <span class="keyword">return</span> x
+
+images = sample(model)
+    </div>
+
+    <p><strong>Your task:</strong> Find all 10 bugs. For each one, explain: (1) what the bug is, (2) what symptom it causes, and (3) the correct fix.</p>
+
+    <details class="collapsible">
+      <summary>Show All 10 Bugs and Fixes</summary>
+      <div class="collapsible-content">
+        <p><strong>Bug 1: Wrong scaling in forward process.</strong></p>
+        <p>The <code>q_sample</code> function uses <code>alphas[t]</code> ($\alpha_t$) instead of <code>alpha_bar[t]</code> ($\bar\alpha_t$). The forward process requires the <em>cumulative product</em>. Using per-step $\alpha_t$ means the noising is wrong at every timestep&mdash;the noise levels don't correspond to what the model expects.</p>
+        <div class="code-block">
+<span class="comment"># Bug: alpha_t = alphas[t]</span>
+<span class="comment"># Fix: alpha_t = alpha_bar[t]</span>
+        </div>
+
+        <p><strong>Bug 2: Missing sqrt in forward process.</strong></p>
+        <p>The forward process computes <code>alpha_t * x_0 + (1 - alpha_t) * noise</code> instead of <code>sqrt(alpha_bar_t) * x_0 + sqrt(1 - alpha_bar_t) * noise</code>. Without the square roots, the means and variances of $x_t$ are wrong.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  alpha_t * x_0 + (1 - alpha_t) * noise</span>
+<span class="comment"># Fix:  sqrt(alpha_bar_t) * x_0 + sqrt(1 - alpha_bar_t) * noise</span>
+        </div>
+
+        <p><strong>Bug 3: Off-by-one in sampling loop.</strong></p>
+        <p>The condition <code>if t_idx >= 0</code> adds noise at <em>every</em> step, including the final step $t=0$. The last step should be noiseless&mdash;the mean at $t=0$ is our final clean output. Adding noise at $t=0$ corrupts the result.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  if t_idx >= 0: x = mean + sqrt(beta) * noise</span>
+<span class="comment"># Fix:  if t_idx > 0:  x = mean + sqrt(beta) * noise</span>
+<span class="comment">#       else:          x = mean</span>
+        </div>
+
+        <p><strong>Bug 4: Sampling with training weights instead of EMA.</strong></p>
+        <p>The code carefully maintains an EMA model during training but then calls <code>sample(model)</code> instead of <code>sample(ema_model)</code>. The entire point of EMA (from Lecture 6) is to use the smoothed weights for generation&mdash;they produce cleaner, higher-quality samples.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  images = sample(model)</span>
+<span class="comment"># Fix:  images = sample(ema_model)</span>
+        </div>
+
+        <p><strong>Bug 5: Missing optimizer.zero_grad().</strong></p>
+        <p>The training loop calls <code>loss.backward()</code> and <code>optimizer.step()</code> but never calls <code>optimizer.zero_grad()</code>. Gradients accumulate across batches, causing the effective gradient to explode. Training loss will diverge rapidly.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  loss.backward(); optimizer.step()</span>
+<span class="comment"># Fix:  optimizer.zero_grad(); loss.backward(); optimizer.step()</span>
+        </div>
+
+        <p><strong>Bug 6: Wrong data normalization.</strong></p>
+        <p>The transform only applies <code>ToTensor()</code>, which maps pixel values to $[0, 1]$. But the diffusion model expects data in $[-1, 1]$. During sampling, the reverse process produces values centered around 0, but the model was trained on data centered around 0.5. This causes a systematic color shift in all outputs.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  transforms.Compose([transforms.ToTensor()])</span>
+<span class="comment"># Fix:  transforms.Compose([transforms.ToTensor(),</span>
+<span class="comment">#                           transforms.Normalize([0.5], [0.5])])</span>
+<span class="comment"># Or: x_0 = x_0 * 2 - 1 in the training loop</span>
+        </div>
+
+        <p><strong>Bug 7: Timestep embedding passes raw integers.</strong></p>
+        <p>The <code>TimestepEmbedding</code> just broadcasts the raw integer $t$ to fill a vector. This gives the model almost no ability to distinguish between timesteps&mdash;the values 499 and 500 look nearly identical. It should use sinusoidal positional embedding to create a rich, continuous representation.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  return t.float().unsqueeze(-1).expand(-1, self.dim)</span>
+<span class="comment"># Fix:  Use sinusoidal embedding (sin/cos at different frequencies)</span>
+        </div>
+
+        <p><strong>Bug 8: CFG formula is wrong.</strong></p>
+        <p>The sampling code uses <code>eps_uncond + scale * eps_cond</code> instead of the correct extrapolation formula <code>eps_uncond + scale * (eps_cond - eps_uncond)</code>. Without the subtraction, there's no extrapolation&mdash;guidance doesn't amplify the class signal.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  eps = eps_uncond + guidance_scale * eps_cond</span>
+<span class="comment"># Fix:  eps = eps_uncond + guidance_scale * (eps_cond - eps_uncond)</span>
+        </div>
+
+        <p><strong>Bug 9: Device mismatch.</strong></p>
+        <p>The schedule tensors (<code>betas</code>, <code>alphas</code>, <code>alpha_bar</code>) are created on CPU, but the model and data are on GPU/MPS. When the sampling function indexes <code>alphas[t_idx]</code> and uses it with <code>x</code> (on device), this causes a device mismatch error or, worse, silent incorrect computation.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  betas = torch.linspace(1e-4, 0.06, T)  # CPU</span>
+<span class="comment"># Fix:  betas = torch.linspace(1e-4, 0.06, T).to(DEVICE)</span>
+<span class="comment">#       alphas = ... .to(DEVICE)</span>
+<span class="comment">#       alpha_bar = ... .to(DEVICE)</span>
+        </div>
+
+        <p><strong>Bug 10: Variance schedule not clipped.</strong></p>
+        <p>The beta schedule goes up to $0.06$, which is far too high (standard DDPM uses $0.02$). At the upper end, $\beta_t = 0.06$ means $\alpha_t = 0.94$, and $\bar\alpha_T$ goes to near-zero much too quickly, causing numerical instability. The schedule should be clipped: <code>betas = betas.clamp(max=0.999)</code> and the upper bound should be $0.02$, not $0.06$.</p>
+        <div class="code-block">
+<span class="comment"># Bug:  betas = torch.linspace(1e-4, 0.06, T)</span>
+<span class="comment"># Fix:  betas = torch.linspace(1e-4, 0.02, T).clamp(max=0.999)</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         PART 4: SYSTEM DESIGN DISCUSSION
+         ═══════════════════════════════════════════════════════════ -->
+    <h2 id="design">Part 4: System Design Discussion</h2>
+
+    <div class="callout example">
+      <div class="callout-label">The Prompt</div>
+      "You've built a diffusion model that works on 28&times;28 MNIST. Your manager asks you to scale it to generate 512&times;512 photorealistic images. Walk through your approach."
+    </div>
+
+    <p>This is an open-ended discussion. Spend 15&ndash;20 minutes thinking through the problem before reading the reference answer. Consider architecture, training, inference, and evaluation.</p>
+
+    <details class="collapsible">
+      <summary>Show Reference Answer</summary>
+      <div class="collapsible-content">
+        <h4>The Resolution Problem</h4>
+        <p>Going from $28 \times 28$ to $512 \times 512$ is a $335\times$ increase in pixel count. You cannot simply make the U-Net bigger&mdash;self-attention is $O(n^2)$ in the number of spatial tokens, so a $512 \times 512$ attention layer would be $65536^2 \approx 4 \times 10^9$ entries. You need a fundamentally different approach.</p>
+
+        <h4>Architecture Decisions</h4>
+        <ul>
+          <li><strong>Latent diffusion:</strong> Train a VAE to compress images spatially ($512 \to 64$, an $8\times$ reduction in each dimension). Run the entire diffusion process in the $64 \times 64 \times 4$ latent space. Decode back to pixels only at the final step. This reduces compute by $\sim64\times$.</li>
+          <li><strong>DiT vs U-Net:</strong> At this scale, consider the Diffusion Transformer (DiT) architecture for better scaling properties. DiT replaces convolutional blocks with transformer blocks and scales more predictably with compute.</li>
+          <li><strong>Attention placement:</strong> Even in latent space ($64 \times 64$), full attention is expensive. Use attention only at $32 \times 32$ and below. Use efficient attention variants (flash attention) where possible.</li>
+          <li><strong>Gradient checkpointing:</strong> Trade compute for memory by recomputing intermediate activations during the backward pass instead of storing them. Essential for training large models on limited GPU memory.</li>
+          <li><strong>Mixed precision:</strong> Train in fp16 or bf16 for approximately $2\times$ memory savings and faster matmuls.</li>
+        </ul>
+
+        <h4>Training Decisions</h4>
+        <ul>
+          <li><strong>Dataset:</strong> MNIST's 60K grayscale digits are nowhere near sufficient. You need 100K+ diverse, high-resolution images at minimum. For photorealistic generation, datasets like LAION-5B (billions of image-text pairs) are used in practice.</li>
+          <li><strong>Training time:</strong> Expect 100K&ndash;1M training steps, taking days to weeks on a cluster of 8+ GPUs.</li>
+          <li><strong>Batch size:</strong> 256+ with distributed data-parallel training across multiple GPUs.</li>
+          <li><strong>EMA:</strong> Critical at this scale. Use a high decay rate like $0.9999$ (more smoothing than the $0.999$ used for MNIST).</li>
+          <li><strong>Schedule:</strong> Cosine schedule with zero terminal SNR for better coverage of the noise range.</li>
+        </ul>
+
+        <h4>Inference Decisions</h4>
+        <ul>
+          <li><strong>Sampler:</strong> DDIM with 50 steps, not 1000-step DDPM. For production, consider DPM-Solver++ or other high-order solvers that achieve good quality in 20&ndash;25 steps.</li>
+          <li><strong>CFG:</strong> Guidance scale around $7.5$ for text-to-image (higher than the $\sim4.0$ used for class-conditional MNIST).</li>
+          <li><strong>Dynamic thresholding:</strong> At high guidance scales, predicted $x_0$ values can exceed $[-1, 1]$, causing saturation artifacts. Dynamic thresholding (Imagen) clips to a percentile of the predicted values instead of a fixed range.</li>
+          <li><strong>Batched generation:</strong> Generate multiple images in parallel to maximize GPU utilization.</li>
+        </ul>
+
+        <h4>Follow-up Questions to Consider</h4>
+        <ul>
+          <li><strong>"What's the memory bottleneck?"</strong> Attention layers at the lowest resolution, plus storing activations for backprop. Solutions: gradient checkpointing, flash attention, mixed precision.</li>
+          <li><strong>"How would you add text conditioning?"</strong> Replace class embeddings with CLIP text embeddings. Cross-attention layers in the U-Net/DiT attend to the text token sequence. Train with random caption dropout for CFG.</li>
+          <li><strong>"What metrics would you use?"</strong> FID (Frechet Inception Distance) for distribution-level quality, CLIP score for text-image alignment, human evaluation for subjective quality.</li>
+          <li><strong>"How would you reduce inference latency?"</strong> Distillation (progressive or consistency distillation) to reduce from 50 steps to 1&ndash;4 steps. Model quantization (INT8). Speculative decoding. Caching attention KV across steps when possible.</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         GENERAL TIPS
+         ═══════════════════════════════════════════════════════════ -->
+    <h2 id="tips">General Tips</h2>
+
+    <div class="callout insight">
+      <div class="callout-label">Approach</div>
+      <p>These challenges help you identify gaps in your understanding. Approach them as self-evaluation, not performance. Getting stuck is information&mdash;it tells you exactly what to study next.</p>
+    </div>
+
+    <ol>
+      <li><strong>Think out loud.</strong> Narrate your reasoning as you code&mdash;it helps you catch your own mistakes and clarifies your mental model.</li>
+      <li><strong>Start simple.</strong> Get the basic version working first, then add complexity. Don't over-engineer from the start.</li>
+      <li><strong>Write clean code from the start.</strong> Meaningful variable names (<code>sqrt_alpha_bar_t</code>, not <code>a</code>), logical structure, brief comments on key lines. This reflects real understanding.</li>
+      <li><strong>Know your shapes.</strong> At every step, know the tensor shapes. Print them if unsure. Shape mismatches are the #1 bug in diffusion code.</li>
+      <li><strong>If you get stuck, that's the point.</strong> Identify exactly where your understanding breaks down&mdash;that's what to review. It's normal to need to derive formulas from first principles.</li>
+      <li><strong>Have a plan.</strong> Spend 2&ndash;3 minutes outlining before coding: "First schedule, then model, then training, then sampling."</li>
+      <li><strong>Know the math cold.</strong> $x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1-\bar\alpha_t} \cdot \epsilon$&mdash;you should be able to write this without thinking.</li>
+    </ol>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture13.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Flow Matching &amp; Rectified Flows</span>
+    </a>
+    <!-- No next — last page -->
+    <span></span>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

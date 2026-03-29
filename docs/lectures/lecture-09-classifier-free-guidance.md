@@ -76,7 +76,9 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
 
 ### Section 9.3: Why CFG Works — The Diversity-Fidelity Tradeoff
 - **Mathematically:** CFG samples from a sharpened conditional distribution:
-  - `p_cfg(x | c) ∝ p(x) · (p(c | x) / p(c))^s ∝ p(x | c)^s / p(x)^{s-1}`
+  - `p_cfg(x | c) ∝ p(x) · (p(c | x) / p(c))^s`
+  - By Bayes' rule, p(c|x)/p(c) = p(x|c)/p(x), so this becomes:
+    `p(x) · (p(x|c)/p(x))^s = p(x|c)^s / p(x)^{s-1}`
   - Higher s → sharper distribution → samples concentrate near the mode
 - **The temperature analogy:** s acts like inverse temperature
   - s = 1 → sampling at "temperature 1" (standard conditional)

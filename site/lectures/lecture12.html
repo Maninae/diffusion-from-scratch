@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 12: Diffusion Transformers (DiT) &mdash; Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 12</div>
+    <h2>Diffusion Transformers (DiT)</h2>
+    <p class="lecture-desc">Replacing the U-Net with a simpler, more scalable architecture &mdash; patchify, transform, unpatchify &mdash; and the conditioning trick that makes it all work.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">DiT</span>
+      <span class="lecture-tag">Patchify</span>
+      <span class="lecture-tag">adaLN-Zero</span>
+      <span class="lecture-tag">Scaling Laws</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 12.1 -->
+    <h2 id="transformers-for-everything">The Trend: Transformers for Everything</h2>
+
+    <p>We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020 &mdash; and it works well. But let's be honest about what it asks of us: an encoder-decoder structure, skip connections at every resolution, attention blocks injected at specific layers, carefully tuned channel multipliers. It's a lot of bespoke engineering.</p>
+
+    <p>Meanwhile, a different story has been unfolding across machine learning. Transformers have conquered NLP (2017), vision classification with ViT (2020), protein structure prediction, code generation, and more. The recipe is always the same: take a simple, repeated building block (self-attention + feedforward), stack it deep, and throw compute at it. The architecture itself barely changes &mdash; you just make it bigger.</p>
+
+    <p>This is exactly the property that makes transformers so appealing for scaling. They follow <strong>predictable scaling laws</strong>: double the compute, get a measurable improvement. U-Nets don't have this property. Scaling a U-Net means deciding where to add channels, which resolutions get attention, how deep each stage should be &mdash; it's an architecture search problem, not a compute scaling problem.</p>
+
+    <p>So the question becomes natural: can we replace the U-Net with a transformer and get the same (or better) results, while inheriting the transformer's scaling properties?</p>
+
+    <!-- Section 12.2 -->
+    <h2 id="dit-architecture">The DiT Architecture</h2>
+
+    <p>The answer is <strong>DiT</strong> (Peebles &amp; Xie, 2023), and the core idea is surprisingly simple. Instead of the U-Net's complex encoder-decoder, DiT has three stages: <strong>patchify</strong> the image into a sequence of tokens, process them with <strong>standard transformer blocks</strong>, and <strong>unpatchify</strong> back into an image. That's it.</p>
+
+    <h3 id="patchify">Patchify: Image &rarr; Sequence</h3>
+
+    <p>The first step borrows directly from Vision Transformers (ViT). We split the input image into non-overlapping patches, flatten each one, and linearly project it to the model's hidden dimension:</p>
+
+    <ul>
+      <li><strong>Patch size $p$</strong> &mdash; typically 2, 4, or 8 pixels</li>
+      <li>A $32 \times 32$ image with $p = 4$ produces $8 \times 8 = 64$ patches</li>
+      <li>Each patch is flattened ($p^2 \times C$ values) and projected to $d_{\text{model}}$</li>
+      <li>Shape: $(B, 3, 32, 32) \rightarrow (B, 64, d_{\text{model}})$ &mdash; 64 tokens of dimension $d_{\text{model}}$</li>
+    </ul>
+
+    <p>We then add <strong>2D positional encodings</strong> (learnable or sinusoidal) so each token knows where in the image it came from. Without these, the transformer has no concept of spatial layout &mdash; it just sees an unordered bag of tokens.</p>
+
+    <div class="callout note">
+      <div class="callout-label">MNIST Note</div>
+      MNIST images are $28 \times 28$, which is <em>not</em> evenly divisible by common patch sizes like 4 or 8. You have a few options: pad to $32 \times 32$ first, use $p = 2$ (giving $14 \times 14 = 196$ patches), or use $p = 7$ (giving $4 \times 4 = 16$ patches). This is a practical detail you'll hit immediately if you try to implement DiT on MNIST.
+    </div>
+
+    <h3 id="transformer-blocks">Transformer Blocks</h3>
+
+    <p>The middle of DiT is a stack of transformer blocks. Each block has the standard structure you know from NLP and ViT:</p>
+
+    <ol>
+      <li>Layer normalization</li>
+      <li>Multi-head self-attention</li>
+      <li>Residual connection</li>
+      <li>Layer normalization</li>
+      <li>Feedforward network (MLP)</li>
+      <li>Residual connection</li>
+    </ol>
+
+    <p>The twist is in how we handle conditioning &mdash; the timestep and (optionally) class label need to modulate every block. Standard LayerNorm won't cut it. This is where <strong>adaLN-Zero</strong> comes in, and it's the key innovation that makes DiT work. We'll cover it in detail in the next section.</p>
+
+    <h3 id="unpatchify">Unpatchify: Sequence &rarr; Image</h3>
+
+    <p>After all transformer blocks, we need to get back to pixel space. Each token is linearly projected from $d_{\text{model}}$ to $p^2 \times C$ values, then reshaped back into the spatial grid:</p>
+
+    <p>$(B, 64, d_{\text{model}}) \rightarrow (B, 3, 32, 32)$</p>
+
+    <p>The output is the predicted noise $\hat{\epsilon}$, same as with our U-Net &mdash; DiT is a drop-in replacement for the denoiser.</p>
+
+    <h3 id="dit-pseudocode">Putting It Together</h3>
+
+    <div class="pseudocode">
+<span class="keyword">class</span> DiT:
+    <span class="keyword">def</span> <span class="function">forward</span>(x, t, class_label=<span class="keyword">None</span>):
+        <span class="comment"># Conditioning embedding</span>
+        c = time_mlp(sinusoidal(t))           <span class="comment"># (B, d_model)</span>
+        <span class="keyword">if</span> class_label <span class="keyword">is not None</span>:
+            c = c + class_emb(class_label)    <span class="comment"># add class info</span>
+
+        <span class="comment"># Patchify</span>
+        tokens = patchify(x)                  <span class="comment"># (B, N, d_model)</span>
+        tokens = tokens + pos_encoding        <span class="comment"># add position info</span>
+
+        <span class="comment"># Transformer blocks</span>
+        <span class="keyword">for</span> block <span class="keyword">in</span> self.blocks:
+            tokens = block(tokens, c)         <span class="comment"># adaLN-Zero conditioning</span>
+
+        <span class="comment"># Unpatchify</span>
+        noise_pred = unpatchify(tokens)       <span class="comment"># (B, C, H, W)</span>
+        <span class="keyword">return</span> noise_pred
+    </div>
+
+    <!-- Section 12.3 -->
+    <h2 id="adaln-zero">Conditioning via adaLN-Zero</h2>
+
+    <p>Here's the challenge. A diffusion model needs to know <em>what timestep</em> it's denoising at &mdash; the behavior at $t = 10$ (light noise) is completely different from $t = 990$ (nearly pure noise). In our U-Net, we injected timestep information through adaptive group normalization. DiT needs something equivalent for transformer blocks.</p>
+
+    <h3 id="from-layernorm-to-adaln">From LayerNorm to Adaptive LayerNorm</h3>
+
+    <p>Standard LayerNorm has two learned parameters, $\gamma$ (scale) and $\beta$ (shift):</p>
+
+    $$y = \frac{x - \mu}{\sigma} \cdot \gamma + \beta$$
+
+    <p>These parameters are the same regardless of input. <strong>Adaptive LayerNorm (adaLN)</strong> makes them <em>condition-dependent</em> &mdash; we predict $\gamma$ and $\beta$ from the conditioning signal $c$ (timestep + class embedding):</p>
+
+    $$\gamma, \beta = \text{Linear}(c)$$
+
+    <p>This is the same idea as the adaptive group normalization we used in our U-Net's residual blocks (Lecture 5), just applied to transformer-style LayerNorm instead.</p>
+
+    <h3 id="zero-initialization">The "Zero" in adaLN-Zero</h3>
+
+    <p>Here's the clever part. adaLN-Zero additionally predicts a <strong>gate parameter</strong> $\alpha$, and initializes it to zero:</p>
+
+    $$\gamma, \beta, \alpha = \text{Linear}(c)$$
+
+    <p>After each sublayer (attention or FFN), the output is gated:</p>
+
+    $$x = x + \alpha \cdot \text{sublayer}(\text{adaLN}(x, \gamma, \beta))$$
+
+    <p>Because $\alpha$ starts at zero, every transformer block acts as the <strong>identity function</strong> at initialization. The model begins by doing nothing &mdash; just passing the input through unchanged &mdash; and gradually learns to process. This makes training remarkably stable, especially for deep models.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      Zero-initialization is not just a trick &mdash; it's a principled approach to training deep residual networks. By starting each block as an identity, you avoid the "signal explosion" problem where randomly initialized deep networks produce wildly varying outputs. The network starts simple and adds complexity only as needed during training.
+    </div>
+
+    <h3 id="dit-block-pseudocode">DiT Block Pseudocode</h3>
+
+    <div class="pseudocode">
+<span class="keyword">class</span> DiTBlock:
+    <span class="keyword">def</span> <span class="function">forward</span>(x, c):
+        <span class="comment"># Predict all adaLN-Zero params from conditioning</span>
+        &gamma;1, &beta;1, &alpha;1, &gamma;2, &beta;2, &alpha;2 = self.adaln_mlp(c).chunk(6, dim=-1)
+
+        <span class="comment"># Self-attention with adaLN</span>
+        h = layer_norm(x) * (1 + &gamma;1) + &beta;1
+        h = self_attention(h)
+        x = x + &alpha;1 * h                <span class="comment"># gated residual</span>
+
+        <span class="comment"># FFN with adaLN</span>
+        h = layer_norm(x) * (1 + &gamma;2) + &beta;2
+        h = ffn(h)
+        x = x + &alpha;2 * h                <span class="comment"># gated residual</span>
+
+        <span class="keyword">return</span> x
+    </div>
+
+    <p>Notice the symmetry: each block has <strong>six</strong> condition-dependent parameters &mdash; scale, shift, and gate for both the attention sublayer and the FFN sublayer. All six are predicted from a single MLP applied to the conditioning vector $c$.</p>
+
+    <!-- Section 12.4 -->
+    <h2 id="scaling">Why DiT Scales Better</h2>
+
+    <p>The whole point of moving to transformers was better scaling, and DiT delivers. Let's look at why.</p>
+
+    <h3 id="simpler-architecture">Architectural Simplicity</h3>
+
+    <p>Compare what you need to define for each architecture:</p>
+
+    <ul>
+      <li><strong>U-Net:</strong> encoder stages, decoder stages, channel multipliers at each resolution, which resolutions get attention, skip connection types, number of ResBlocks per stage</li>
+      <li><strong>DiT:</strong> number of transformer blocks, hidden dimension, number of attention heads, patch size</li>
+    </ul>
+
+    <p>With DiT, scaling is trivial: stack more blocks, increase the hidden dimension. No architectural redesign required.</p>
+
+    <h3 id="dit-scaling-results">Scaling Results</h3>
+
+    <p>Peebles and Xie demonstrated clean scaling on <strong>ImageNet 256&times;256</strong> (not MNIST &mdash; these are large-scale results):</p>
+
+    <div class="algorithm">
+      <div class="algorithm-title">DiT Scaling (ImageNet 256&times;256, Classifier-Free Guidance)</div>
+      <ul>
+        <li><strong>DiT-S/2</strong> (33M params): FID 68.4</li>
+        <li><strong>DiT-B/2</strong> (130M params): FID 43.5</li>
+        <li><strong>DiT-L/2</strong> (458M params): FID 23.3</li>
+        <li><strong>DiT-XL/2</strong> (675M params): FID 9.62 &rarr; with CFG: <strong>FID 2.27</strong> (state-of-the-art)</li>
+      </ul>
+      <p>The "/2" means patch size $p = 2$. FID (Fr&eacute;chet Inception Distance) measures image quality &mdash; lower is better.</p>
+    </div>
+
+    <p>The pattern is clear: each step up in model size gives a predictable drop in FID. This is the transformer scaling recipe at work &mdash; more parameters, more compute, better results, no architecture surgery needed.</p>
+
+    <!-- Section 12.5 -->
+    <h2 id="unet-vs-dit">U-Net vs. DiT &mdash; When to Use Each</h2>
+
+    <p>DiT doesn't make the U-Net obsolete. Each has its place, and the right choice depends on your constraints.</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--rule-strong);">
+          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">Property</th>
+          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">U-Net</th>
+          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">DiT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid var(--rule);">
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Architecture complexity</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">High (many bespoke components)</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Low (repeated blocks)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--rule);">
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Scaling behavior</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Diminishing returns, needs redesign</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Follows scaling laws</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--rule);">
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Multi-resolution</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Built-in (encoder-decoder)</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Flat sequence (patch-based)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--rule);">
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Skip connections</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Yes (critical for fine detail)</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">No (relies on deep attention)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--rule);">
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Best for</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Small/medium models, proven recipes</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Large-scale, frontier models</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Used in</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">DDPM, SD 1.5, SDXL</td>
+          <td style="padding: 10px 16px; color: var(--text-secondary);">Sora, SD 3, Flux</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>For our MNIST experiments in this course, the U-Net is the right tool &mdash; it's smaller, faster to train, and we don't need scaling laws. But if you were building a production image generator? You'd reach for DiT.</p>
+
+    <!-- Section 12.6 -->
+    <h2 id="dit-in-practice">DiT in the Wild</h2>
+
+    <p>DiT isn't just a research curiosity. It's the architecture behind the most capable generative models shipping today:</p>
+
+    <ul>
+      <li><strong>Sora (OpenAI)</strong> &mdash; uses DiT for video generation by treating video as <em>spatiotemporal patches</em>. A 10-second video becomes a long sequence of space-time tokens, processed by the same transformer machinery.</li>
+      <li><strong>Stable Diffusion 3 (Stability AI)</strong> &mdash; replaces the U-Net with an "MM-DiT" (multimodal DiT) that jointly attends to image and text tokens in the same sequence.</li>
+      <li><strong>Flux (Black Forest Labs)</strong> &mdash; a DiT-based architecture with improved efficiency and quality, from the original Stable Diffusion creators.</li>
+    </ul>
+
+    <p>The pattern is unmistakable: every new frontier diffusion model is DiT-based, not U-Net-based. The U-Net era (2020&ndash;2023) gave way to the DiT era, and the transition happened because transformers do what they always do &mdash; scale simply and predictably.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      DiT's contribution isn't a new diffusion algorithm &mdash; the noise schedules, training objectives, and sampling procedures are all unchanged. The contribution is showing that the <em>denoiser architecture</em> can be swapped from a bespoke CNN to a standard transformer, inheriting all the scaling benefits that transformers provide. The diffusion framework is architecture-agnostic.
+    </div>
+
+    <!-- Section 12.7: PyTorch -->
+    <h2 id="pytorch-reference">PyTorch Reference</h2>
+
+    <p>Here's what the key components look like in actual PyTorch. First, the patchify and unpatchify operations:</p>
+
+    <div class="code-block">
+      <div class="code-block-label">PyTorch</div>
+<span class="keyword">class</span> <span class="type">Patchify</span>(nn.Module):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, patch_size, in_channels, embed_dim):
+        super().__init__()
+        self.proj = nn.Conv2d(in_channels, embed_dim,
+                              kernel_size=patch_size, stride=patch_size)
+
+    <span class="keyword">def</span> <span class="function">forward</span>(self, x):            <span class="comment"># x: (B, C, H, W)</span>
+        x = self.proj(x)                <span class="comment"># (B, embed_dim, H/p, W/p)</span>
+        x = x.flatten(2).transpose(1, 2) <span class="comment"># (B, N, embed_dim)</span>
+        <span class="keyword">return</span> x
+    </div>
+
+    <p>And the adaLN-Zero transformer block:</p>
+
+    <div class="code-block">
+      <div class="code-block-label">PyTorch</div>
+<span class="keyword">class</span> <span class="type">DiTBlock</span>(nn.Module):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, dim, num_heads):
+        super().__init__()
+        self.norm1 = nn.LayerNorm(dim, elementwise_affine=<span class="keyword">False</span>)
+        self.attn = nn.MultiheadAttention(dim, num_heads, batch_first=<span class="keyword">True</span>)
+        self.norm2 = nn.LayerNorm(dim, elementwise_affine=<span class="keyword">False</span>)
+        self.ffn = nn.Sequential(
+            nn.Linear(dim, 4 * dim), nn.GELU(), nn.Linear(4 * dim, dim)
+        )
+        <span class="comment"># Predict 6 adaLN-Zero parameters from conditioning</span>
+        self.adaln = nn.Sequential(nn.SiLU(), nn.Linear(dim, 6 * dim))
+        <span class="comment"># Initialize gate projection to zero</span>
+        nn.init.zeros_(self.adaln[-1].weight)
+        nn.init.zeros_(self.adaln[-1].bias)
+
+    <span class="keyword">def</span> <span class="function">forward</span>(self, x, c):         <span class="comment"># x: (B, N, dim), c: (B, dim)</span>
+        params = self.adaln(c).unsqueeze(1).chunk(6, dim=-1)
+        &gamma;1, &beta;1, &alpha;1, &gamma;2, &beta;2, &alpha;2 = params
+
+        <span class="comment"># Attention with adaLN-Zero</span>
+        h = self.norm1(x) * (1 + &gamma;1) + &beta;1
+        h, _ = self.attn(h, h, h)
+        x = x + &alpha;1 * h
+
+        <span class="comment"># FFN with adaLN-Zero</span>
+        h = self.norm2(x) * (1 + &gamma;2) + &beta;2
+        h = self.ffn(h)
+        x = x + &alpha;2 * h
+
+        <span class="keyword">return</span> x
+    </div>
+
+    <!-- Looking Ahead -->
+    <h2 id="looking-ahead">Looking Ahead</h2>
+
+    <p>DiT shows that the denoiser architecture is a replaceable module &mdash; you can swap the U-Net for a transformer and everything else stays the same. But the "everything else" still includes noise schedules, cumulative alpha products, ELBO-derived losses, and 50&ndash;1000 sampling steps.</p>
+
+    <p>In the next lecture, we'll ask: what if we could simplify <em>that</em> part too? Flow matching does exactly this &mdash; it replaces the entire DDPM framework with straight-line interpolation and velocity prediction. The result is dramatically simpler math, more stable training, and fewer sampling steps. It's the framework behind Stable Diffusion 3 and Flux &mdash; and it pairs perfectly with the DiT architecture we just learned.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture11.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Prediction Targets</span>
+    </a>
+    <a class="next" href="lecture13.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">Flow Matching &amp; Rectified Flows</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body, {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false}
+    ]
+  });"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

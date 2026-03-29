@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 8: Conditioning & Classifier Guidance — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="../index.html">&larr; All Modules</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 8</div>
+    <h2>Conditioning &amp; Classifier Guidance</h2>
+    <p class="lecture-desc">Moving from unconditional to conditional generation &mdash; embedding class labels into the U-Net, then steering generation with a trained classifier's gradients.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">Conditional Generation</span>
+      <span class="lecture-tag">Class Embedding</span>
+      <span class="lecture-tag">Classifier Guidance</span>
+      <span class="lecture-tag optional">Historical Context</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 8.1 -->
+    <h2 id="unconditional-to-conditional">From Unconditional to Conditional Generation</h2>
+
+    <p>Up to now, our diffusion model generates images &mdash; but we have no control over <em>what</em> it generates. We get random digits, random objects, random faces. For any practical application, we need to tell the model what to produce: "generate a 7" or "generate a cat."</p>
+
+    <p>The shift is surprisingly simple at the architectural level. Our unconditional model takes two inputs:</p>
+
+    $$\epsilon_\theta(x_t, t)$$
+
+    <p>A conditional model adds one more &mdash; a conditioning signal $c$:</p>
+
+    $$\epsilon_\theta(x_t, t, c)$$
+
+    <p>The condition $c$ can be almost anything: a class label (integer), a text prompt (sequence of embeddings), another image, even an audio clip. For this course, we'll focus on class-conditional generation with MNIST digits, where $c \in \{0, 1, \ldots, 9\}$.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      The architecture change is minimal &mdash; we're adding one more input to the network. The interesting question is <em>how</em> that conditioning signal gets woven into the model's representations, and <em>how</em> we use it during sampling to steer generation.
+    </div>
+
+    <!-- Section 8.2 -->
+    <h2 id="class-embedding">Class Embedding &amp; Injection</h2>
+
+    <p>A class label is an integer &mdash; it carries no geometric or semantic structure. We need to lift it into a continuous vector that the network can work with. This is the same idea as word embeddings in NLP: map discrete tokens to learned vectors.</p>
+
+    <h3 id="embedding-lookup">The Embedding Lookup</h3>
+
+    <p>We create a learnable lookup table with one vector per class:</p>
+
+    $$\texttt{class\_emb} = \texttt{nn.Embedding}(\texttt{num\_classes}, \texttt{emb\_dim})$$
+
+    <p>Given a class label $c$, the embedding layer returns a vector of shape $(\texttt{emb\_dim},)$. This vector is randomly initialized and <em>learned during training</em> &mdash; the network discovers what each class "means" in embedding space.</p>
+
+    <h3 id="injection-addition">Injection Method 1: Addition to Time Embedding</h3>
+
+    <p>The simplest and most common approach: add the class embedding directly to the time embedding before the MLP. The network receives a single conditioning vector that encodes <em>both</em> when in the diffusion process we are and <em>what</em> class we're generating:</p>
+
+    $$\texttt{combined\_emb} = \texttt{time\_emb}(t) + \texttt{class\_emb}(c)$$
+
+    <p>This works well for class-conditional generation and is what we'll implement. Both embeddings have the same dimensionality, so the addition is element-wise.</p>
+
+    <h3 id="injection-alternatives">Alternative Injection Methods</h3>
+
+    <ul>
+      <li><strong>Separate injection:</strong> Process the class embedding through its own MLP, then add it to features at each ResBlock independently from the time embedding. More expressive, but more parameters.</li>
+      <li><strong>Adaptive Group Normalization (AdaGN):</strong> Use the conditioning vector to predict per-channel scale and shift parameters for GroupNorm. This is the most expressive approach &mdash; used in DALL-E 2 and other advanced architectures.</li>
+    </ul>
+
+    <h3 id="null-class-token">The Null Class Token</h3>
+
+    <p>One important detail: we allocate <em>one extra class</em> in our embedding table. If we have 10 digit classes (0&ndash;9), we create an embedding of size 11. Index 10 is the <strong>null class</strong> &mdash; it means "no conditioning." This will become critical in Lecture 9 when we implement classifier-free guidance, which requires the model to make predictions both <em>with</em> and <em>without</em> a class label.</p>
+
+    <div class="pseudocode">
+<strong>Conditional U-Net Architecture</strong>
+
+class ConditionalUNet(UNet):
+    def __init__(self, num_classes, ...):
+        # +1 for null class token (index = num_classes)
+        # "no class" enables unconditional prediction from same model
+        self.class_emb = Embedding(num_classes + 1, emb_dim)
+
+    def forward(self, x_t, t, class_label=None):
+        t_emb = self.time_mlp(sinusoidal_embedding(t))   <span class="comment"># (B, emb_dim)</span>
+
+        if class_label is not None:
+            c_emb = self.class_emb(class_label)           <span class="comment"># (B, emb_dim)</span>
+            t_emb = t_emb + c_emb                         <span class="comment"># combine</span>
+
+        <span class="comment"># Rest of U-Net forward pass uses t_emb as before</span>
+        ...
+    </div>
+
+    <!-- Section 8.3 -->
+    <h2 id="training-conditional">Training the Conditional Model</h2>
+
+    <p>The good news: training is nearly identical to what we did in Lecture 6. Each training sample now includes a label alongside the image: $(x_0, c)$. The label gets embedded and added to the time embedding. The loss function is unchanged:</p>
+
+    $$\mathcal{L} = \|\epsilon - \epsilon_\theta(x_t, t, c)\|^2$$
+
+    <p>The model learns to make <em>class-specific</em> noise predictions. When told "this is a 7 at noise level $t$," it predicts the noise differently than when told "this is a 3 at noise level $t$." The conditioning signal helps the model resolve ambiguity &mdash; at high noise levels, digits can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
+
+    <div class="pseudocode">
+<strong>Conditional Training Step</strong>
+
+def train_step(model, x_0, class_label, optimizer, schedule):
+    t = random_integers(0, T-1, batch_size)
+    noise = randn_like(x_0)
+    x_t = q_sample(x_0, t, noise, schedule)
+    noise_pred = model(x_t, t, class_label)       <span class="comment"># now with class!</span>
+    loss = mse_loss(noise_pred, noise)
+    loss.backward()
+    optimizer.step()
+    </div>
+
+    <div class="callout example">
+      <div class="callout-label">Example</div>
+      <strong>Minimal change from unconditional training.</strong> Compare this to the unconditional training step from Lecture 6 &mdash; the only difference is passing <code>class_label</code> to the model. The loss, the noise sampling, the forward diffusion process: all identical. The architecture does the heavy lifting.
+    </div>
+
+    <!-- Section 8.4 -->
+    <h2 id="classifier-guidance">Classifier Guidance (Historical Context)</h2>
+
+    <p>Now we have a model that <em>accepts</em> conditioning. But there's another question: can we make the conditioning <em>stronger</em>? Can we amplify how much the model pays attention to the class label during sampling? This is where guidance comes in.</p>
+
+    <p>The first approach, proposed by Dhariwal &amp; Nichol (2021), was <strong>classifier guidance</strong>. It's an elegant idea that we'll study for historical context &mdash; it was superseded by the simpler classifier-free guidance in Lecture 9, but understanding it helps you appreciate <em>why</em> CFG was such a breakthrough.</p>
+
+    <div class="callout definition">
+      <div class="callout-label">Definition</div>
+      <strong>Classifier Guidance.</strong> Train a separate classifier $p_\phi(y \mid x_t)$ on noisy images at all noise levels. During sampling, use its gradients to steer the denoising process toward the desired class.
+    </div>
+
+    <h3 id="classifier-guidance-how">How It Works</h3>
+
+    <p>The idea is intuitive: at each denoising step, we ask a classifier "which direction should I move $x_t$ to make it look more like class $y$?" That direction is the gradient $\nabla_{x_t} \log p_\phi(y \mid x_t)$. We then shift our noise prediction in that direction.</p>
+
+    <p>Concretely, at each step of the reverse process:</p>
+
+    <ol>
+      <li><strong>Predict noise</strong> as usual: $\epsilon_\theta(x_t, t)$</li>
+      <li><strong>Compute classifier gradient:</strong> $\nabla_{x_t} \log p_\phi(y \mid x_t)$ &mdash; "which direction makes $x_t$ look more like class $y$?"</li>
+      <li><strong>Shift the noise prediction:</strong>
+        $$\hat{\epsilon} = \epsilon_\theta - s \cdot \sqrt{1 - \bar{\alpha}_t} \cdot \nabla_{x_t} \log p_\phi(y \mid x_t)$$
+      </li>
+      <li>Use $\hat{\epsilon}$ for the standard DDPM denoising step</li>
+    </ol>
+
+    <p>The parameter $s$ is the <strong>guidance scale</strong>. It controls how strongly the classifier steers:</p>
+
+    <ul>
+      <li>$s = 0$: no guidance &mdash; pure unconditional generation</li>
+      <li>$s = 1$: standard classifier guidance</li>
+      <li>$s > 1$: amplified guidance &mdash; sharper, more class-specific images, but less diversity</li>
+    </ul>
+
+    <h3 id="implicit-distribution">What Distribution Are We Sampling From?</h3>
+
+    <p>Mathematically, classifier guidance causes us to sample from a sharpened distribution:</p>
+
+    $$p_\text{guided}(x \mid y) \propto p(x) \cdot p(y \mid x)^s$$
+
+    <p>When $s = 1$, this is just Bayes' rule &mdash; we get the standard conditional $p(x \mid y)$. When $s > 1$, we're raising the classifier likelihood to a power, which sharpens the distribution around images that the classifier confidently assigns to class $y$. Higher $s$ means sharper peaks but thinner tails &mdash; better fidelity, less diversity.</p>
+
+    <h3 id="classifier-guidance-pseudocode">Sampling with Classifier Guidance</h3>
+
+    <div class="pseudocode">
+<strong>Classifier-Guided Sampling</strong>
+
+def classifier_guided_sample(model, classifier, class_label, schedule, s):
+    x = randn(shape)                              <span class="comment"># start from noise</span>
+
+    for t in reversed(range(T)):
+        <span class="comment"># 1. Standard noise prediction</span>
+        noise_pred = model(x, t)
+
+        <span class="comment"># 2. Classifier gradient</span>
+        x.requires_grad_(True)
+        log_prob = classifier(x, t).log_softmax(dim=-1)[:, class_label]
+        grad = autograd.grad(log_prob.sum(), x)[0]
+        x.requires_grad_(False)
+
+        <span class="comment"># 3. Shift noise prediction toward desired class</span>
+        noise_pred = noise_pred - s * sqrt(1 - alpha_bar[t]) * grad
+
+        <span class="comment"># 4. Standard DDPM step with modified prediction</span>
+        x = ddpm_step(x, noise_pred, t, schedule)
+
+    return x
+    </div>
+
+    <!-- Section 8.5 -->
+    <h2 id="classifier-guidance-limitations">Why Classifier Guidance Falls Short</h2>
+
+    <p>Classifier guidance works &mdash; it produces sharp, class-specific images. But it has significant practical drawbacks:</p>
+
+    <ul>
+      <li><strong>Extra model required.</strong> You must train a separate classifier on noisy images at <em>all</em> noise levels. This classifier needs to handle everything from nearly-clean images ($t \approx 0$) to pure noise ($t \approx T$). That's an expensive, non-trivial training task.</li>
+      <li><strong>Inflexible conditioning.</strong> Want to condition on text instead of class labels? You need to train an entirely new classifier. Each new conditioning modality requires a new external model.</li>
+      <li><strong>Slow sampling.</strong> At every denoising step, you must compute gradients through the classifier via backpropagation. This is significantly slower than a simple forward pass.</li>
+      <li><strong>Limited scalability.</strong> The approach doesn't naturally extend to rich conditioning signals like text prompts, which require understanding complex semantics rather than simple classification.</li>
+    </ul>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      Classifier guidance proves that external signals <em>can</em> steer diffusion models during sampling. The problem isn't the idea &mdash; it's the execution. Training a separate model for each conditioning type is inelegant. What if the guidance signal could come from the diffusion model itself? That's exactly what classifier-free guidance achieves, and it's the subject of our next lecture.
+    </div>
+
+    <!-- Section 8.6: PyTorch Reference -->
+    <h2 id="pytorch-reference">PyTorch Reference</h2>
+
+    <p>Here's how the conditional U-Net modification looks in real PyTorch. The key change from our unconditional model is just three lines: embedding initialization, embedding lookup, and the addition.</p>
+
+    <div class="code-block">
+<span class="code-block-label">PyTorch</span>
+<span class="keyword">import</span> torch
+<span class="keyword">import</span> torch.nn <span class="keyword">as</span> nn
+
+<span class="keyword">class</span> <span class="type">ConditionalUNet</span>(nn.Module):
+    <span class="keyword">def</span> <span class="function">__init__</span>(self, in_ch, out_ch, time_dim=<span class="number">256</span>, num_classes=<span class="number">10</span>):
+        <span class="function">super</span>().__init__()
+        <span class="comment"># ... existing U-Net layers ...</span>
+
+        <span class="comment"># +1 for null class token used in CFG (Lecture 9)</span>
+        self.class_emb = nn.<span class="function">Embedding</span>(num_classes + <span class="number">1</span>, time_dim)
+
+    <span class="keyword">def</span> <span class="function">forward</span>(self, x, t, class_label=<span class="keyword">None</span>):
+        t_emb = self.time_mlp(self.sinusoidal_embedding(t))   <span class="comment"># (B, time_dim)</span>
+
+        <span class="keyword">if</span> class_label <span class="keyword">is not None</span>:
+            c_emb = self.class_emb(class_label)               <span class="comment"># (B, time_dim)</span>
+            t_emb = t_emb + c_emb                             <span class="comment"># fuse conditioning</span>
+
+        <span class="comment"># Forward pass uses t_emb exactly as before</span>
+        <span class="comment"># Every ResBlock receives the same combined embedding</span>
+        ...
+    </div>
+
+    <p>And the classifier guidance sampling loop in PyTorch:</p>
+
+    <div class="code-block">
+<span class="code-block-label">PyTorch</span>
+<span class="keyword">@</span>torch.no_grad()
+<span class="keyword">def</span> <span class="function">classifier_guided_sample</span>(model, classifier, y, schedule, guidance_scale=<span class="number">3.0</span>):
+    x = torch.<span class="function">randn</span>(batch_size, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>, device=device)
+
+    <span class="keyword">for</span> t <span class="keyword">in</span> <span class="function">reversed</span>(<span class="function">range</span>(T)):
+        t_batch = torch.<span class="function">full</span>((batch_size,), t, device=device)
+
+        <span class="comment"># Noise prediction (no grad needed)</span>
+        noise_pred = model(x, t_batch)
+
+        <span class="comment"># Classifier gradient (grad needed for x only)</span>
+        <span class="keyword">with</span> torch.<span class="function">enable_grad</span>():
+            x_in = x.<span class="function">detach</span>().<span class="function">requires_grad_</span>(<span class="keyword">True</span>)
+            logits = classifier(x_in, t_batch)
+            log_probs = logits.<span class="function">log_softmax</span>(dim=-<span class="number">1</span>)
+            selected = log_probs[<span class="function">range</span>(batch_size), y]
+            grad = torch.autograd.<span class="function">grad</span>(selected.<span class="function">sum</span>(), x_in)[<span class="number">0</span>]
+
+        <span class="comment"># Shift noise prediction</span>
+        alpha_bar_t = schedule[<span class="string">'alphas_cumprod'</span>][t]
+        noise_pred = noise_pred - guidance_scale * (<span class="number">1</span> - alpha_bar_t).<span class="function">sqrt</span>() * grad
+
+        <span class="comment"># Standard DDPM update step</span>
+        x = ddpm_step(x, noise_pred, t, schedule)
+
+    <span class="keyword">return</span> x
+    </div>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture07.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Sampling: DDPM, DDIM &amp; Beyond</span>
+    </a>
+    <a class="next" href="lecture09.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">Classifier-Free Guidance</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lecture 2: The Forward Process — Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="../styles/shared.css">
+</head>
+<body>
+
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu"><span></span></button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+<div class="progress-bar"><div class="bar"></div></div>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1><a href="../index.html">Diffusion From Scratch</a></h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer"><a href="../index.html">&larr; All Modules</a></div>
+</aside>
+
+<div class="main">
+  <div class="lecture-header">
+    <div class="lecture-eyebrow">Lecture 2</div>
+    <h2>The Forward Process &amp; Noise Schedules</h2>
+    <p class="lecture-desc">How to destroy an image in exactly the right way&mdash;and why the math that lets us skip ahead to any noise level is the key to efficient training.</p>
+    <div class="lecture-tags">
+      <span class="lecture-tag">Forward Process</span>
+      <span class="lecture-tag">Noise Schedules</span>
+      <span class="lecture-tag">Reparameterization</span>
+      <span class="lecture-tag">SNR</span>
+    </div>
+  </div>
+
+  <article class="lecture-article">
+
+    <!-- Section 2.1 -->
+    <h2 id="forward-chain">The Forward Markov Chain</h2>
+
+    <p>In Lecture 1, we said diffusion models learn to reverse a destruction process. Now let's define that process precisely.</p>
+
+    <p>Starting from a clean image $x_0$, the forward process adds a small amount of Gaussian noise at each step, producing a sequence $x_0, x_1, x_2, \ldots, x_T$. Each step is defined by:</p>
+
+    $$q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(x_t;\; \sqrt{1 - \beta_t}\, x_{t-1},\; \beta_t\, I\right)$$
+
+    <p>Let's unpack this. At step $t$, we do two things to the previous image $x_{t-1}$:</p>
+
+    <ul>
+      <li><strong>Shrink the signal</strong> by multiplying by $\sqrt{1 - \beta_t}$. This slightly reduces the magnitude of the image.</li>
+      <li><strong>Add noise</strong> sampled from $\mathcal{N}(0, \beta_t\, I)$. This injects a small amount of random static.</li>
+    </ul>
+
+    <p>The parameter $\beta_t$ is the <strong>noise variance</strong> at step $t$. It's small&mdash;typically ranging from $\beta_1 = 0.0001$ to $\beta_T = 0.02$. The shrinking factor $\sqrt{1 - \beta_t}$ is crucial: without it, the variance of $x_t$ would grow without bound as we keep adding noise. The shrinking ensures the overall variance stays controlled.</p>
+
+    <p>This is a <strong>Markov chain</strong>&mdash;each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> single_forward_step(x_prev, beta_t):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># One step of the forward noising chain</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise = sample_gaussian(shape=x_prev.shape)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt(1 - beta_t) * x_prev + sqrt(beta_t) * noise<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t
+    </div>
+
+    <p>After $T = 1000$ steps, the cumulative effect is devastating: the original image is completely gone. $x_T$ is indistinguishable from pure Gaussian noise $\mathcal{N}(0, I)$. Every trace of the face, the digit, the landscape&mdash;erased. That's exactly what we want.</p>
+
+    <!-- Section 2.2 -->
+    <h2 id="cumulative-products">The Cumulative Products &mdash; $\alpha_t$ and $\bar{\alpha}_t$</h2>
+
+    <p>Working with individual $\beta_t$ values gets tedious quickly. Let's introduce two quantities that make everything cleaner.</p>
+
+    <div class="callout definition">
+      <div class="callout-label">Definition</div>
+      <p><strong>Signal retention:</strong> $\alpha_t = 1 - \beta_t$. This is the fraction of signal that survives step $t$.</p>
+      <p><strong>Cumulative signal retention:</strong> $\bar{\alpha}_t = \prod_{s=1}^{t} \alpha_s$. This is the total fraction of the original signal that survives from step $0$ to step $t$.</p>
+    </div>
+
+    <p>Think of $\bar{\alpha}_t$ as a measure of <strong>how much of the original image is left</strong> at step $t$:</p>
+
+    <ul>
+      <li>At $t = 0$: $\bar{\alpha}_0 \approx 1$ &mdash; nearly all signal, almost no noise</li>
+      <li>At $t = T$: $\bar{\alpha}_T \approx 0$ &mdash; no signal, pure noise</li>
+    </ul>
+
+    <p>These cumulative products are <strong>precomputed once</strong> when you set up the model and stored as tensors. They're the heart of the noise schedule.</p>
+
+    <div class="pseudocode">
+betas = linear_schedule(T=1000)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
+alphas = 1 - betas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
+alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) — this is ᾱ_t</span>
+    </div>
+
+    <!-- Section 2.3 -->
+    <h2 id="closed-form">The Closed-Form Shortcut</h2>
+
+    <p>Here's where the math pays off. We claimed in the introduction that diffusion training requires millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, training would be absurdly slow&mdash;imagine running 500 sequential operations just to produce one training sample.</p>
+
+    <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and Gaussians compose beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any $x_t$:</p>
+
+    $$q(x_t \mid x_0) = \mathcal{N}\!\left(x_t;\; \sqrt{\bar{\alpha}_t}\, x_0,\; (1 - \bar{\alpha}_t)\, I\right)$$
+
+    <p>In sampling form, this becomes the single most important equation in diffusion:</p>
+
+    <div class="callout theorem">
+      <div class="callout-label">Key Equation</div>
+      $$x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon, \quad \varepsilon \sim \mathcal{N}(0, I)$$
+    </div>
+
+    <p>Read it as a weighted sum of two components:</p>
+
+    <ul>
+      <li>$\sqrt{\bar{\alpha}_t} \cdot x_0$ &mdash; the <strong>signal component</strong>. How much of the original image survives.</li>
+      <li>$\sqrt{1 - \bar{\alpha}_t} \cdot \varepsilon$ &mdash; the <strong>noise component</strong>. How much random noise has been injected.</li>
+    </ul>
+
+    <p>The two coefficients are complementary: $(\sqrt{\bar{\alpha}_t})^2 + (\sqrt{1-\bar{\alpha}_t})^2 = 1$. As $t$ increases, the signal fades and the noise grows&mdash;a smooth interpolation from data to noise.</p>
+
+    <div class="callout example">
+      <div class="callout-label">Concrete Example</div>
+      <p>Suppose $\bar{\alpha}_{250} = 0.5$ (halfway through the schedule). Then:</p>
+      <p>$x_{250} = \sqrt{0.5} \cdot x_0 + \sqrt{0.5} \cdot \varepsilon \approx 0.707 \cdot x_0 + 0.707 \cdot \varepsilon$</p>
+      <p>The image and noise contribute equally. You'd see a ghostly outline of the original with heavy static overlay.</p>
+    </div>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> q_sample(x_0, t, alphas_cumprod):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">"""Noise x_0 to timestep t in one shot."""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise = sample_gaussian(shape=x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_alpha_bar = sqrt(alphas_cumprod[t])&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># signal coefficient</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_one_minus = sqrt(1 - alphas_cumprod[t])&nbsp;<span class="comment"># noise coefficient</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt_alpha_bar * x_0 + sqrt_one_minus * noise<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t, noise&nbsp;&nbsp;<span class="comment"># return noise too — it's the training target!</span>
+    </div>
+
+    <p>One multiplication, one addition&mdash;constant time regardless of $t$. This is why diffusion training is efficient despite the 1000-step forward chain.</p>
+
+    <!-- Section 2.4 -->
+    <h2 id="reparameterization">The Reparameterization Trick</h2>
+
+    <p>Look at the closed-form equation again: $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. We need gradients to flow through $x_t$ during training (for backpropagation). But $x_t$ involves a <strong>random sample</strong> $\varepsilon$&mdash;and you can't backpropagate through randomness.</p>
+
+    <p>The <strong>reparameterization trick</strong> solves this elegantly. Instead of sampling $x_t$ directly from $\mathcal{N}(\mu, \sigma^2)$, we:</p>
+
+    <ol>
+      <li>Sample $\varepsilon \sim \mathcal{N}(0, I)$ &mdash; this randomness is <strong>external</strong> to the computation graph.</li>
+      <li>Compute $x_t = \mu + \sigma \cdot \varepsilon$ &mdash; this is a <strong>deterministic, differentiable</strong> function of $\mu$ and $\sigma$.</li>
+    </ol>
+
+    <p>The random number $\varepsilon$ is generated before the computation starts and treated as a constant input. The network's parameters only affect $\mu$ and $\sigma$, so gradients flow cleanly.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      <p>This is the same trick used in VAEs (Kingma &amp; Welling, 2013) to make the sampling step differentiable. In diffusion, the reparameterization has an even deeper role: the noise $\varepsilon$ that we sample isn't just a computational trick&mdash;it becomes the <strong>training target</strong>. The model's job is to predict exactly this $\varepsilon$.</p>
+    </div>
+
+    <!-- Section 2.5 -->
+    <h2 id="snr">Signal-to-Noise Ratio</h2>
+
+    <p>Different timesteps present different challenges to the model. At low $t$, the image is almost clean&mdash;easy to denoise. At high $t$, it's nearly pure noise&mdash;the model has to invent plausible structure. The <strong>signal-to-noise ratio</strong> (SNR) formalizes this.</p>
+
+    $$\text{SNR}(t) = \frac{\bar{\alpha}_t}{1 - \bar{\alpha}_t}$$
+
+    <p>This is the ratio of signal power to noise power at timestep $t$:</p>
+
+    <ul>
+      <li>At $t = 0$: SNR is very large (mostly signal)</li>
+      <li>At $t = T$: SNR $\approx 0$ (pure noise)</li>
+      <li>The hardest timesteps are in the <strong>middle range</strong>, where signal and noise are roughly balanced&mdash;the model can see some structure but must fill in significant detail</li>
+    </ul>
+
+    <p>In practice, the <strong>log-SNR</strong> is more useful because it spreads the range linearly:</p>
+
+    $$\log\text{SNR}(t) = \log \bar{\alpha}_t - \log(1 - \bar{\alpha}_t)$$
+
+    <p>Log-SNR gives us a unified lens for comparing different noise schedules. A "good" schedule should decrease the log-SNR smoothly and spend enough timesteps in the difficult mid-range.</p>
+
+    <!-- Section 2.6 -->
+    <h2 id="noise-schedules">Noise Schedules</h2>
+
+    <p>The schedule&mdash;how $\beta_t$ varies across timesteps&mdash;controls the <strong>rate of information destruction</strong>. This choice matters more than you might expect: it determines how training difficulty is distributed across timesteps.</p>
+
+    <h3 id="linear-schedule">Linear Schedule (DDPM)</h3>
+
+    <p>The original DDPM (Ho et al., 2020) used a linear schedule: $\beta_t$ increases linearly from $\beta_1 = 0.0001$ to $\beta_T = 0.02$.</p>
+
+    <p>Simple and effective&mdash;but it has a problem. The $\bar{\alpha}_t$ curve drops quickly in the early steps and then flattens. This means the model spends too many timesteps in the "nearly destroyed" regime and not enough in the perceptually important middle range.</p>
+
+    <h3 id="cosine-schedule">Cosine Schedule (Improved DDPM)</h3>
+
+    <p>Nichol &amp; Dhariwal (2021) proposed a cosine schedule that defines $\bar{\alpha}_t$ directly:</p>
+
+    $$\bar{\alpha}_t = \cos^2\!\left(\frac{t/T + s}{1 + s} \cdot \frac{\pi}{2}\right), \quad s = 0.008$$
+
+    <p>The cosine curve gives a <strong>much smoother SNR decay</strong>. Information is preserved longer in the early steps, and the model spends more time at medium noise levels&mdash;exactly where the denoising problem is most interesting. The small offset $s$ prevents $\bar{\alpha}_T$ from hitting exactly zero.</p>
+
+    <h3 id="sigmoid-schedule">Sigmoid Schedule</h3>
+
+    <p>The sigmoid schedule ramps $\beta_t$ through a sigmoid curve&mdash;gentle at the extremes, steep in the middle. It's a compromise between linear and cosine, and performs well in practice.</p>
+
+    <div class="pseudocode">
+<span class="keyword">def</span> linear_schedule(T, beta_start=0.0001, beta_end=0.02):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> linspace(beta_start, beta_end, T)<br>
+<br>
+<span class="keyword">def</span> cosine_schedule(T, s=0.008):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps = linspace(0, T, T+1)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f_t = cos((steps/T + s) / (1+s) * pi/2) ** 2<br>
+&nbsp;&nbsp;&nbsp;&nbsp;alphas_cumprod = f_t / f_t[0]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;betas = 1 - alphas_cumprod[1:] / alphas_cumprod[:-1]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> clip(betas, max=0.999)
+    </div>
+
+    <!-- Section 2.7 -->
+    <h2 id="visualizing-forward">Visualizing the Forward Process</h2>
+
+    <p>To build intuition, let's watch what happens to a single image as the forward process runs.</p>
+
+    <p>At $t = 0$, you see the original image clearly. By $t = 100$, there's a subtle graininess&mdash;like a slightly noisy photograph. At $t = 250$, you can still make out the overall shape and structure, but details are fading. At $t = 500$, it's a ghostly outline buried in static. By $t = 750$, you're squinting to see any structure at all. At $t = 1000$, it's pure noise&mdash;no trace of the original image remains.</p>
+
+    <p>Now think about this from the model's perspective. At each timestep, the model sees $x_t$ and must predict the noise $\varepsilon$ that was added. At low $t$ (clean images), this is easy&mdash;the noise is small and the image provides strong context. At high $t$ (nearly pure noise), the model must essentially hallucinate plausible image structure. The <strong>schedule determines how many training samples fall at each difficulty level</strong>.</p>
+
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      <p>The signal decomposition $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$ shows that every noisy image is a <strong>weighted blend</strong> of signal and noise. You can visualize the two components separately: the fading ghost of the original (signal) and the growing static (noise). Their sum is what the model actually sees at each step.</p>
+    </div>
+
+    <h3 id="pytorch-reference">PyTorch Reference</h3>
+
+    <p>Here's how the forward process looks in real PyTorch code. We'll build this from scratch in the notebooks&mdash;this is just a reference to ground the pseudocode in practice.</p>
+
+    <div class="code-block">
+      <div class="code-block-label">PyTorch</div>
+<span class="keyword">import</span> torch<br>
+<span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F<br>
+<br>
+<span class="keyword">def</span> <span class="function">linear_schedule</span>(T, beta_start=<span class="number">1e-4</span>, beta_end=<span class="number">0.02</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Linear noise schedule from DDPM."""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> torch.linspace(beta_start, beta_end, T)<br>
+<br>
+<span class="keyword">def</span> <span class="function">cosine_schedule</span>(T, s=<span class="number">0.008</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Cosine noise schedule from Improved DDPM."""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps = torch.linspace(<span class="number">0</span>, T, T + <span class="number">1</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f_t = torch.cos((steps / T + s) / (<span class="number">1</span> + s) * torch.pi / <span class="number">2</span>) ** <span class="number">2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;alphas_cumprod = f_t / f_t[<span class="number">0</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;betas = <span class="number">1</span> - alphas_cumprod[<span class="number">1</span>:] / alphas_cumprod[:-<span class="number">1</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> torch.clamp(betas, max=<span class="number">0.999</span>)<br>
+<br>
+<span class="keyword">def</span> <span class="function">q_sample</span>(x_0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, noise=<span class="keyword">None</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Forward diffusion: noise x_0 to timestep t."""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">if</span> noise <span class="keyword">is None</span>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;noise = torch.randn_like(x_0)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = sqrt_alphas_cumprod[t]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B,) → (B, 1, 1, 1)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = sqrt_one_minus_alphas_cumprod[t]&nbsp;&nbsp;&nbsp;<span class="comment"># (B,) → (B, 1, 1, 1)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">while</span> sqrt_ab.dim() &lt; x_0.dim():<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = sqrt_ab.unsqueeze(-<span class="number">1</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = sqrt_om.unsqueeze(-<span class="number">1</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> sqrt_ab * x_0 + sqrt_om * noise, noise
+    </div>
+
+    <p>In the next lecture, we'll tackle the reverse process&mdash;how to train a neural network to undo the noise we just learned to add.</p>
+
+  </article>
+
+  <nav class="lecture-nav">
+    <a class="prev" href="lecture01.html">
+      <span class="nav-dir">Previous</span>
+      <span class="nav-title">Why Diffusion?</span>
+    </a>
+    <a class="next" href="lecture03.html">
+      <span class="nav-dir">Next</span>
+      <span class="nav-title">The Reverse Process &amp; the Simplified Loss</span>
+    </a>
+  </nav>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script src="../scripts/shared.js"></script>
+</body>
+</html>
