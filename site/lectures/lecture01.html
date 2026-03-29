@@ -74,7 +74,7 @@
 
     <p>GANs (Goodfellow et al., 2014) frame generation as a game between two networks. A <strong>generator</strong> $G$ tries to produce realistic images from random noise. A <strong>discriminator</strong> $D$ tries to distinguish real images from generated ones. They train against each other: $G$ improves at fooling $D$, and $D$ improves at catching $G$.</p>
 
-    <p>The result? GANs produce <strong>stunningly sharp images</strong>&mdash;for years, they held the crown for visual quality.</p>
+    <p>GANs produce <strong>stunningly sharp images</strong>&mdash;for years, they held the crown for visual quality.</p>
 
     <p>But the adversarial training dynamic is fragile. Generators frequently suffer from <strong>mode collapse</strong>, where they learn to produce only a few types of output that fool the discriminator. Training requires careful hyperparameter tuning, and there's no reliable way to measure convergence. You also get no density estimation&mdash;GANs can't tell you how likely a given image is.</p>
 
@@ -82,7 +82,7 @@
 
     <p>VAEs (Kingma &amp; Welling, 2013) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the ELBO).</p>
 
-    <p>VAEs give you a proper probabilistic framework&mdash;smooth latent spaces, meaningful interpolations, and a principled training objective. The price? <strong>Blurry samples.</strong> The reconstruction loss (typically MSE) encourages the decoder to hedge its bets, producing the average of possible outputs rather than committing to sharp details.</p>
+    <p>VAEs give you a proper probabilistic framework&mdash;smooth latent spaces, meaningful interpolations, and a principled training objective. But VAE samples tend to be <strong>blurry</strong>. The reconstruction loss (typically MSE) encourages the decoder to hedge its bets, producing the average of possible outputs rather than committing to sharp details.</p>
 
     <h3 id="flows">Normalizing Flows</h3>
 
@@ -94,7 +94,7 @@
 
     <p>Autoregressive models (van den Oord et al., 2016) factor the joint distribution as a product of conditionals: $p(x) = \prod_i p(x_i \mid x_1, \ldots, x_{i-1})$. They predict one pixel (or token) at a time, conditioned on everything generated so far.</p>
 
-    <p>This gives you <strong>exact likelihoods</strong> and powerful density estimation&mdash;PixelCNN and its variants are excellent at capturing fine-grained dependencies. The fatal weakness: <strong>generation is sequential</strong>. To produce a 256&times;256 image, you need 65,536 sequential forward passes. You can't parallelize this. For large images, generation is painfully slow.</p>
+    <p>This gives you <strong>exact likelihoods</strong> and powerful density estimation&mdash;PixelCNN and its variants are excellent at capturing fine-grained dependencies. The main limitation is that <strong>generation is sequential</strong>. To produce a 256&times;256 image, you need 65,536 sequential forward passes. You can't parallelize this. For large images, generation is painfully slow.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -106,7 +106,7 @@
 
     <p>Diffusion models take a completely different angle. Instead of trying to learn the data distribution in one shot&mdash;through a generator, a decoder, an invertible transform, or a sequential factorization&mdash;they learn to <strong>gradually reverse a simple destruction process</strong>.</p>
 
-    <p>The core intuition is disarmingly simple:</p>
+    <p>The core intuition is simple:</p>
 
     <div class="callout definition">
       <div class="callout-label">Core Idea</div>
@@ -122,7 +122,7 @@
 
     <p>Why does this work so well? Because <strong>each denoising step is a small, learnable problem</strong>. The network doesn't have to generate an entire image from scratch&mdash;it just has to remove a tiny bit of noise at each step. A thousand easy problems instead of one impossible one.</p>
 
-    <p>And the tradeoffs? Diffusion models deliver:</p>
+    <p>Diffusion models deliver on these tradeoffs:</p>
 
     <ul>
       <li><strong>Stable training</strong> &mdash; The loss is a simple MSE (predict the noise that was added). No adversarial dynamics, no mode collapse.</li>
@@ -131,7 +131,7 @@
       <li><strong>Principled framework</strong> &mdash; Built on a variational bound with a clean probabilistic interpretation.</li>
     </ul>
 
-    <p>The cost? <strong>Sampling is slow.</strong> Generating an image requires iterating through hundreds or thousands of denoising steps. This is the main weakness, and much of the research since 2020 has focused on reducing the number of steps needed. We'll cover accelerated sampling in later lectures.</p>
+    <p>The main cost is <strong>sampling speed</strong>. Generating an image requires iterating through hundreds or thousands of denoising steps. This is the main weakness, and much of the research since 2020 has focused on reducing the number of steps needed. We'll cover accelerated sampling in later lectures.</p>
 
     <!-- Section 1.4 -->
     <h2 id="timeline">Historical Timeline</h2>

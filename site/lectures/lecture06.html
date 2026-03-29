@@ -117,7 +117,7 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
       </ol>
     </div>
 
-    <p>Here's what that looks like as a complete training step:</p>
+    <p>The complete training step:</p>
 
     <div class="pseudocode">
 <span class="keyword">def</span> train_step(model, x_0, optimizer, schedule, device):
@@ -208,13 +208,13 @@ torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
     <!-- Section 6: EMA -->
     <h2 id="ema">EMA &mdash; Exponential Moving Average</h2>
 
-    <p>Here's a counterintuitive fact: the best weights for <em>generating samples</em> are not the current training weights. They're a smoothed average of all recent training weights.</p>
+    <p>This may seem counterintuitive, but the best weights for <em>generating samples</em> are not the current training weights. They're a smoothed average of all recent training weights.</p>
 
     <h3 id="why-ema">Why EMA Helps</h3>
 
     <p>During training, model weights oscillate around the optimum &mdash; overshooting in one direction, then correcting. These oscillations are fine for computing gradients (the optimizer handles them), but they produce noisy, inconsistent samples. EMA averages out the oscillations, yielding a smoother set of weights that generates higher-quality images.</p>
 
-    <p>The update rule is beautifully simple:</p>
+    <p>The update rule is:</p>
 
     $$\theta_{\text{ema}} = \lambda \cdot \theta_{\text{ema}} + (1 - \lambda) \cdot \theta$$
 
@@ -264,7 +264,7 @@ torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
     <!-- Section 8: Common Pitfalls -->
     <h2 id="common-pitfalls">Common Training Pitfalls</h2>
 
-    <p>Diffusion models fail in predictable ways. Here's a field guide to the most common failure modes and their fixes.</p>
+    <p>Diffusion models fail in predictable ways. The most common failure modes and their fixes.</p>
 
     <h3 id="loss-spikes">Loss Spikes</h3>
     <p><strong>Symptom:</strong> Loss suddenly jumps to 10&times; its normal value, then (hopefully) recovers. <strong>Cause:</strong> Gradient explosion from an unlucky batch. <strong>Fix:</strong> Gradient clipping with <code>max_norm=1.0</code>. If spikes persist, reduce the learning rate.</p>

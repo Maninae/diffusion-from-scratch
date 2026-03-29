@@ -114,7 +114,7 @@
 
     <h3 id="particle-transport">Reframing Generation as Particle Transport</h3>
 
-    <p>Let's throw away the DDPM lens entirely and think from first principles.</p>
+    <p>Setting aside the DDPM framework, consider the problem from first principles.</p>
 
     <p>We have two distributions: a data distribution $p_{\text{data}}$ (images of digits, faces, whatever) and a noise distribution $\mathcal{N}(0, I)$ (easy to sample from). We want to learn a mapping from one to the other.</p>
 
@@ -124,7 +124,7 @@
 
     $$\frac{dx}{dt} = v_\theta(x_t, t)$$
 
-    <p>Start at a noise sample, follow the velocity field, arrive at a data sample. That's it.</p>
+    <p>Start at a noise sample, follow the velocity field, arrive at a data sample.</p>
 
     <h3 id="what-this-needs">What This Framework Needs</h3>
 
@@ -136,7 +136,7 @@
       <li><strong>An ODE solver</strong> to follow the learned velocity field at inference</li>
     </ol>
 
-    <p>That's the complete list. No schedule. No ELBO. No reverse process derivation. No cumulative alpha products.</p>
+    <p>The complete list. No schedule. No ELBO. No reverse process derivation. No cumulative alpha products.</p>
 
     <p>The question is: <strong>what paths should we use?</strong></p>
 
@@ -171,7 +171,7 @@
     <!-- Section 13.4 -->
     <h2 id="training-objective">The Flow Matching Training Objective</h2>
 
-    <p>Here's where flow matching's simplicity really shines. The entire training algorithm is six lines:</p>
+    <p>Flow matching's simplicity shows in the training algorithm. The entire training algorithm is six lines:</p>
 
     <div class="algorithm">
       <div class="algorithm-title">Flow Matching Training</div>
@@ -185,7 +185,7 @@
       </ol>
     </div>
 
-    <p>Read that again. There are no cumulative alpha products. No schedule tensors. No reparameterization trick. Just: interpolate between data and noise along a straight line, and train the model to predict the velocity of that line.</p>
+    <p>There are no cumulative alpha products. No schedule tensors. No reparameterization trick. Just: interpolate between data and noise along a straight line, and train the model to predict the velocity of that line.</p>
 
     <h3 id="pseudocode-training">Pseudocode: Flow Matching Training Step</h3>
 

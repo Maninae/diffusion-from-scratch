@@ -41,7 +41,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">We know how to destroy images. Now comes the hard part: reversing that destruction. We'll work through the full derivation &mdash; from an intractable posterior, through the ELBO, to the beautifully simple result that training a diffusion model reduces to predicting the noise that was added. Six lines of pseudocode, backed by a rigorous mathematical chain.</p>
+    <p class="lecture-roadmap">We know how to destroy images. Now comes the hard part: reversing that destruction. We'll work through the full derivation &mdash; from an intractable posterior, through the ELBO, to the result that training a diffusion model reduces to predicting noise. Six lines of pseudocode, backed by a rigorous mathematical chain.</p>
 
     <!-- Section 3.1 -->
     <h2 id="reverse-process">The Reverse Process &mdash; What We Need</h2>
@@ -61,7 +61,7 @@
     <!-- Section 3.2 -->
     <h2 id="intractable-reverse">Why the True Reverse Is Intractable</h2>
 
-    <p>Here's the catch. The <strong>true</strong> reverse distribution $q(x_{t-1} \mid x_t)$ requires marginalizing over all possible clean images:</p>
+    <p>But there's a problem. The <strong>true</strong> reverse distribution $q(x_{t-1} \mid x_t)$ requires marginalizing over all possible clean images:</p>
 
     $$q(x_{t-1} \mid x_t) = \int q(x_{t-1} \mid x_t, x_0)\, q(x_0 \mid x_t)\, dx_0$$
 
@@ -79,7 +79,7 @@
     <!-- Section 3.3 -->
     <h2 id="tractable-posterior">The Tractable Posterior &mdash; $q(x_{t-1} \mid x_t, x_0)$</h2>
 
-    <p>Here's the saving grace. If we condition on <strong>both</strong> $x_t$ and $x_0$&mdash;the noisy image and the clean original&mdash;the posterior becomes tractable. Using Bayes' rule:</p>
+    <p>There is a tractable alternative. If we condition on <strong>both</strong> $x_t$ and $x_0$&mdash;the noisy image and the clean original&mdash;the posterior becomes tractable. Using Bayes' rule:</p>
 
     $$q(x_{t-1} \mid x_t, x_0) \propto q(x_t \mid x_{t-1}) \cdot q(x_{t-1} \mid x_0)$$
 

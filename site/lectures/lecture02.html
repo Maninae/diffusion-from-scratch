@@ -52,7 +52,7 @@
 
     $$q(x_t \mid x_{t-1}) = \mathcal{N}\!\left(x_t;\; \sqrt{1 - \beta_t}\, x_{t-1},\; \beta_t\, I\right)$$
 
-    <p>Let's unpack this. At step $t$, we do two things to the previous image $x_{t-1}$:</p>
+    <p>At step $t$, we do two things to the previous image $x_{t-1}$:</p>
 
     <ul>
       <li><strong>Shrink the signal</strong> by multiplying by $\sqrt{1 - \beta_t}$. This slightly reduces the magnitude of the image.</li>
@@ -105,7 +105,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
     <!-- Section 2.3 -->
     <h2 id="closed-form">The Closed-Form Shortcut</h2>
 
-    <p>Here's where the math pays off. We claimed in the introduction that diffusion training requires millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, training would be absurdly slow&mdash;imagine running 500 sequential operations just to produce one training sample.</p>
+    <p>Now the math pays off. We claimed in the introduction that diffusion training requires millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, training would be absurdly slow&mdash;imagine running 500 sequential operations just to produce one training sample.</p>
 
     <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and Gaussians compose beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any $x_t$:</p>
 
@@ -118,7 +118,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
       $$x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon, \quad \varepsilon \sim \mathcal{N}(0, I)$$
     </div>
 
-    <p>Read it as a weighted sum of two components:</p>
+    <p>This is a weighted sum of two components:</p>
 
     <ul>
       <li>$\sqrt{\bar{\alpha}_t} \cdot x_0$ &mdash; the <strong>signal component</strong>. How much of the original image survives.</li>

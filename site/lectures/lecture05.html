@@ -323,14 +323,14 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      The U-Net concentrates its representational capacity at low resolutions (many channels, attention) where the computational cost per operation is low, and keeps high-resolution processing lightweight (fewer channels, no attention). This is an elegant trade-off between model expressiveness and computational efficiency.
+      The U-Net concentrates its representational capacity at low resolutions (many channels, attention) where the computational cost per operation is low, and keeps high-resolution processing lightweight (fewer channels, no attention). This balances model expressiveness against computational efficiency.
     </div>
 
 
     <!-- Section 10: Verification -->
     <h2 id="verification">Putting It to the Test</h2>
 
-    <p>Here's the moment of truth. We can now verify that our complete U-Net produces output with the correct shape:</p>
+    <p>We can now verify that our complete U-Net produces output with the correct shape:</p>
 
     <div class="code-block">
 <pre>from utils.unet import UNet

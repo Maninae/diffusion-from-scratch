@@ -93,7 +93,7 @@ schedule = checkpoint['schedule']
 
     <h3 id="step-by-step">Step by Step</h3>
 
-    <p>Let's unpack what happens at each timestep. The model sees a noisy image $\mathbf{x}_t$ and outputs its best guess of what noise was added: $\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)$. We then use this prediction to compute the <strong>posterior mean</strong> &mdash; the expected value of $\mathbf{x}_{t-1}$ given $\mathbf{x}_t$ and the predicted noise:</p>
+    <p>At each timestep, the model sees a noisy image $\mathbf{x}_t$ and outputs its best guess of what noise was added: $\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)$. We then use this prediction to compute the <strong>posterior mean</strong> &mdash; the expected value of $\mathbf{x}_{t-1}$ given $\mathbf{x}_t$ and the predicted noise:</p>
 
     $$\boldsymbol{\mu}_\theta(\mathbf{x}_t, t) = \frac{1}{\sqrt{\alpha_t}}\left(\mathbf{x}_t - \frac{\beta_t}{\sqrt{1-\bar{\alpha}_t}} \boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)\right)$$
 

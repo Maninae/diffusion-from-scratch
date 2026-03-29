@@ -55,7 +55,7 @@
     <!-- Section 1: The Resolution Bottleneck -->
     <h2 id="resolution-bottleneck">The Resolution Bottleneck</h2>
 
-    <p>Everything we've built so far works beautifully on 28&times;28 MNIST digits. But real-world image generation happens at 512&times;512 or higher. Let's see why that's a problem.</p>
+    <p>Everything we've built so far works well on 28&times;28 MNIST digits. But real-world image generation happens at 512&times;512 or higher. Let's see why that's a problem.</p>
 
     <p>The pixel count at different resolutions tells the story:</p>
 
@@ -151,7 +151,7 @@
     <!-- Section 3: Latent Diffusion -->
     <h2 id="latent-diffusion">Latent Diffusion &mdash; The Key Insight</h2>
 
-    <p>Here's the idea that changed everything (Rombach et al., 2022). Instead of running diffusion in pixel space, <strong>run it in the VAE's latent space</strong>. The recipe has three steps:</p>
+    <p>The key idea (Rombach et al., 2022): instead of running diffusion in pixel space, <strong>run it in the VAE's latent space</strong>. The recipe has three steps:</p>
 
     <div class="algorithm">
       <div class="algorithm-title">The Latent Diffusion Recipe</div>
@@ -200,7 +200,7 @@ z_0 = ddim_sample(diffusion_model, z_T, schedule, num_steps=50)
 images = vae.decode(z_0)  <span class="comment"># decode back to pixel space: (B, 3, 512, 512)</span>
     </div>
 
-    <p>Notice how little changes from our MNIST pipeline. The forward process, training loop, and sampling algorithm are <em>identical</em>&mdash;we've just swapped the data from pixels to latents. That's the elegance of the approach.</p>
+    <p>Notice how little changes from our MNIST pipeline. The forward process, training loop, and sampling algorithm are <em>identical</em>&mdash;we've just swapped the data from pixels to latents.</p>
 
     <!-- Section 4: Stable Diffusion Architecture -->
     <h2 id="stable-diffusion">The Stable Diffusion Architecture</h2>

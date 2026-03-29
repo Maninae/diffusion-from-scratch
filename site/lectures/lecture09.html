@@ -56,9 +56,9 @@
     <!-- Section 9.1 -->
     <h2 id="the-training-trick">The Training Trick: Random Label Dropout</h2>
 
-    <p>Classifier guidance (Lecture 8) works, but it requires training a separate classifier on noisy images at every noise level. Want to condition on text? Train another classifier. Want to adjust guidance strength? Still need that extra model. The approach is expensive, inflexible, and inelegant.</p>
+    <p>Classifier guidance (Lecture 8) works, but it requires training a separate classifier on noisy images at every noise level. Want to condition on text? Train another classifier. Want to adjust guidance strength? Still need that extra model. The approach is expensive and inflexible.</p>
 
-    <p>What if we could get guidance without any classifier at all? The key insight, from Ho &amp; Salimans (2022), is disarmingly simple: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
+    <p>What if we could get guidance without any classifier at all? The key insight, from Ho &amp; Salimans (2022), is straightforward: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
 
     <p>During training, with probability $p_\text{uncond}$ (typically 10&ndash;20%), we replace the class label with a special <strong>null token</strong> &mdash; the extra embedding at index <code>num_classes</code> that we set up in Lecture 8. The rest of the time, we train normally with the real class label.</p>
 
@@ -98,7 +98,7 @@ def train_step_cfg(model, x_0, class_label, schedule, p_uncond=0.1):
 
     $$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$$
 
-    <p>Let's unpack this. The term $(\epsilon_\text{cond} - \epsilon_\text{uncond})$ is the <strong>conditioning signal</strong> &mdash; it captures exactly what's different about the model's prediction when it knows the class versus when it doesn't. The guidance scale $s$ controls how aggressively we amplify this difference.</p>
+    <p>The term $(\epsilon_\text{cond} - \epsilon_\text{uncond})$ is the <strong>conditioning signal</strong> &mdash; it captures exactly what's different about the model's prediction when it knows the class versus when it doesn't. The guidance scale $s$ controls how aggressively we amplify this difference.</p>
 
     <h3 id="guidance-scale-values">The Guidance Scale $s$</h3>
 
@@ -283,7 +283,7 @@ def cfg_sample(model, shape, schedule, class_label, guidance_scale=4.0):
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      <strong>No classifier anywhere.</strong> Compare this to the classifier guidance pseudocode in Lecture 8. There's no separate classifier, no gradient computation, no <code>autograd.grad</code>. The guidance comes entirely from the diffusion model itself &mdash; from the difference between its conditional and unconditional predictions. That's the elegance of CFG.
+      <strong>No classifier anywhere.</strong> Compare this to the classifier guidance pseudocode in Lecture 8. There's no separate classifier, no gradient computation, no <code>autograd.grad</code>. The guidance comes entirely from the diffusion model itself &mdash; from the difference between its conditional and unconditional predictions. This is what makes CFG effective.
     </div>
 
     <!-- Section 9.7: PyTorch -->

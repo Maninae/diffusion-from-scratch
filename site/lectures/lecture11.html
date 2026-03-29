@@ -95,7 +95,7 @@
 
     <h3 id="v-prediction">$v$-Prediction (Salimans &amp; Ho, 2022)</h3>
 
-    <p>Here's where it gets interesting. Define the <strong>velocity</strong>:</p>
+    <p>Define the <strong>velocity</strong>:</p>
 
     $$v = \sqrt{\bar\alpha_t} \cdot \varepsilon - \sqrt{1 - \bar\alpha_t} \cdot x_0$$
 
@@ -200,7 +200,7 @@
 
     <h3 id="offset-noise">Offset Noise</h3>
 
-    <p>Here's a subtle but important problem. Standard Gaussian noise $\varepsilon \sim \mathcal{N}(0, I)$ has <strong>zero mean per channel</strong>. Every noise sample's red, green, and blue channels each average to approximately zero. This means:</p>
+    <p>There's a subtle but important problem with standard noise. Standard Gaussian noise $\varepsilon \sim \mathcal{N}(0, I)$ has <strong>zero mean per channel</strong>. Every noise sample's red, green, and blue channels each average to approximately zero. This means:</p>
 
     <ul>
       <li>During training, $x_t$ always has roughly the same mean brightness as $x_0$</li>
@@ -267,7 +267,7 @@ noise = torch.randn_like(x) + 0.1 * torch.randn(B, C, 1, 1)
     <!-- Section 6: Practical Guidance -->
     <h2 id="practical-guidance">Putting It All Together</h2>
 
-    <p>Here's a decision table for choosing prediction targets and schedules based on your use case:</p>
+    <p>A decision table for choosing prediction targets and schedules based on your use case:</p>
 
     <div class="algorithm">
       <div class="algorithm-title">Practical Configuration Guide</div>
@@ -300,7 +300,7 @@ noise = torch.randn_like(x) + 0.1 * torch.randn(B, C, 1, 1)
     <!-- Section 7: Training with v-prediction -->
     <h2 id="v-prediction-training">Training with $v$-Prediction</h2>
 
-    <p>Switching from $\varepsilon$-prediction to $v$-prediction requires remarkably few code changes. Here's the diff:</p>
+    <p>Switching from $\varepsilon$-prediction to $v$-prediction requires very few code changes. Here's the diff:</p>
 
     <div class="pseudocode">
 <span class="comment"># ε-prediction training step (what we've been doing)</span>
@@ -322,7 +322,7 @@ x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
     <!-- Section 8: Looking Ahead -->
     <h2 id="looking-ahead">Looking Ahead</h2>
 
-    <p>We've now covered the complete toolkit of modern diffusion model design: U-Net architecture, noise schedules, training, sampling, conditioning, guidance, latent diffusion, prediction targets, and schedule refinements. That's the full DDPM/DDIM/LDM stack.</p>
+    <p>We've now covered the complete toolkit of modern diffusion model design: U-Net architecture, noise schedules, training, sampling, conditioning, guidance, latent diffusion, prediction targets, and schedule refinements. This completes the DDPM/DDIM/LDM stack.</p>
 
     <p>But the field didn't stop there. In Lecture 12, we'll replace the U-Net entirely with a <strong>Diffusion Transformer (DiT)</strong>&mdash;bringing the transformer revolution to the diffusion backbone. Then in Lecture 13, we'll rethink the entire framework with <strong>flow matching</strong>, a simpler formulation that learns velocity fields along straight paths from noise to data.</p>
 
