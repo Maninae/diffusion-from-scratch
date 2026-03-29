@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffusion From Scratch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/shared.css">
+</head>
+<body class="page-index">
+
+<!-- Mobile menu -->
+<button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+  <span></span>
+</button>
+<div class="menu-overlay" onclick="toggleSidebar()"></div>
+
+<!-- Progress bar -->
+<div class="progress-bar"><div class="bar"></div></div>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="course-code">Course Notes</div>
+    <h1>Diffusion From Scratch</h1>
+    <div class="term">2026</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div class="sidebar-footer">
+    <a href="https://github.com/Maninae/diffusion-from-scratch" target="_blank" rel="noopener">GitHub &nearr;</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <section class="hero">
+    <div class="hero-eyebrow">Course Notes</div>
+    <h2>Diffusion From Scratch</h2>
+    <p>
+      A structured guide to understanding and implementing diffusion models &mdash;
+      from the forward process to classifier-free guidance, latent diffusion, and flow matching.
+    </p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="stat-num">6</div>
+        <div class="stat-label">Modules</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">13</div>
+        <div class="stat-label">Lectures</div>
+      </div>
+      <div class="hero-stat">
+        <div class="stat-num">4</div>
+        <div class="stat-label">Assessments</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="content" id="content"></div>
+</div>
+
+<script src="scripts/shared.js"></script>
+<script>
+var modules = [
+  {
+    id: 'diffusion-framework',
+    num: '01',
+    title: 'The Diffusion Framework',
+    subtitle: 'What diffusion models are and the math that makes them work',
+    description: '<p>The generative modeling landscape, the forward noising process, noise schedules, and the reverse process that makes generation possible. Derives the simplified loss function that made DDPM practical.</p>',
+    lectures: [
+      { label: 'Lecture 1', title: 'Why Diffusion?', file: 'lectures/lecture01.html' },
+      { label: 'Lecture 2', title: 'Forward Process & Noise Schedules', file: 'lectures/lecture02.html' },
+      { label: 'Lecture 3', title: 'Reverse Process & Simplified Loss', file: 'lectures/lecture03.html' }
+    ],
+    readings: [
+      { text: 'Ho et al. 2020 (DDPM)', url: 'https://arxiv.org/abs/2006.11239' },
+      { text: 'Nichol & Dhariwal 2021', url: 'https://arxiv.org/abs/2102.09672' },
+      { text: 'Sohl-Dickstein et al. 2015', url: 'https://arxiv.org/abs/1503.03585' }
+    ],
+    prereqs: [
+      { label: 'Deep Learning', sub: 'CS231N or equivalent', icon: '\u2207', url: 'http://cs231n.stanford.edu/' },
+      { label: 'PyTorch', sub: 'Tensors, autograd, nn.Module', icon: '\uD83D\uDD25', url: 'https://pytorch.org/tutorials/' },
+      { label: 'Probability', sub: 'Distributions, Bayes, KL divergence', icon: 'P', url: 'http://cs229.stanford.edu/section/cs229-prob.pdf' }
+    ]
+  },
+  {
+    id: 'denoising-network',
+    num: '02',
+    title: 'The Denoising Network',
+    subtitle: 'U-Net architecture, time conditioning & spatial attention',
+    description: '<p>The neural network that learns to predict noise. How the U-Net encoder-decoder with skip connections, sinusoidal time embeddings, and strategic attention placement creates an effective denoiser.</p>',
+    lectures: [
+      { label: 'Lecture 4', title: 'U-Net: Encoder, Decoder & Skips', file: 'lectures/lecture04.html' },
+      { label: 'Lecture 5', title: 'Time Conditioning & Spatial Attention', file: 'lectures/lecture05.html' }
+    ],
+    readings: [
+      { text: 'Ronneberger et al. 2015 (U-Net)', url: 'https://arxiv.org/abs/1505.04597' },
+      { text: 'Dhariwal & Nichol 2021', url: 'https://arxiv.org/abs/2105.05233' }
+    ]
+  },
+  {
+    id: 'training-sampling',
+    num: '03',
+    title: 'Training & Sampling',
+    subtitle: 'From theory to practice: training loops and generation algorithms',
+    description: '<p>How to train a diffusion model end-to-end (DDPM Algorithm 1) with EMA, learning rate schedules, and common pitfalls. Then how to generate images from pure noise with DDPM, DDIM, and accelerated sampling.</p>',
+    lectures: [
+      { label: 'Lecture 6', title: 'Training a Diffusion Model', file: 'lectures/lecture06.html' },
+      { label: 'Lecture 7', title: 'Sampling: DDPM, DDIM & Beyond', file: 'lectures/lecture07.html' }
+    ],
+    readings: [
+      { text: 'Song et al. 2021 (DDIM)', url: 'https://arxiv.org/abs/2010.02502' },
+      { text: 'Lu et al. 2022 (DPM-Solver)', url: 'https://arxiv.org/abs/2206.00927' }
+    ]
+  },
+  {
+    id: 'controllable-generation',
+    num: '04',
+    title: 'Controllable Generation',
+    subtitle: 'Conditioning, guidance & telling the model what to generate',
+    description: '<p>From unconditional to conditional generation. Class labels, classifier guidance (historical), and the breakthrough of classifier-free guidance that powers modern text-to-image systems. Cross-attention and negative prompts.</p>',
+    lectures: [
+      { label: 'Lecture 8', title: 'Conditioning & Classifier Guidance', file: 'lectures/lecture08.html' },
+      { label: 'Lecture 9', title: 'Classifier-Free Guidance', file: 'lectures/lecture09.html' }
+    ],
+    readings: [
+      { text: 'Ho & Salimans 2021 (CFG)', url: 'https://arxiv.org/abs/2207.12598' },
+      { text: 'Dhariwal & Nichol 2021', url: 'https://arxiv.org/abs/2105.05233' }
+    ]
+  },
+  {
+    id: 'scaling-diffusion',
+    num: '05',
+    title: 'Scaling Diffusion',
+    subtitle: 'Latent spaces, prediction targets & making diffusion practical',
+    description: '<p>How to go from 32\u00d732 MNIST to high-resolution images. VAEs for perceptual compression, the latent diffusion insight behind Stable Diffusion, and the design choices (prediction targets, advanced schedules) that make modern systems work.</p>',
+    lectures: [
+      { label: 'Lecture 10', title: 'Latent Diffusion & Stable Diffusion', file: 'lectures/lecture10.html' },
+      { label: 'Lecture 11', title: 'Prediction Targets & Advanced Schedules', file: 'lectures/lecture11.html' }
+    ],
+    readings: [
+      { text: 'Rombach et al. 2022 (LDM)', url: 'https://arxiv.org/abs/2112.10752' },
+      { text: 'Salimans & Ho 2022 (v-pred)', url: 'https://arxiv.org/abs/2202.00512' }
+    ]
+  },
+  {
+    id: 'modern-architectures',
+    num: '06',
+    title: 'Modern Architectures',
+    subtitle: 'Beyond U-Net: transformers and flow matching',
+    description: '<p>The cutting edge. Replacing U-Net with vision transformers (DiT), and rethinking the entire framework with flow matching \u2014 a simpler formulation that learns velocity fields along straight paths from noise to data.</p>',
+    lectures: [
+      { label: 'Lecture 12', title: 'Diffusion Transformers (DiT)', file: 'lectures/lecture12.html' },
+      { label: 'Lecture 13', title: 'Flow Matching & Rectified Flows', file: 'lectures/lecture13.html' }
+    ],
+    readings: [
+      { text: 'Peebles & Xie 2023 (DiT)', url: 'https://arxiv.org/abs/2212.09748' },
+      { text: 'Lipman et al. 2023 (Flow Matching)', url: 'https://arxiv.org/abs/2210.02747' },
+      { text: 'Liu et al. 2023 (Rectified Flow)', url: 'https://arxiv.org/abs/2209.03003' }
+    ]
+  },
+  {
+    id: 'assessment',
+    num: '',
+    title: 'Assessment Track',
+    subtitle: 'Self-evaluation exercises and interview preparation',
+    icon: '\u270E',
+    isAssessment: true,
+    description: '<p>Optional practice material for testing your understanding. Timed coding challenges, conceptual Q&A, a debug exercise with hidden bugs, and a system design discussion. Work through these at your own pace.</p>',
+    lectures: [
+      { label: 'Coding Challenges', title: '', file: 'lectures/assessment.html#coding' },
+      { label: 'Conceptual Q&A', title: '', file: 'lectures/assessment.html#conceptual' },
+      { label: 'Debug Challenge', title: '', file: 'lectures/assessment.html#debug' },
+      { label: 'System Design', title: '', file: 'lectures/assessment.html#design' }
+    ],
+    readings: []
+  }
+];
+
+buildIndexPage(modules);
+</script>
+</body>
+</html>
