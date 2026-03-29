@@ -80,7 +80,7 @@
 
     <h3 id="vaes">VAEs &mdash; Variational Autoencoders</h3>
 
-    <p>VAEs (Kingma &amp; Welling, 2013) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the ELBO).</p>
+    <p>VAEs (Kingma &amp; Welling, 2014) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the ELBO).</p>
 
     <p>VAEs give you a proper probabilistic framework&mdash;smooth latent spaces, meaningful interpolations, and a principled training objective. But VAE samples tend to be <strong>blurry</strong>. The reconstruction loss (typically MSE) encourages the decoder to hedge its bets, producing the average of possible outputs rather than committing to sharp details.</p>
 
