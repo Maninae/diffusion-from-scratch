@@ -105,7 +105,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
     <!-- Section 2.3 -->
     <h2 id="closed-form">The Closed-Form Shortcut</h2>
 
-    <p>Now the math pays off. We claimed in the introduction that diffusion training requires millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, training would be absurdly slow&mdash;imagine running 500 sequential operations just to produce one training sample.</p>
+    <p>Training a diffusion model means generating millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, this would be impossibly slow&mdash;500 sequential noise operations just to produce a single noised image for one gradient step.</p>
 
     <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and Gaussians compose beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any $x_t$:</p>
 
@@ -162,7 +162,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      <p>This is the same trick used in VAEs (Kingma &amp; Welling, 2013) to make the sampling step differentiable. In diffusion, the reparameterization has an even deeper role: the noise $\varepsilon$ that we sample isn't just a computational trick&mdash;it becomes the <strong>training target</strong>. The model's job is to predict exactly this $\varepsilon$.</p>
+      <p>This is the same trick used in VAEs (Kingma &amp; Welling, 2014) to make the sampling step differentiable. In diffusion, the reparameterization has an even deeper role: the noise $\varepsilon$ that we sample isn't just a computational trick&mdash;it becomes the <strong>training target</strong>. The model's job is to predict exactly this $\varepsilon$.</p>
     </div>
 
     <!-- Section 2.5 -->
