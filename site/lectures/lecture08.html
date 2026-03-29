@@ -131,7 +131,9 @@ class ConditionalUNet(UNet):
 
     $$\mathcal{L} = \|\epsilon - \epsilon_\theta(x_t, t, c)\|^2$$
 
-    <p>The model learns to make <em>class-specific</em> noise predictions. When told "this is a 7 at noise level $t$," it predicts the noise differently than when told "this is a 3 at noise level $t$." The conditioning signal helps the model resolve ambiguity &mdash; at high noise levels, digits can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
+    <p>The model learns to make <em>class-specific</em> noise predictions. When told "this is a 7 at noise level $t$," it predicts the noise differently than when told "this is a 3 at noise level $t$."</p>
+
+    <p>The conditioning signal helps the model resolve ambiguity &mdash; at high noise levels, digits can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
 
     <div class="pseudocode">
 <strong>Conditional Training Step</strong>
@@ -156,7 +158,9 @@ def train_step(model, x_0, class_label, optimizer, schedule):
 
     <p>Now we have a model that <em>accepts</em> conditioning. But there's another question: can we make the conditioning <em>stronger</em>? Can we amplify how much the model pays attention to the class label during sampling? This is where guidance comes in.</p>
 
-    <p>The first approach, proposed by Dhariwal &amp; Nichol (2021), was <strong>classifier guidance</strong>. It's an elegant idea that we'll study for historical context &mdash; it was superseded by the simpler classifier-free guidance in Lecture 9, but understanding it helps you appreciate <em>why</em> CFG was such a breakthrough.</p>
+    <p>The first approach, proposed by Dhariwal &amp; Nichol (2021), was <strong>classifier guidance</strong>. It's an elegant idea that we'll study for historical context &mdash; it was superseded by the simpler classifier-free guidance in Lecture 9.</p>
+
+    <p>But understanding it helps you appreciate <em>why</em> CFG was such a breakthrough.</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>

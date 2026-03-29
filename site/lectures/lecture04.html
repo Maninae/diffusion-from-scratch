@@ -57,7 +57,9 @@
 
     <p>In Lecture 3, we derived the training objective for diffusion models: predict the noise $\varepsilon$ that was added to a clean image. The network takes a noisy image of shape $(B, 1, 28, 28)$ and must output a noise prediction of the <em>exact same shape</em>. But what neural network should we use?</p>
 
-    <p>A plain CNN could work in theory. Stack some convolutions, maybe some pooling layers, and output a prediction. But there's a fundamental tension: convolutions with pooling compress spatial information &mdash; great for classification ("is this a 7?"), terrible for pixel-level prediction ("what noise was added to this specific pixel?"). Through successive convolutions, fine spatial detail &mdash; edges, textures, exact positions &mdash; gets progressively destroyed.</p>
+    <p>A plain CNN could work in theory. Stack some convolutions, maybe some pooling layers, and output a prediction.</p>
+
+    <p>But there's a fundamental tension: convolutions with pooling compress spatial information &mdash; great for classification ("is this a 7?"), terrible for pixel-level prediction ("what noise was added to this specific pixel?"). Through successive convolutions, fine spatial detail &mdash; edges, textures, exact positions &mdash; gets progressively destroyed.</p>
 
     <p>We need an architecture that can reason at multiple scales simultaneously: high-level understanding (what digit is this?) <em>and</em> fine spatial detail (where exactly are the edges?). That architecture is the <strong>U-Net</strong>.</p>
 
@@ -121,7 +123,9 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
                                           no downsample &mdash; this is the deepest point</pre>
     </div>
 
-    <p>Notice the trade-off: spatial resolution decreases ($28 \to 14 \to 7$) while channel count increases ($64 \to 128 \to 256$). The total information capacity stays roughly constant, but the <em>kind</em> of information changes. Early layers have high spatial resolution with few channels (where are the edges?). Deep layers have low spatial resolution with many channels (what abstract features are present?).</p>
+    <p>Notice the trade-off: spatial resolution decreases ($28 \to 14 \to 7$) while channel count increases ($64 \to 128 \to 256$). The total information capacity stays roughly constant, but the <em>kind</em> of information changes.</p>
+
+    <p>Early layers have high spatial resolution with few channels (where are the edges?). Deep layers have low spatial resolution with many channels (what abstract features are present?).</p>
 
     <div class="pseudocode">
       <div class="pseudocode-title">DownBlock &mdash; One Encoder Level</div>

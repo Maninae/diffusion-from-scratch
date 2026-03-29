@@ -65,7 +65,9 @@
 
     $$q(x_{t-1} \mid x_t) = \int q(x_{t-1} \mid x_t, x_0)\, q(x_0 \mid x_t)\, dx_0$$
 
-    <p>Think about what this means. Given a noisy image $x_t$, the true reverse step considers <strong>every possible clean image $x_0$</strong> that could have produced it, weights each by its likelihood $q(x_0 \mid x_t)$, and averages the resulting denoising steps. But $q(x_0 \mid x_t)$ depends on the data distribution&mdash;the very thing we're trying to learn.</p>
+    <p>Think about what this means. Given a noisy image $x_t$, the true reverse step considers <strong>every possible clean image $x_0$</strong> that could have produced it, weights each by its likelihood $q(x_0 \mid x_t)$, and averages the resulting denoising steps.</p>
+
+    <p>But $q(x_0 \mid x_t)$ depends on the data distribution&mdash;the very thing we're trying to learn.</p>
 
     <p>This is intractable. We can't compute this integral analytically or even approximate it directly. That's why we need a neural network: we'll train $p_\theta(x_{t-1} \mid x_t)$ to approximate $q(x_{t-1} \mid x_t)$ from data.</p>
 
@@ -98,7 +100,9 @@
 
     <p>The variance $\tilde{\beta}_t$ is small&mdash;the posterior is a tight Gaussian. This makes sense: knowing both the clean and noisy images pins down the intermediate state precisely.</p>
 
-    <p>But wait&mdash;we don't have $x_0$ at test time. That's the whole point: we're trying to <em>generate</em> $x_0$. So why is this useful? Because it tells us what the model should <strong>aim for</strong>. If the model can estimate $x_0$ from $x_t$, it can compute this posterior and take the reverse step. The ELBO derivation makes this precise.</p>
+    <p>But wait&mdash;we don't have $x_0$ at test time. That's the whole point: we're trying to <em>generate</em> $x_0$.</p>
+
+    <p>So why is this useful? Because it tells us what the model should <strong>aim for</strong>. If the model can estimate $x_0$ from $x_t$, it can compute this posterior and take the reverse step. The ELBO derivation makes this precise.</p>
 
     <!-- Section 3.4 -->
     <h2 id="elbo">The ELBO Derivation</h2>
@@ -167,7 +171,9 @@
       <p>Sample noise. Add it to an image. Ask the model to predict that noise. Minimize MSE. That's it.</p>
     </div>
 
-    <p>Why is $\varepsilon$-prediction better than $\mu$-prediction? Empirically, it produces better samples. Intuitively, predicting noise is a more "uniform" task across timesteps: at every noise level, the target $\varepsilon$ is a standard Gaussian. Predicting $\mu$ or $x_0$ directly has wildly different scales and difficulties across timesteps.</p>
+    <p>Why is $\varepsilon$-prediction better than $\mu$-prediction? Empirically, it produces better samples.</p>
+
+    <p>Intuitively, predicting noise is a more "uniform" task across timesteps: at every noise level, the target $\varepsilon$ is a standard Gaussian. Predicting $\mu$ or $x_0$ directly has wildly different scales and difficulties across timesteps.</p>
 
     <!-- Section 3.6 -->
     <h2 id="simplified-loss">The Simplified Loss ($L_\text{simple}$)</h2>

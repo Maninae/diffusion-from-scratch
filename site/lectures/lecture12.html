@@ -55,11 +55,17 @@
     <!-- Section 12.1 -->
     <h2 id="transformers-for-everything">The Trend: Transformers for Everything</h2>
 
-    <p>We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020 &mdash; and it works well. But let's be honest about what it asks of us: an encoder-decoder structure, skip connections at every resolution, attention blocks injected at specific layers, carefully tuned channel multipliers. It's a lot of bespoke engineering.</p>
+    <p>We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020 &mdash; and it works well.</p>
 
-    <p>Meanwhile, a different story has been unfolding across machine learning. Transformers have conquered NLP (2017), vision classification with ViT (2020), protein structure prediction, code generation, and more. The recipe is always the same: take a simple, repeated building block (self-attention + feedforward), stack it deep, and throw compute at it. The architecture itself barely changes &mdash; you just make it bigger.</p>
+    <p>But let's be honest about what it asks of us: an encoder-decoder structure, skip connections at every resolution, attention blocks injected at specific layers, carefully tuned channel multipliers. It's a lot of bespoke engineering.</p>
 
-    <p>This is exactly the property that makes transformers so appealing for scaling. They follow <strong>predictable scaling laws</strong>: double the compute, get a measurable improvement. U-Nets don't have this property. Scaling a U-Net means deciding where to add channels, which resolutions get attention, how deep each stage should be &mdash; it's an architecture search problem, not a compute scaling problem.</p>
+    <p>Meanwhile, a different story has been unfolding across machine learning. Transformers have conquered NLP (2017), vision classification with ViT (2020), protein structure prediction, code generation, and more.</p>
+
+    <p>The recipe is always the same: take a simple, repeated building block (self-attention + feedforward), stack it deep, and throw compute at it. The architecture itself barely changes &mdash; you just make it bigger.</p>
+
+    <p>This is exactly the property that makes transformers so appealing for scaling. They follow <strong>predictable scaling laws</strong>: double the compute, get a measurable improvement.</p>
+
+    <p>U-Nets don't have this property. Scaling a U-Net means deciding where to add channels, which resolutions get attention, how deep each stage should be &mdash; it's an architecture search problem, not a compute scaling problem.</p>
 
     <p>So the question becomes natural: can we replace the U-Net with a transformer and get the same (or better) results, while inheriting the transformer's scaling properties?</p>
 

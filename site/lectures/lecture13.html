@@ -65,7 +65,9 @@
       <li><strong>Schedule sensitivity</strong> &mdash; the choice between linear, cosine, and sigmoid schedules meaningfully affects results. The schedule <em>is</em> a hyperparameter, and a finicky one.</li>
     </ul>
 
-    <p>All of this works &mdash; we've proven that through this entire course. But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
+    <p>All of this works &mdash; we've proven that through this entire course.</p>
+
+    <p>But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
 
     <!-- Section 13.2 — THE BRIDGE -->
     <h2 id="velocity-fields-bridge">The Bridge: v-Prediction to Flow Matching</h2>
@@ -101,7 +103,9 @@
       <li>The entire forward/reverse process machinery stays intact</li>
     </ul>
 
-    <p>v-prediction fixed the <em>prediction target</em>, but it didn't simplify the <em>framework</em>. It was the right <strong>concept</strong> &mdash; think in terms of velocities &mdash; trapped in the wrong <strong>framework</strong> &mdash; DDPM's schedule-driven noising process.</p>
+    <p>v-prediction fixed the <em>prediction target</em>, but it didn't simplify the <em>framework</em>.</p>
+
+    <p>It was the right <strong>concept</strong> &mdash; think in terms of velocities &mdash; trapped in the wrong <strong>framework</strong> &mdash; DDPM's schedule-driven noising process.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>

@@ -59,7 +59,10 @@
       <li><strong>Add noise</strong> sampled from $\mathcal{N}(0, \beta_t\, I)$. This injects a small amount of random static.</li>
     </ul>
 
-    <p>The parameter $\beta_t$ is the <strong>noise variance</strong> at step $t$. It's small&mdash;typically ranging from $\beta_1 = 0.0001$ to $\beta_T = 0.02$. The shrinking factor $\sqrt{1 - \beta_t}$ is crucial: without it, the variance of $x_t$ would grow without bound as we keep adding noise. The shrinking ensures the overall variance stays controlled.</p>
+    <p>The parameter $\beta_t$ is the <strong>noise variance</strong> at step $t$. It's small&mdash;typically ranging from $\beta_1 = 0.0001$ to $\beta_T = 0.02$.</p>
+
+    <p>The shrinking factor $\sqrt{1 - \beta_t}$ is crucial: without it, the variance of $x_t$ would grow without bound as we keep adding noise. The shrinking ensures the overall variance stays controlled.</p>
+
 
     <p>This is a <strong>Markov chain</strong>&mdash;each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
 
@@ -223,9 +226,13 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <p>To build intuition, let's watch what happens to a single image as the forward process runs.</p>
 
-    <p>At $t = 0$, you see the original image clearly. By $t = 100$, there's a subtle graininess&mdash;like a slightly noisy photograph. At $t = 250$, you can still make out the overall shape and structure, but details are fading. At $t = 500$, it's a ghostly outline buried in static. By $t = 750$, you're squinting to see any structure at all. At $t = 1000$, it's pure noise&mdash;no trace of the original image remains.</p>
+    <p>At $t = 0$, you see the original image clearly. By $t = 100$, there's a subtle graininess&mdash;like a slightly noisy photograph. At $t = 250$, you can still make out the overall shape and structure, but details are fading. At $t = 500$, it's a ghostly outline buried in static.</p>
 
-    <p>Now think about this from the model's perspective. At each timestep, the model sees $x_t$ and must predict the noise $\varepsilon$ that was added. At low $t$ (clean images), this is easy&mdash;the noise is small and the image provides strong context. At high $t$ (nearly pure noise), the model must essentially hallucinate plausible image structure. The <strong>schedule determines how many training samples fall at each difficulty level</strong>.</p>
+    <p>By $t = 750$, you're squinting to see any structure at all. At $t = 1000$, it's pure noise&mdash;no trace of the original image remains.</p>
+
+    <p>Now think about this from the model's perspective. At each timestep, the model sees $x_t$ and must predict the noise $\varepsilon$ that was added. At low $t$ (clean images), this is easy&mdash;the noise is small and the image provides strong context. At high $t$ (nearly pure noise), the model must essentially hallucinate plausible image structure.</p>
+
+    <p>The <strong>schedule determines how many training samples fall at each difficulty level</strong>.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>

@@ -50,7 +50,9 @@
 
     <p>We want to do two things: (1) <strong>learn</strong> a model that captures this distribution, and (2) <strong>sample</strong> new images from it that look like they belong in the original dataset.</p>
 
-    <p>This is the generative modeling problem, and it's deceptively hard. Images live in extremely high-dimensional spaces&mdash;a 256&times;256 RGB image has 196,608 pixel values. The distribution over these values is incredibly complex: most random configurations of 196K numbers look like static, not faces. The "face manifold" is a thin, winding surface in a vast space, and we need to find it from examples alone.</p>
+    <p>This is the generative modeling problem, and it's deceptively hard.</p>
+
+    <p>Images live in extremely high-dimensional spaces&mdash;a 256&times;256 RGB image has 196,608 pixel values. The distribution over these values is incredibly complex: most random configurations of 196K numbers look like static, not faces. The "face manifold" is a thin, winding surface in a vast space, and we need to find it from examples alone.</p>
 
     <p>When evaluating a generative model, we care about several things:</p>
 
@@ -72,7 +74,9 @@
 
     <p>GANs (Goodfellow et al., 2014) frame generation as a game between two networks. A <strong>generator</strong> $G$ tries to produce realistic images from random noise. A <strong>discriminator</strong> $D$ tries to distinguish real images from generated ones. They train against each other: $G$ improves at fooling $D$, and $D$ improves at catching $G$.</p>
 
-    <p>The result? GANs produce <strong>stunningly sharp images</strong>&mdash;for years, they held the crown for visual quality. But the adversarial training dynamic is fragile. Generators frequently suffer from <strong>mode collapse</strong>, where they learn to produce only a few types of output that fool the discriminator. Training requires careful hyperparameter tuning, and there's no reliable way to measure convergence. You also get no density estimation&mdash;GANs can't tell you how likely a given image is.</p>
+    <p>The result? GANs produce <strong>stunningly sharp images</strong>&mdash;for years, they held the crown for visual quality.</p>
+
+    <p>But the adversarial training dynamic is fragile. Generators frequently suffer from <strong>mode collapse</strong>, where they learn to produce only a few types of output that fool the discriminator. Training requires careful hyperparameter tuning, and there's no reliable way to measure convergence. You also get no density estimation&mdash;GANs can't tell you how likely a given image is.</p>
 
     <h3 id="vaes">VAEs &mdash; Variational Autoencoders</h3>
 
@@ -136,11 +140,15 @@
 
     <h3 id="origins">2015 &mdash; The Original Idea</h3>
 
-    <p>Sohl-Dickstein et al. published <em>"Deep Unsupervised Learning using Nonequilibrium Thermodynamics"</em>&mdash;the paper that started it all. They drew on ideas from statistical physics: a diffusion process that gradually destroys data, paired with a learned reverse process. The framework was theoretically elegant but produced modest results. It wasn't competitive with GANs, and the community largely moved on.</p>
+    <p>Sohl-Dickstein et al. published <em>"Deep Unsupervised Learning using Nonequilibrium Thermodynamics"</em>&mdash;the paper that started it all. They drew on ideas from statistical physics: a diffusion process that gradually destroys data, paired with a learned reverse process. The framework was theoretically elegant but produced modest results.</p>
+
+    <p>It wasn't competitive with GANs, and the community largely moved on.</p>
 
     <h3 id="ddpm">2020 &mdash; The DDPM Breakthrough</h3>
 
-    <p>Five years later, Ho, Jain, and Abbeel published <em>"Denoising Diffusion Probabilistic Models"</em> (DDPM). They stripped the framework to its essentials: a simple noise schedule, a U-Net architecture, and an MSE loss on predicted noise. The result was competitive image quality with remarkably stable training. Two algorithms&mdash;Algorithm 1 (training) and Algorithm 2 (sampling)&mdash;became the foundation of everything in this course.</p>
+    <p>Five years later, Ho, Jain, and Abbeel published <em>"Denoising Diffusion Probabilistic Models"</em> (DDPM). They stripped the framework to its essentials: a simple noise schedule, a U-Net architecture, and an MSE loss on predicted noise. The result was competitive image quality with remarkably stable training.</p>
+
+    <p>Two algorithms&mdash;Algorithm 1 (training) and Algorithm 2 (sampling)&mdash;became the foundation of everything in this course.</p>
 
     <h3 id="beat-gans">2021 &mdash; Beating GANs</h3>
 

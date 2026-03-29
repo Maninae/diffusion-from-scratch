@@ -65,7 +65,9 @@
       <li><strong>$t = 990$:</strong> Almost pure Gaussian static. The original image is essentially destroyed. The network must <em>hallucinate</em> plausible structure from nearly zero signal.</li>
     </ul>
 
-    <p>These are fundamentally different tasks. A network that doesn't know the current timestep would produce the same prediction regardless of noise level &mdash; and that prediction would be wrong for almost every $t$. We need to inject a representation of the timestep into every layer of the network.</p>
+    <p>These are fundamentally different tasks. A network that doesn't know the current timestep would produce the same prediction regardless of noise level &mdash; and that prediction would be wrong for almost every $t$.</p>
+
+    <p>We need to inject a representation of the timestep into every layer of the network.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>

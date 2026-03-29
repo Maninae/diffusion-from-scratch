@@ -77,7 +77,9 @@
       <li>At <strong>256&times;256</strong>: attention operates on 65,536 tokens &rarr; ~4 billion operations per layer. Impractical.</li>
     </ul>
 
-    <p>You could avoid attention at high resolutions and rely only on convolutions&mdash;but convolutions are local operators. Without attention, the model loses the <strong>global context</strong> that makes generated images coherent. A face might have perfectly rendered eyes but mismatched ears, because the receptive field of convolutions isn't large enough to coordinate distant features.</p>
+    <p>You could avoid attention at high resolutions and rely only on convolutions&mdash;but convolutions are local operators. Without attention, the model loses the <strong>global context</strong> that makes generated images coherent.</p>
+
+    <p>A face might have perfectly rendered eyes but mismatched ears, because the receptive field of convolutions isn't large enough to coordinate distant features.</p>
 
     <p>You could also try progressive generation: train a low-resolution model, then train a separate super-resolution model. But this requires multiple models, multiple training runs, and information loss at each stage.</p>
 
@@ -89,13 +91,17 @@
     <!-- Section 2: VAE Primer -->
     <h2 id="vae-primer">VAE Primer</h2>
 
-    <p>If you took CS231N, you've seen variational autoencoders before. We need a compact treatment here because the VAE is a critical component of latent diffusion&mdash;not the main event, but you need to understand what it does and why it works. Let's go deeper than a refresher but keep the focus on what matters for diffusion.</p>
+    <p>If you took CS231N, you've seen variational autoencoders before. We need a compact treatment here because the VAE is a critical component of latent diffusion&mdash;not the main event, but you need to understand what it does and why it works.</p>
+
+    <p>Let's go deeper than a refresher but keep the focus on what matters for diffusion.</p>
 
     <h3 id="encoder-decoder">Encoder and Decoder</h3>
 
     <p>A VAE has two halves:</p>
 
-    <p>The <strong>encoder</strong> $E$ maps an image $x$ to a lower-dimensional latent representation $z$. Architecturally, it's a series of convolutional layers with downsampling (stride-2 convolutions or pooling). Crucially, the encoder doesn't output a single point in latent space&mdash;it outputs two things: a <strong>mean</strong> $\mu$ and a <strong>log-variance</strong> $\log \sigma^2$ for a Gaussian distribution over latent codes.</p>
+    <p>The <strong>encoder</strong> $E$ maps an image $x$ to a lower-dimensional latent representation $z$. Architecturally, it's a series of convolutional layers with downsampling (stride-2 convolutions or pooling).</p>
+
+    <p>Crucially, the encoder doesn't output a single point in latent space&mdash;it outputs two things: a <strong>mean</strong> $\mu$ and a <strong>log-variance</strong> $\log \sigma^2$ for a Gaussian distribution over latent codes.</p>
 
     <p>The <strong>decoder</strong> $D$ maps a latent code $z$ back to pixel space, producing a reconstructed image $\hat{x}$. It's the mirror of the encoder: convolutional layers with upsampling (transposed convolutions or interpolation followed by convolution).</p>
 

@@ -58,7 +58,9 @@
 
     <p>We have the math from Lecture 3 &mdash; a loss function, a forward noising process, and a six-line training algorithm. We have the architecture from Lectures 4&ndash;5 &mdash; a U-Net with time conditioning and attention. In principle, we could just wire them together and start training. In practice, doing that naively will produce a model that trains painfully slowly, generates blurry mush, or quietly diverges at step 5,000.</p>
 
-    <p>This lecture is about the <strong>practical engineering</strong> that turns Algorithm 1 into a pipeline that actually works. None of these techniques are optional extras &mdash; they're the difference between generating recognizable digits in 5K steps and generating noise at 50K steps.</p>
+    <p>This lecture is about the <strong>practical engineering</strong> that turns Algorithm 1 into a pipeline that actually works.</p>
+
+    <p>None of these techniques are optional extras &mdash; they're the difference between generating recognizable digits in 5K steps and generating noise at 50K steps.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -70,7 +72,9 @@
 
     <h3 id="normalize-to-minus-one">Normalize to $[-1, 1]$, Not $[0, 1]$</h3>
 
-    <p>This is the single most common mistake in diffusion model implementations. Your model predicts noise $\epsilon \sim \mathcal{N}(0, I)$ &mdash; values that are mean-zero and symmetric around the origin. If your images live in $[0, 1]$, you've introduced an asymmetry: the model has to learn to predict symmetric noise from an asymmetric signal. It works, but it's harder than it needs to be.</p>
+    <p>This is the single most common mistake in diffusion model implementations. Your model predicts noise $\epsilon \sim \mathcal{N}(0, I)$ &mdash; values that are mean-zero and symmetric around the origin.</p>
+
+    <p>If your images live in $[0, 1]$, you've introduced an asymmetry: the model has to learn to predict symmetric noise from an asymmetric signal. It works, but it's harder than it needs to be.</p>
 
     <p>The fix is simple: normalize images to $[-1, 1]$. The transform pipeline is:</p>
 
@@ -87,7 +91,9 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
     <h3 id="data-augmentation">Data Augmentation: Less Than You'd Think</h3>
 
-    <p>For MNIST, we use <strong>no data augmentation</strong>. This might surprise you &mdash; augmentation is standard practice in classification. But here's the thing: horizontal flips would destroy digit identity. A flipped 3 or 7 becomes unrecognizable; a flipped 6 becomes a 9. And diffusion training already provides powerful implicit augmentation &mdash; each image is seen at thousands of different noise levels across training, effectively multiplying the dataset many times over.</p>
+    <p>For MNIST, we use <strong>no data augmentation</strong>. This might surprise you &mdash; augmentation is standard practice in classification. But here's the thing: horizontal flips would destroy digit identity. A flipped 3 or 7 becomes unrecognizable; a flipped 6 becomes a 9.</p>
+
+    <p>And diffusion training already provides powerful implicit augmentation &mdash; each image is seen at thousands of different noise levels across training, effectively multiplying the dataset many times over.</p>
 
     <div class="callout example">
       <div class="callout-label">Example</div>

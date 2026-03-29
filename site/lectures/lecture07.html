@@ -147,7 +147,9 @@ schedule = checkpoint['schedule']
 
     <h3 id="error-correction">Stochastic Sampling as Error Correction</h3>
 
-    <p>The noise injection serves as a form of <strong>error correction</strong>. The model's noise prediction at each step isn't perfect &mdash; it's an approximation. Without the injected noise, these small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. The fresh noise at each step gives the model a chance to "re-randomize" and correct its trajectory.</p>
+    <p>The noise injection serves as a form of <strong>error correction</strong>. The model's noise prediction at each step isn't perfect &mdash; it's an approximation.</p>
+
+    <p>Without the injected noise, these small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. The fresh noise at each step gives the model a chance to "re-randomize" and correct its trajectory.</p>
 
     <p>Think of it like this: if you're navigating through fog with a slightly miscalibrated compass, occasionally re-randomizing your direction (within a shrinking radius) keeps you closer to the target than blindly following the compass for 1,000 steps.</p>
 
@@ -256,7 +258,9 @@ schedule = checkpoint['schedule']
       <li><strong>10 steps</strong> &mdash; significant quality loss, blurry outputs</li>
     </ul>
 
-    <p>Going from 1,000 to 50 steps is a <strong>20&times; speedup</strong> with nearly the same output quality. This is why DDIM was a breakthrough &mdash; it made diffusion models practical for interactive use.</p>
+    <p>Going from 1,000 to 50 steps is a <strong>20&times; speedup</strong> with nearly the same output quality.</p>
+
+    <p>This is why DDIM was a breakthrough &mdash; it made diffusion models practical for interactive use.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
