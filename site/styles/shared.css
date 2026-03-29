@@ -342,6 +342,16 @@ body::before {
   margin-bottom: 16px;
 }
 
+.hero-hook {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--teal);
+  max-width: 560px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
 .hero p {
   font-size: 18px;
   color: var(--text-secondary);
