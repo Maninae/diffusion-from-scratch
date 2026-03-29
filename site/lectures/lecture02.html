@@ -107,7 +107,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <p>Training a diffusion model means generating millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, this would be impossibly slow&mdash;500 sequential noise operations just to produce a single noised image for one gradient step.</p>
 
-    <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and Gaussians compose beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any $x_t$:</p>
+    <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and <a href="https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables" target="_blank" rel="noopener">Gaussians compose</a> beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any $x_t$:</p>
 
     $$q(x_t \mid x_0) = \mathcal{N}\!\left(x_t;\; \sqrt{\bar{\alpha}_t}\, x_0,\; (1 - \bar{\alpha}_t)\, I\right)$$
 
