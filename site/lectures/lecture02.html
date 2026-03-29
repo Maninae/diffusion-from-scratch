@@ -180,7 +180,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
       <li>The hardest timesteps are in the <strong>middle range</strong>, where signal and noise are roughly balanced&mdash;the model can see some structure but must fill in significant detail</li>
     </ul>
 
-    <p>In practice, the <strong>log-SNR</strong> is more useful because it spreads the range linearly:</p>
+    <p>In practice, the <strong>log-SNR</strong> metric is more useful because it spreads the range linearly:</p>
 
     $$\log\text{SNR}(t) = \log \bar{\alpha}_t - \log(1 - \bar{\alpha}_t)$$
 
