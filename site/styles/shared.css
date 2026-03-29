@@ -343,9 +343,8 @@ body::before {
 }
 
 .hero-hook {
-  font-family: var(--serif);
-  font-style: italic;
   font-size: 22px;
+  font-weight: 600;
   color: var(--teal);
   max-width: 560px;
   line-height: 1.5;
