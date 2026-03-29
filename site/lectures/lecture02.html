@@ -129,9 +129,9 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <div class="callout example">
       <div class="callout-label">Concrete Example</div>
-      <p>Suppose $\bar{\alpha}_{250} = 0.5$ (halfway through the schedule). Then:</p>
+      <p>Say we want to generate the noised version of an image at timestep $t = 250$ out of $T = 1000$. The cumulative schedule tells us how much signal remains at that point: $\bar{\alpha}_{250} = 0.5$, meaning half the original signal has been preserved and half has been replaced by noise. Plugging into the closed-form equation:</p>
       <p>$x_{250} = \sqrt{0.5} \cdot x_0 + \sqrt{0.5} \cdot \varepsilon \approx 0.707 \cdot x_0 + 0.707 \cdot \varepsilon$</p>
-      <p>The image and noise contribute equally. You'd see a ghostly outline of the original with heavy static overlay.</p>
+      <p>The signal and noise coefficients are equal&mdash;the image and noise contribute in exactly the same proportion. Visually, you'd see a ghostly outline of the original with heavy static overlay.</p>
     </div>
 
     <div class="pseudocode">
