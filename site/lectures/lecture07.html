@@ -166,7 +166,7 @@ schedule = checkpoint['schedule']
 
     <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps &mdash; the noise magnitudes would be wrong, and sample quality collapses.</p>
 
-    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, Song et al. 2020) solves this by reformulating the reverse process with a tunable noise parameter $\eta$:</p>
+    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, Song, Meng &amp; Ermon, 2020) solves this by reformulating the reverse process with a tunable noise parameter $\eta$:</p>
 
     <ul>
       <li>$\eta = 1$: equivalent to DDPM (full stochastic sampling)</li>
@@ -195,7 +195,7 @@ schedule = checkpoint['schedule']
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>DDIM (Song et al., 2020).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling &mdash; no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
+      <strong>DDIM (Song, Meng &amp; Ermon, 2020).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling &mdash; no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
     </div>
 
     <h3 id="ddim-pseudocode">Pseudocode</h3>

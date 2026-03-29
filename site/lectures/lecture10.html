@@ -105,7 +105,7 @@
 
     <p>The <strong>decoder</strong> $D$ maps a latent code $z$ back to pixel space, producing a reconstructed image $\hat{x}$. It's the mirror of the encoder: convolutional layers with upsampling (transposed convolutions or interpolation followed by convolution).</p>
 
-    <p>A typical compression ratio: $256 \times 256 \times 3 \to 32 \times 32 \times 4$, which is a <strong>64&times; compression</strong> in the number of values.</p>
+    <p>A typical compression ratio: $256 \times 256 \times 3 \to 32 \times 32 \times 4$, which is a <strong>48&times; compression</strong> in the number of values (196,608 down to 4,096).</p>
 
     <h3 id="elbo-loss">The ELBO Loss</h3>
 

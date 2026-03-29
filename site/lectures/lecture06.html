@@ -97,7 +97,7 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
     <div class="callout example">
       <div class="callout-label">Example</div>
-      <strong>Implicit augmentation in diffusion.</strong> A single MNIST digit seen at timesteps $t = 10, 100, 500, 900$ looks like four completely different training examples &mdash; from nearly clean to nearly pure noise. Over 20K training steps with batch size 64, each image is seen at ~80 random noise levels. That's far more variety than a horizontal flip would provide.
+      <strong>Implicit augmentation in diffusion.</strong> A single MNIST digit seen at timesteps $t = 10, 100, 500, 900$ looks like four completely different training examples &mdash; from nearly clean to nearly pure noise. Over 20K training steps with batch size 64, each image is seen at ~20 random noise levels. That's far more variety than a horizontal flip would provide.
     </div>
 
     <!-- Section 3: The Training Loop -->

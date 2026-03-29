@@ -89,7 +89,7 @@
 
     <div class="callout note">
       <div class="callout-label">MNIST Note</div>
-      MNIST images are $28 \times 28$, which is <em>not</em> evenly divisible by common patch sizes like 4 or 8. You have a few options: pad to $32 \times 32$ first, use $p = 2$ (giving $14 \times 14 = 196$ patches), or use $p = 7$ (giving $4 \times 4 = 16$ patches). This is a practical detail you'll hit immediately if you try to implement DiT on MNIST.
+      MNIST images are $28 \times 28$, which is not evenly divisible by patch size 8. You have several options: use $p = 2$ (giving $14 \times 14 = 196$ patches), $p = 4$ (giving $7 \times 7 = 49$ patches), $p = 7$ (giving $4 \times 4 = 16$ patches), or pad to $32 \times 32$ first. This is a practical detail you'll hit immediately if you try to implement DiT on MNIST.
     </div>
 
     <h3 id="transformer-blocks">Transformer Blocks</h3>
