@@ -149,7 +149,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
     <!-- Section 2.4 -->
     <h2 id="reparameterization">The Reparameterization Trick</h2>
 
-    <p>Look at the closed-form equation again: $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. We need gradients to flow through $x_t$ during training (for backpropagation). But $x_t$ involves a <strong>random sample</strong> $\varepsilon$&mdash;and you can't backpropagate through randomness.</p>
+    <p>Look at the closed-form equation again: $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. We need gradients to flow through $x_t$ during training (for backpropagation). But $x_t$ involves a <strong>random sample</strong> $\varepsilon$&mdash;and you <a href="https://gregorygundersen.com/blog/2018/04/29/reparameterization/" target="_blank" rel="noopener">can't backpropagate through randomness</a>.</p>
 
     <p>The <strong>reparameterization trick</strong> solves this elegantly. Instead of sampling $x_t$ directly from $\mathcal{N}(\mu, \sigma^2)$, we:</p>
 
