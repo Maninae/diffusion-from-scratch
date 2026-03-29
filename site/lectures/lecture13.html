@@ -50,6 +50,8 @@
 
   <article class="lecture-article">
 
+    <p class="lecture-desc" style="font-size: 18px; line-height: 1.8; color: var(--text-secondary); margin-bottom: 40px;">What if we could generate images from noise with dramatically less scaffolding? In this lecture, we trace the arc from DDPM to a cleaner modern framework called <strong>flow matching</strong>. We start by cataloguing all the machinery DDPM requires, then see how <strong>v-prediction</strong> &mdash; a key intermediate improvement &mdash; pointed toward the right idea but couldn't escape the framework's complexity. Flow matching completes that arc: it builds the entire generative process around straight-line transport and learned velocity fields, dropping the noise schedules, cumulative products, and ELBO derivation that turned out to be scaffolding, not structure.</p>
+
     <!-- Section 13.1 -->
     <h2 id="ddpm-baggage">DDPM's Baggage &mdash; What We're Trying to Escape</h2>
 
@@ -65,12 +67,10 @@
 
     <p>All of this works &mdash; we've proven that through this entire course. But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
 
-    <p>What if we could do the same thing with dramatically less scaffolding?</p>
-
     <!-- Section 13.2 — THE BRIDGE -->
-    <h2 id="velocity-fields-bridge">Velocity Fields &mdash; The Bridge from DDPM to Flow Matching</h2>
+    <h2 id="velocity-fields-bridge">The Bridge: v-Prediction to Flow Matching</h2>
 
-    <p>This is the key section of this lecture. To understand why flow matching exists, you need to see how a series of ideas &mdash; from noise prediction to velocity prediction to flow matching &mdash; form a natural progression, each one stripping away complexity that turned out to be unnecessary.</p>
+    <p>The path from DDPM to flow matching ran through an intermediate improvement called <strong>v-prediction</strong> (Salimans &amp; Ho, 2022). Understanding that middle step makes flow matching feel inevitable rather than arbitrary.</p>
 
     <h3 id="epsilon-problem">The Problem with Noise Prediction</h3>
 
