@@ -757,6 +757,13 @@ body::before {
   margin: 0 auto;
 }
 
+.lecture-roadmap {
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+}
+
 .lecture-article h2 {
   font-family: var(--serif);
   font-size: 32px;

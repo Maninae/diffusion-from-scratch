@@ -50,6 +50,8 @@
 
   <article class="lecture-article">
 
+    <p class="lecture-roadmap">Our diffusion model works on 28&times;28 digits, but real-world generation happens at 512&times;512 and beyond. Pixel-space diffusion can't scale there &mdash; attention costs explode quadratically with resolution. The solution: compress images into a small latent space with a VAE, then run diffusion in that latent space. This is the architecture behind Stable Diffusion, and it's what made high-resolution generation practical.</p>
+
     <!-- Section 1: The Resolution Bottleneck -->
     <h2 id="resolution-bottleneck">The Resolution Bottleneck</h2>
 
