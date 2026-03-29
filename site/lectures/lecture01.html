@@ -46,7 +46,9 @@
     <!-- Section 1.1 -->
     <h2 id="generative-modeling">The Generative Modeling Problem</h2>
 
-    <p>Here's the setup. You have a dataset of images&mdash;say, a million photographs of faces. These images were drawn from some true distribution $p_{\text{data}}(x)$ that we can never write down in closed form. We want to do two things: (1) <strong>learn</strong> a model that captures this distribution, and (2) <strong>sample</strong> new images from it that look like they belong in the original dataset.</p>
+    <p>Here's the setup. You have a dataset of images&mdash;say, a million photographs of faces. These images were drawn from some true distribution $p_{\text{data}}(x)$ that we can never write down in closed form.</p>
+
+    <p>We want to do two things: (1) <strong>learn</strong> a model that captures this distribution, and (2) <strong>sample</strong> new images from it that look like they belong in the original dataset.</p>
 
     <p>This is the generative modeling problem, and it's deceptively hard. Images live in extremely high-dimensional spaces&mdash;a 256&times;256 RGB image has 196,608 pixel values. The distribution over these values is incredibly complex: most random configurations of 196K numbers look like static, not faces. The "face manifold" is a thin, winding surface in a vast space, and we need to find it from examples alone.</p>
 
