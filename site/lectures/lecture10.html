@@ -190,19 +190,19 @@
 
     <div class="pseudocode">
 <span class="comment"># Stage 1: Train VAE (done once, then frozen)</span>
-vae = train_vae(image_dataset)
+vae = <span class="function">train_vae</span>(image_dataset)
 
 <span class="comment"># Stage 2: Encode all training images into latent space</span>
-latent_dataset = [vae.encode(x) for x in image_dataset]
+latent_dataset = [vae.<span class="function">encode</span>(x) <span class="keyword">for</span> x <span class="keyword">in</span> image_dataset]
 
 <span class="comment"># Stage 3: Train diffusion model on latents</span>
 <span class="comment"># Exactly the same training loop as Lecture 6, but on z_0 instead of x</span>
-diffusion_model = train_diffusion(latent_dataset)
+diffusion_model = <span class="function">train_diffusion</span>(latent_dataset)
 
 <span class="comment"># Inference: generate new images</span>
-z_T = torch.randn(batch_size, 4, 64, 64)  <span class="comment"># start from noise in latent space</span>
-z_0 = ddim_sample(diffusion_model, z_T, schedule, num_steps=50)
-images = vae.decode(z_0)  <span class="comment"># decode back to pixel space: (B, 3, 512, 512)</span>
+z_T = torch.<span class="function">randn</span>(batch_size, <span class="number">4</span>, <span class="number">64</span>, <span class="number">64</span>)  <span class="comment"># start from noise in latent space</span>
+z_0 = <span class="function">ddim_sample</span>(diffusion_model, z_T, schedule, num_steps=<span class="number">50</span>)
+images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># decode back to pixel space: (B, 3, 512, 512)</span>
     </div>
 
     <p>Notice how little changes from our MNIST pipeline. The forward process, training loop, and sampling algorithm are <em>identical</em>&mdash;we've just swapped the data from pixels to latents.</p>

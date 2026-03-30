@@ -112,17 +112,17 @@
     <div class="pseudocode">
 <strong>Conditional U-Net Architecture</strong>
 
-class ConditionalUNet(UNet):
-    def __init__(self, num_classes, ...):
-        # +1 for null class token (index = num_classes)
-        # "no class" enables unconditional prediction from same model
-        self.class_emb = Embedding(num_classes + 1, emb_dim)
+<span class="keyword">class</span> ConditionalUNet(UNet):
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>, num_classes, ...):
+        <span class="comment"># +1 for null class token (index = num_classes)</span>
+        <span class="comment"># "no class" enables unconditional prediction from same model</span>
+        <span class="keyword">self</span>.class_emb = <span class="type">Embedding</span>(num_classes + <span class="number">1</span>, emb_dim)
 
-    def forward(self, x_t, t, class_label=None):
-        t_emb = self.time_mlp(sinusoidal_embedding(t))   <span class="comment"># (B, emb_dim)</span>
+    <span class="keyword">def</span> <span class="function">forward</span>(<span class="keyword">self</span>, x_t, t, class_label=<span class="keyword">None</span>):
+        t_emb = <span class="keyword">self</span>.<span class="function">time_mlp</span>(<span class="function">sinusoidal_embedding</span>(t))   <span class="comment"># (B, emb_dim)</span>
 
-        if class_label is not None:
-            c_emb = self.class_emb(class_label)           <span class="comment"># (B, emb_dim)</span>
+        <span class="keyword">if</span> class_label <span class="keyword">is not None</span>:
+            c_emb = <span class="keyword">self</span>.<span class="function">class_emb</span>(class_label)           <span class="comment"># (B, emb_dim)</span>
             t_emb = t_emb + c_emb                         <span class="comment"># combine</span>
 
         <span class="comment"># Rest of U-Net forward pass uses t_emb as before</span>
@@ -143,14 +143,14 @@ class ConditionalUNet(UNet):
     <div class="pseudocode">
 <strong>Conditional Training Step</strong>
 
-def train_step(model, x_0, class_label, optimizer, schedule):
-    t = random_integers(0, T-1, batch_size)
-    noise = randn_like(x_0)
-    x_t = q_sample(x_0, t, noise, schedule)
+<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, class_label, optimizer, schedule):
+    t = <span class="function">random_integers</span>(<span class="number">0</span>, T-<span class="number">1</span>, batch_size)
+    noise = <span class="function">randn_like</span>(x_0)
+    x_t = <span class="function">q_sample</span>(x_0, t, noise, schedule)
     noise_pred = model(x_t, t, class_label)       <span class="comment"># now with class!</span>
-    loss = mse_loss(noise_pred, noise)
-    loss.backward()
-    optimizer.step()
+    loss = <span class="function">mse_loss</span>(noise_pred, noise)
+    loss.<span class="function">backward</span>()
+    optimizer.<span class="function">step</span>()
     </div>
 
     <div class="callout example">
@@ -208,26 +208,26 @@ def train_step(model, x_0, class_label, optimizer, schedule):
     <div class="pseudocode">
 <strong>Classifier-Guided Sampling</strong>
 
-def classifier_guided_sample(model, classifier, class_label, schedule, s):
-    x = randn(shape)                              <span class="comment"># start from noise</span>
+<span class="keyword">def</span> <span class="function">classifier_guided_sample</span>(model, classifier, class_label, schedule, s):
+    x = <span class="function">randn</span>(shape)                              <span class="comment"># start from noise</span>
 
-    for t in reversed(range(T)):
+    <span class="keyword">for</span> t <span class="keyword">in</span> <span class="function">reversed</span>(<span class="function">range</span>(T)):
         <span class="comment"># 1. Standard noise prediction</span>
         noise_pred = model(x, t)
 
         <span class="comment"># 2. Classifier gradient</span>
-        x.requires_grad_(True)
-        log_prob = classifier(x, t).log_softmax(dim=-1)[:, class_label]
-        grad = autograd.grad(log_prob.sum(), x)[0]
-        x.requires_grad_(False)
+        x.<span class="function">requires_grad_</span>(<span class="keyword">True</span>)
+        log_prob = classifier(x, t).<span class="function">log_softmax</span>(dim=-<span class="number">1</span>)[:, class_label]
+        grad = autograd.<span class="function">grad</span>(log_prob.<span class="function">sum</span>(), x)[<span class="number">0</span>]
+        x.<span class="function">requires_grad_</span>(<span class="keyword">False</span>)
 
         <span class="comment"># 3. Shift noise prediction toward desired class</span>
-        noise_pred = noise_pred - s * sqrt(1 - alpha_bar[t]) * grad
+        noise_pred = noise_pred - s * <span class="function">sqrt</span>(<span class="number">1</span> - alpha_bar[t]) * grad
 
         <span class="comment"># 4. Standard DDPM step with modified prediction</span>
-        x = ddpm_step(x, noise_pred, t, schedule)
+        x = <span class="function">ddpm_step</span>(x, noise_pred, t, schedule)
 
-    return x
+    <span class="keyword">return</span> x
     </div>
 
     <!-- Section 8.5 -->

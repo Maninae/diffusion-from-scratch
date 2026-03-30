@@ -82,18 +82,18 @@
     <div class="pseudocode">
 <strong>Training with Random Label Dropout</strong>
 
-def train_step_cfg(model, x_0, class_label, schedule, p_uncond=0.1):
+<span class="keyword">def</span> <span class="function">train_step_cfg</span>(model, x_0, class_label, schedule, p_uncond=<span class="number">0.1</span>):
     <span class="comment"># Randomly drop labels → null token</span>
-    drop_mask = random(batch_size) &lt; p_uncond
+    drop_mask = <span class="function">random</span>(batch_size) &lt; p_uncond
     class_label[drop_mask] = NULL_CLASS          <span class="comment"># index = num_classes</span>
 
     <span class="comment"># Standard training with modified labels</span>
-    t = random_integers(0, T-1, batch_size)
-    noise = randn_like(x_0)
-    x_t = q_sample(x_0, t, noise, schedule)
+    t = <span class="function">random_integers</span>(<span class="number">0</span>, T-<span class="number">1</span>, batch_size)
+    noise = <span class="function">randn_like</span>(x_0)
+    x_t = <span class="function">q_sample</span>(x_0, t, noise, schedule)
     noise_pred = model(x_t, t, class_label)
-    loss = mse_loss(noise_pred, noise)
-    return loss
+    loss = <span class="function">mse_loss</span>(noise_pred, noise)
+    <span class="keyword">return</span> loss
     </div>
 
     <!-- Section 9.2 -->
@@ -142,13 +142,13 @@ def train_step_cfg(model, x_0, class_label, schedule, p_uncond=0.1):
 <strong>Batched CFG Forward Pass</strong>
 
 <span class="comment"># Concatenate conditional + unconditional into one batch</span>
-x_combined = concat([x_t, x_t], dim=0)              <span class="comment"># (2B, C, H, W)</span>
-t_combined = concat([t, t], dim=0)                   <span class="comment"># (2B,)</span>
-c_combined = concat([class_label, null_labels])      <span class="comment"># (2B,)</span>
+x_combined = <span class="function">concat</span>([x_t, x_t], dim=<span class="number">0</span>)              <span class="comment"># (2B, C, H, W)</span>
+t_combined = <span class="function">concat</span>([t, t], dim=<span class="number">0</span>)                   <span class="comment"># (2B,)</span>
+c_combined = <span class="function">concat</span>([class_label, null_labels])      <span class="comment"># (2B,)</span>
 
 <span class="comment"># Single forward pass</span>
 noise_pred = model(x_combined, t_combined, c_combined)
-eps_cond, eps_uncond = noise_pred.chunk(2, dim=0)
+eps_cond, eps_uncond = noise_pred.<span class="function">chunk</span>(<span class="number">2</span>, dim=<span class="number">0</span>)
 
 <span class="comment"># Apply guidance</span>
 eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
@@ -264,26 +264,26 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <div class="pseudocode">
 <strong>Classifier-Free Guidance Sampling</strong>
 
-def cfg_sample(model, shape, schedule, class_label, guidance_scale=4.0):
-    x = randn(shape)                              <span class="comment"># start from pure noise</span>
-    null_label = full(batch_size, NULL_CLASS)      <span class="comment"># null = num_classes</span>
+<span class="keyword">def</span> <span class="function">cfg_sample</span>(model, shape, schedule, class_label, guidance_scale=<span class="number">4.0</span>):
+    x = <span class="function">randn</span>(shape)                              <span class="comment"># start from pure noise</span>
+    null_label = <span class="function">full</span>(batch_size, NULL_CLASS)      <span class="comment"># null = num_classes</span>
 
-    for t in reversed(range(T)):
+    <span class="keyword">for</span> t <span class="keyword">in</span> <span class="function">reversed</span>(<span class="function">range</span>(T)):
         <span class="comment"># Batched forward: conditional + unconditional</span>
-        x_double = concat([x, x], dim=0)          <span class="comment"># (2B, C, H, W)</span>
-        t_double = concat([t, t], dim=0)           <span class="comment"># (2B,)</span>
-        c_double = concat([class_label, null_label])
+        x_double = <span class="function">concat</span>([x, x], dim=<span class="number">0</span>)          <span class="comment"># (2B, C, H, W)</span>
+        t_double = <span class="function">concat</span>([t, t], dim=<span class="number">0</span>)           <span class="comment"># (2B,)</span>
+        c_double = <span class="function">concat</span>([class_label, null_label])
 
         eps_both = model(x_double, t_double, c_double)
-        eps_cond, eps_uncond = eps_both.chunk(2, dim=0)
+        eps_cond, eps_uncond = eps_both.<span class="function">chunk</span>(<span class="number">2</span>, dim=<span class="number">0</span>)
 
         <span class="comment"># CFG combination</span>
         eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
 
         <span class="comment"># Standard denoising step with guided prediction</span>
-        x = ddpm_step(x, eps_guided, t, schedule)
+        x = <span class="function">ddpm_step</span>(x, eps_guided, t, schedule)
 
-    return denormalize(x.clamp(-1, 1))
+    <span class="keyword">return</span> <span class="function">denormalize</span>(x.<span class="function">clamp</span>(-<span class="number">1</span>, <span class="number">1</span>))
     </div>
 
     <div class="callout insight">
