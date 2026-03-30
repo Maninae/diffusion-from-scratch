@@ -61,7 +61,7 @@
 
     <p>The model takes a noisy image $x_t$ and a timestep $t$, and outputs the parameters of a Gaussian distribution over the slightly-less-noisy image $x_{t-1}$. In practice, the model predicts the <strong>mean</strong> $\mu_\theta$, and we fix the variance $\sigma_t^2$ to a known schedule (following DDPM).</p>
 
-    <p>There's a deep result by Feller (1949) that justifies this: when the forward steps are small enough (small $\beta_t$), the reverse steps are also approximately Gaussian. So our Gaussian parameterization isn't just convenient&mdash;it's theoretically grounded.</p>
+    <p>There's a deep result by Feller (1949) that justifies this: when the forward steps are small enough (small $\beta_t$), the reverse steps are also approximately Gaussian. Our Gaussian parameterization is therefore not only convenient but also theoretically grounded.</p>
 
     <!-- Section 3.2 -->
     <h2 id="intractable-reverse">Why the True Reverse Is Intractable</h2>
@@ -232,14 +232,14 @@
     <p>The simplicity is remarkable&mdash;and it all follows from the math. The ELBO decomposition, the Gaussian posterior, the $\varepsilon$-reparameterization, and the uniform weighting simplification all conspire to produce this clean training loop.</p>
 
     <div class="pseudocode">
-<span class="keyword">def</span> train_step(model, x_0, schedule):<br>
+<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># The entire DDPM training step</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;t = random_integers(0, T, batch_size)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># random timesteps</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise = sample_gaussian(x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt(schedule.alpha_bar[t]) * x_0<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ sqrt(1 - schedule.alpha_bar[t]) * noise&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># forward process</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;t = <span class="function">random_integers</span>(<span class="number">0</span>, T, batch_size)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># random timesteps</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise = <span class="function">sample_gaussian</span>(x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;x_t = <span class="function">sqrt</span>(schedule.alpha_bar[t]) * x_0<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="function">sqrt</span>(<span class="number">1</span> - schedule.alpha_bar[t]) * noise&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># forward process</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;noise_pred = model(x_t, t)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># predict the noise</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss = mean_squared_error(noise, noise_pred)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># L_simple</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;loss = <span class="function">mean_squared_error</span>(noise, noise_pred)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># L_simple</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> loss
     </div>
 
