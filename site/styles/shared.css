@@ -1047,7 +1047,7 @@ body::before {
   margin: 20px 0;
   font-family: var(--mono);
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.45;
   color: var(--text-secondary);
   white-space: pre-wrap;
   overflow-x: auto;
