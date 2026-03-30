@@ -1053,6 +1053,16 @@ body::before {
   overflow-x: auto;
 }
 
+.pseudocode-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  opacity: 0.8;
+}
+
 /* ── Display math overflow ── */
 .katex-display {
   overflow-x: auto;
