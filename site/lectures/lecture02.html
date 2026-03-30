@@ -168,7 +168,13 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
     <!-- Section 2.5 -->
     <h2 id="noise-schedules">Noise Schedules</h2>
 
-    <p>The schedule&mdash;how $\beta_t$ varies across timesteps&mdash;controls the <strong>rate of information destruction</strong>. This choice matters more than you might expect: it determines how training difficulty is distributed across timesteps.</p>
+    <p>Recall that at every timestep, we add a bit more noise to the image. The value $\beta_t$ controls exactly how much noise gets added at step $t$&mdash;it's the knob that governs the pace of destruction.</p>
+
+    <p>This is entirely a design choice. You could blast the image with massive noise from step one and destroy it almost immediately. You could add a tiny, uniform amount at every step and let the process creep along. There are infinitely many ways to configure how $\beta_t$ ramps from start to finish.</p>
+
+    <p>But the choice has real consequences for training. The shape of the $\beta_t$ curve determines which noise levels the model spends most of its time learning to handle. Rush through the early steps too fast, and the model rarely sees medium-noise images&mdash;the ones where learning is hardest and most productive. Go too slow, and you waste training compute on nearly-clean images the model can already handle.</p>
+
+    <p>Three schedules have emerged as practical defaults:</p>
 
     <h3 id="linear-schedule">Linear Schedule (DDPM)</h3>
 
