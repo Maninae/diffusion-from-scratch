@@ -81,6 +81,118 @@
 
     <p>The key insight was simple but powerful: combine <strong>high-level semantics</strong> from deep layers with <strong>fine spatial detail</strong> from shallow layers. An encoder compresses the image (capturing what's in it), a decoder expands it back (recovering where things are), and <strong>skip connections</strong> carry detail directly from encoder to decoder at each resolution level.</p>
 
+    <div style="margin: 32px 0; text-align: center;">
+      <svg viewBox="0 0 600 360" xmlns="http://www.w3.org/2000/svg" style="max-width: 600px; width: 100%; height: auto;">
+        <style>
+          .unet-label { font-family: 'IBM Plex Mono', monospace; fill: var(--text-primary, #e8dcc8); }
+          .unet-annotation { font-family: 'IBM Plex Mono', monospace; fill: var(--text-muted, #6b7280); }
+          .unet-encoder { fill: var(--teal-light, rgba(45,212,191,0.08)); stroke: var(--teal, #2dd4bf); stroke-width: 1.5; }
+          .unet-decoder { fill: var(--accent-light, rgba(249,115,22,0.08)); stroke: var(--accent, #f97316); stroke-width: 1.5; }
+          .unet-bottleneck { fill: rgba(167,139,250,0.08); stroke: var(--purple, #a78bfa); stroke-width: 1.5; }
+          .unet-output { fill: rgba(74,222,128,0.08); stroke: var(--green, #4ade80); stroke-width: 1.5; }
+          .unet-arrow { stroke: var(--text-muted, #6b7280); stroke-width: 1.5; fill: none; }
+          .unet-arrow-head { fill: var(--text-muted, #6b7280); }
+          .unet-skip { stroke: var(--text-primary, #e8dcc8); stroke-width: 1.2; stroke-dasharray: 6 4; fill: none; }
+          .unet-skip-head { fill: var(--text-primary, #e8dcc8); }
+        </style>
+        <defs>
+          <marker id="arrow-down" markerWidth="8" markerHeight="6" refX="4" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" class="unet-arrow-head" />
+          </marker>
+          <marker id="arrow-up" markerWidth="8" markerHeight="6" refX="4" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" class="unet-arrow-head" />
+          </marker>
+          <marker id="arrow-skip" markerWidth="7" markerHeight="5" refX="7" refY="2.5" orient="auto">
+            <path d="M0,0 L7,2.5 L0,5" class="unet-skip-head" />
+          </marker>
+        </defs>
+
+        <!-- === ENCODER (left side) === -->
+        <!-- Level 1: 28x28, 64ch -->
+        <rect x="40" y="30" width="120" height="54" rx="6" class="unet-encoder" />
+        <text x="100" y="54" text-anchor="middle" class="unet-label" font-size="11" font-weight="600">28&times;28</text>
+        <text x="100" y="72" text-anchor="middle" class="unet-label" font-size="10" opacity="0.7">64 ch</text>
+
+        <!-- Arrow down -->
+        <line x1="100" y1="84" x2="100" y2="120" class="unet-arrow" marker-end="url(#arrow-down)" />
+        <text x="68" y="108" class="unet-annotation" font-size="8" text-anchor="end">downsample</text>
+
+        <!-- Level 2: 14x14, 128ch -->
+        <rect x="60" y="124" width="100" height="50" rx="6" class="unet-encoder" />
+        <text x="110" y="147" text-anchor="middle" class="unet-label" font-size="11" font-weight="600">14&times;14</text>
+        <text x="110" y="163" text-anchor="middle" class="unet-label" font-size="10" opacity="0.7">128 ch</text>
+
+        <!-- Arrow down -->
+        <line x1="110" y1="174" x2="110" y2="210" class="unet-arrow" marker-end="url(#arrow-down)" />
+        <text x="78" y="198" class="unet-annotation" font-size="8" text-anchor="end">downsample</text>
+
+        <!-- === BOTTLENECK (bottom center) === -->
+        <rect x="220" y="214" width="160" height="50" rx="6" class="unet-bottleneck" />
+        <text x="300" y="236" text-anchor="middle" class="unet-label" font-size="11" font-weight="600">7&times;7, 256 ch</text>
+        <text x="300" y="253" text-anchor="middle" class="unet-annotation" font-size="9">bottleneck + attention</text>
+
+        <!-- Arrow from encoder L2 to bottleneck -->
+        <path d="M 130 174 L 130 240 L 220 240" class="unet-arrow" fill="none" marker-end="url(#arrow-down)" />
+
+        <!-- Arrow from bottleneck to decoder L2 -->
+        <path d="M 380 240 L 470 240 L 470 174" class="unet-arrow" fill="none" marker-end="url(#arrow-up)" />
+
+        <!-- === DECODER (right side) === -->
+        <!-- Level 2: 14x14, 128ch -->
+        <rect x="440" y="124" width="100" height="50" rx="6" class="unet-decoder" />
+        <text x="490" y="147" text-anchor="middle" class="unet-label" font-size="11" font-weight="600">14&times;14</text>
+        <text x="490" y="163" text-anchor="middle" class="unet-label" font-size="10" opacity="0.7">128 ch</text>
+
+        <!-- Arrow up -->
+        <line x1="490" y1="124" x2="490" y2="88" class="unet-arrow" marker-end="url(#arrow-up)" />
+        <text x="522" y="108" class="unet-annotation" font-size="8" text-anchor="start">upsample</text>
+
+        <!-- Level 1: 28x28, 64ch -->
+        <rect x="440" y="30" width="120" height="54" rx="6" class="unet-decoder" />
+        <text x="500" y="54" text-anchor="middle" class="unet-label" font-size="11" font-weight="600">28&times;28</text>
+        <text x="500" y="72" text-anchor="middle" class="unet-label" font-size="10" opacity="0.7">64 ch</text>
+
+        <!-- Arrow to output -->
+        <line x1="500" y1="30" x2="500" y2="10" class="unet-arrow" marker-end="url(#arrow-up)" />
+
+        <!-- === SKIP CONNECTIONS (horizontal dashed) === -->
+        <!-- Skip 1: 28x28 -->
+        <line x1="160" y1="57" x2="440" y2="57" class="unet-skip" marker-end="url(#arrow-skip)" />
+        <text x="300" y="50" text-anchor="middle" class="unet-annotation" font-size="9">skip connection</text>
+
+        <!-- Skip 2: 14x14 -->
+        <line x1="160" y1="149" x2="440" y2="149" class="unet-skip" marker-end="url(#arrow-skip)" />
+        <text x="300" y="142" text-anchor="middle" class="unet-annotation" font-size="9">skip connection</text>
+
+        <!-- === LABELS === -->
+        <!-- Input label -->
+        <text x="100" y="22" text-anchor="middle" class="unet-annotation" font-size="9">input (B, 1, 28, 28)</text>
+
+        <!-- Output label -->
+        <text x="500" y="8" text-anchor="middle" class="unet-annotation" font-size="9">output (B, 1, 28, 28)</text>
+
+        <!-- Encoder / Decoder labels -->
+        <text x="24" y="148" class="unet-label" font-size="10" font-weight="600" text-anchor="middle" transform="rotate(-90, 24, 148)" opacity="0.5">ENCODER</text>
+        <text x="576" y="148" class="unet-label" font-size="10" font-weight="600" text-anchor="middle" transform="rotate(90, 576, 148)" opacity="0.5">DECODER</text>
+
+        <!-- Upsample label for bottleneck->decoder -->
+        <text x="522" y="198" class="unet-annotation" font-size="8" text-anchor="start">upsample</text>
+
+        <!-- ResBlock annotations -->
+        <text x="300" y="296" text-anchor="middle" class="unet-annotation" font-size="9">Each level: 2&times; ResBlock + optional attention</text>
+
+        <!-- Legend -->
+        <rect x="160" y="318" width="14" height="10" rx="2" class="unet-encoder" />
+        <text x="180" y="327" class="unet-annotation" font-size="9">Encoder</text>
+        <rect x="230" y="318" width="14" height="10" rx="2" class="unet-decoder" />
+        <text x="250" y="327" class="unet-annotation" font-size="9">Decoder</text>
+        <rect x="306" y="318" width="14" height="10" rx="2" class="unet-bottleneck" />
+        <text x="326" y="327" class="unet-annotation" font-size="9">Bottleneck</text>
+        <line x1="394" y1="323" x2="424" y2="323" class="unet-skip" />
+        <text x="430" y="327" class="unet-annotation" font-size="9">Skip</text>
+      </svg>
+    </div>
+
     <h3 id="diffusion-adaptations">What Changed for Diffusion</h3>
 
     <p>When <a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al. (2020)</a> adopted the U-Net for DDPM, they made several modifications:</p>
