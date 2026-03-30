@@ -77,7 +77,7 @@
     <!-- Section 13.2 — THE BRIDGE -->
     <h2 id="velocity-fields-bridge">The Bridge: v-Prediction to Flow Matching</h2>
 
-    <p>The path from DDPM to flow matching ran through an intermediate improvement called <strong>v-prediction</strong> (Salimans &amp; Ho, 2022). Understanding that middle step makes flow matching feel inevitable rather than arbitrary.</p>
+    <p>The path from DDPM to flow matching ran through an intermediate improvement called <strong>v-prediction</strong> (<a href="https://arxiv.org/abs/2202.00512" target="_blank">Salimans &amp; Ho, 2022</a>). Understanding that middle step makes flow matching feel inevitable rather than arbitrary.</p>
 
     <h3 id="epsilon-problem">The Problem with Noise Prediction</h3>
 
@@ -92,7 +92,7 @@
 
     <h3 id="v-prediction-partial-fix">v-Prediction: The Right Idea, the Wrong Framework</h3>
 
-    <p>Salimans &amp; Ho (2022) proposed <strong>v-prediction</strong> to fix this. Instead of predicting the noise $\epsilon$, predict a velocity:</p>
+    <p><a href="https://arxiv.org/abs/2202.00512" target="_blank">Salimans &amp; Ho (2022)</a> proposed <strong>v-prediction</strong> to fix this. Instead of predicting the noise $\epsilon$, predict a velocity:</p>
 
     $$v = \sqrt{\bar{\alpha}_t} \cdot \epsilon - \sqrt{1 - \bar{\alpha}_t} \cdot x_0$$
 
@@ -148,7 +148,7 @@
     <!-- Section 13.3 -->
     <h2 id="straight-line-interpolation">Straight-Line Interpolation</h2>
 
-    <p>Flow matching (Lipman et al., 2023) makes the simplest possible choice: <strong>straight lines</strong>.</p>
+    <p>Flow matching (<a href="https://arxiv.org/abs/2210.02747" target="_blank">Lipman et al., 2023</a>) makes the simplest possible choice: <strong>straight lines</strong>.</p>
 
     <p>Define the interpolation path between data $x_0$ and noise $x_1$:</p>
 
@@ -286,7 +286,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
 
     <h3 id="rectification-idea">The Rectification Idea</h3>
 
-    <p>Liu et al. (2023) proposed <strong>rectified flows</strong> to fix this. The idea is to iteratively straighten the learned trajectories:</p>
+    <p><a href="https://arxiv.org/abs/2209.03003" target="_blank">Liu et al. (2023)</a> proposed <strong>rectified flows</strong> to fix this. The idea is to iteratively straighten the learned trajectories:</p>
 
     <div class="algorithm">
       <div class="algorithm-title">Rectified Flow Training</div>
