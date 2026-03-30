@@ -126,7 +126,7 @@
 
     <h3 id="reparameterization">The Reparameterization Trick</h3>
 
-    <p>Sampling $z$ from the distribution $q(z|x) = \mathcal{N}(\mu, \sigma^2)$ isn't differentiable; you can't backpropagate through a random sampling operation. The reparameterization trick sidesteps this:</p>
+    <p>Sampling $z$ from the distribution $q(z|x) = \mathcal{N}(\mu, \sigma^2)$ isn't differentiable; you can't backpropagate through a random sampling operation. The <a href="https://en.wikipedia.org/wiki/Reparameterization_trick" target="_blank">reparameterization trick</a> sidesteps this:</p>
 
     $$z = \mu + \sigma \cdot \varepsilon, \quad \varepsilon \sim \mathcal{N}(0, I)$$
 
@@ -233,7 +233,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
     <p>Converts a text prompt into a sequence of embeddings that the U-Net can attend to:</p>
 
     <ul>
-      <li><strong>SD 1.5:</strong> CLIP ViT-L/14&mdash;77 tokens, 768-dimensional embeddings</li>
+      <li><strong>SD 1.5:</strong> <a href="https://openai.com/research/clip" target="_blank">CLIP</a> <a href="https://en.wikipedia.org/wiki/Vision_transformer" target="_blank">ViT</a>-L/14&mdash;77 tokens, 768-dimensional embeddings</li>
       <li><strong>SDXL:</strong> dual text encoders (CLIP + OpenCLIP) for richer representations</li>
       <li><strong>SD 3:</strong> T5-XXL for more powerful text understanding</li>
     </ul>

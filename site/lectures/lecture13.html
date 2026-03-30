@@ -65,7 +65,7 @@
     <ul>
       <li><strong>A noise schedule</strong> &mdash; choose $\beta_t$ values (linear? cosine? sigmoid?), then compute cumulative products $\bar{\alpha}_t = \prod_{s=1}^{t}(1 - \beta_s)$</li>
       <li><strong>A zoo of precomputed tensors</strong> &mdash; $\sqrt{\bar{\alpha}_t}$, $\sqrt{1 - \bar{\alpha}_t}$, posterior variance $\tilde{\beta}_t$, and more. We built a whole <code>prepare_schedule()</code> function just to manage them.</li>
-      <li><strong>A long derivation chain</strong> &mdash; forward process &rarr; Bayes' rule for the posterior &rarr; variational lower bound (ELBO) &rarr; KL between Gaussians &rarr; noise reparameterization &rarr; simplified loss</li>
+      <li><strong>A long derivation chain</strong> &mdash; forward process &rarr; <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a> for the posterior &rarr; variational lower bound (ELBO) &rarr; <a href="https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence" target="_blank">KL</a> between Gaussians &rarr; noise reparameterization &rarr; simplified loss</li>
       <li><strong>1000 discrete timesteps</strong> for full-quality sampling (or DDIM tricks to reduce it)</li>
       <li><strong>Schedule sensitivity</strong> &mdash; the choice between linear, cosine, and sigmoid schedules meaningfully affects results. The schedule <em>is</em> a hyperparameter, and a finicky one.</li>
     </ul>
@@ -125,7 +125,7 @@
 
     <p>Imagine each sample as a <strong>particle</strong>. Generation means moving particles from their starting positions (noise) to their destinations (data). Each particle follows a path through space, and at every point along that path, it has a <strong>velocity</strong>, a direction and speed.</p>
 
-    <p>A <strong>velocity field</strong> $v(x, t)$ tells each particle which direction to move at each moment in time. If we know the velocity field, generating a sample is just solving an ordinary differential equation:</p>
+    <p>A <strong>velocity field</strong> $v(x, t)$ tells each particle which direction to move at each moment in time. If we know the velocity field, generating a sample is just solving an <a href="https://en.wikipedia.org/wiki/Ordinary_differential_equation" target="_blank">ordinary differential equation</a>:</p>
 
     $$\frac{dx}{dt} = v_\theta(x_t, t)$$
 
@@ -343,7 +343,7 @@ x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># con
 
     <h3 id="unified-picture">The Unified Picture</h3>
 
-    <p>Diffusion, score matching, and flow matching are all ways to learn a mapping from noise to data. They differ in three dimensions:</p>
+    <p>Diffusion, <a href="https://en.wikipedia.org/wiki/Score_matching" target="_blank">score matching</a>, and flow matching are all ways to learn a mapping from noise to data. They differ in three dimensions:</p>
 
     <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px;">
       <thead>

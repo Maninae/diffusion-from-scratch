@@ -216,7 +216,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <h3 id="text-to-image-pipeline">The Text-to-Image Pipeline</h3>
 
     <ol>
-      <li><strong>Encode the text:</strong> A pretrained text encoder (CLIP or T5) maps the prompt to a sequence of embeddings with shape $(\text{seq\_len}, d_\text{text})$. "A photo of a cat on a beach" becomes a matrix of token embeddings.</li>
+      <li><strong>Encode the text:</strong> A pretrained text encoder (<a href="https://openai.com/research/clip" target="_blank">CLIP</a> or <a href="https://en.wikipedia.org/wiki/T5_(language_model)" target="_blank">T5</a>) maps the prompt to a sequence of embeddings with shape $(\text{seq\_len}, d_\text{text})$. "A photo of a cat on a beach" becomes a matrix of token embeddings.</li>
       <li><strong>Inject via cross-attention:</strong> In the U-Net, at each attention layer:
         <ul>
           <li><strong>Q</strong> comes from the image features (spatial tokens)</li>
