@@ -68,7 +68,7 @@
     <p>The shrinking factor $\sqrt{1 - \beta_t}$ is crucial: without it, the variance of $x_t$ would grow without bound as we keep adding noise. The shrinking ensures the overall variance stays controlled.</p>
 
 
-    <p>This is a <strong>Markov chain</strong>: each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
+    <p>This is a <strong><a href="https://en.wikipedia.org/wiki/Markov_chain" target="_blank">Markov chain</a></strong>: each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
 
     <div class="pseudocode">
 <span class="keyword">def</span> <span class="function">single_forward_step</span>(x_prev, beta_t):<br>
@@ -611,7 +611,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     <!-- Section 2.6 -->
     <h2 id="snr"><span class="section-number">2.5</span> Signal-to-Noise Ratio</h2>
 
-    <p>We've now seen three schedules that distribute the transition from image to noise in very different ways, but how do we compare them on equal footing? We need a single quantity that captures how much signal remains relative to noise at any given timestep. That quantity is the <strong>signal-to-noise ratio</strong> (SNR).</p>
+    <p>We've now seen three schedules that distribute the transition from image to noise in very different ways, but how do we compare them on equal footing? We need a single quantity that captures how much signal remains relative to noise at any given timestep. That quantity is the <strong><a href="https://en.wikipedia.org/wiki/Signal-to-noise_ratio" target="_blank">signal-to-noise ratio</a></strong> (SNR).</p>
 
     $$\text{SNR}(t) = \frac{\bar{\alpha}_t}{1 - \bar{\alpha}_t}$$
 

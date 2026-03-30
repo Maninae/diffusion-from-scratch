@@ -76,27 +76,27 @@
 
     <h3 id="gans">GANs &mdash; Generative Adversarial Networks</h3>
 
-    <p>GANs (<a href="https://arxiv.org/abs/1406.2661" target="_blank">Goodfellow et al., 2014</a>) frame generation as a game between two networks. A <strong>generator</strong> $G$ tries to produce realistic images from random noise. A <strong>discriminator</strong> $D$ tries to distinguish real images from generated ones. They train against each other: $G$ improves at fooling $D$, and $D$ improves at catching $G$.</p>
+    <p><a href="https://en.wikipedia.org/wiki/Generative_adversarial_network" target="_blank">GANs</a> (<a href="https://arxiv.org/abs/1406.2661" target="_blank">Goodfellow et al., 2014</a>) frame generation as a game between two networks. A <strong>generator</strong> $G$ tries to produce realistic images from random noise. A <strong>discriminator</strong> $D$ tries to distinguish real images from generated ones. They train against each other: $G$ improves at fooling $D$, and $D$ improves at catching $G$.</p>
 
     <p>GANs produce <strong>stunningly sharp images</strong>. For years, they held the crown for visual quality.</p>
 
-    <p>But the adversarial training dynamic is fragile. Generators frequently suffer from <strong>mode collapse</strong>, where they learn to produce only a few types of output that fool the discriminator. Training requires careful hyperparameter tuning, and there's no reliable way to measure convergence. You also get no density estimation; GANs can't tell you how likely a given image is.</p>
+    <p>But the adversarial training dynamic is fragile. Generators frequently suffer from <strong><a href="https://en.wikipedia.org/wiki/Mode_collapse" target="_blank">mode collapse</a></strong>, where they learn to produce only a few types of output that fool the discriminator. Training requires careful hyperparameter tuning, and there's no reliable way to measure convergence. You also get no density estimation; GANs can't tell you how likely a given image is.</p>
 
     <h3 id="vaes">VAEs &mdash; Variational Autoencoders</h3>
 
-    <p>VAEs (<a href="https://arxiv.org/abs/1312.6114" target="_blank">Kingma &amp; Welling, 2014</a>) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the ELBO).</p>
+    <p>VAEs (<a href="https://arxiv.org/abs/1312.6114" target="_blank">Kingma &amp; Welling, 2014</a>) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the <a href="https://en.wikipedia.org/wiki/Evidence_lower_bound" target="_blank">ELBO</a>).</p>
 
     <p>VAEs give you a proper probabilistic framework: smooth latent spaces, meaningful interpolations, and a principled training objective. But VAE samples tend to be <strong>blurry</strong>. The reconstruction loss (typically MSE) encourages the decoder to hedge its bets, producing the average of possible outputs rather than committing to sharp details.</p>
 
     <h3 id="flows">Normalizing Flows</h3>
 
-    <p>Normalizing flows (<a href="https://arxiv.org/abs/1505.05770" target="_blank">Rezende &amp; Mohamed, 2015</a>) build a chain of <strong>invertible transformations</strong> that map a simple distribution (Gaussian) to the data distribution. Because every transformation is invertible, you can compute exact log-likelihoods using the change-of-variables formula.</p>
+    <p><a href="https://en.wikipedia.org/wiki/Normalizing_flow" target="_blank">Normalizing flows</a> (<a href="https://arxiv.org/abs/1505.05770" target="_blank">Rezende &amp; Mohamed, 2015</a>) build a chain of <strong>invertible transformations</strong> that map a simple distribution (Gaussian) to the data distribution. Because every transformation is invertible, you can compute exact log-likelihoods using the change-of-variables formula.</p>
 
     <p>This is mathematically elegant, and exact density evaluation is a powerful tool. But the <strong>invertibility constraint</strong> severely limits what architectures you can use. You can't use standard convolutions, attention, or most modern building blocks. This architectural straitjacket limits the expressiveness of the model.</p>
 
     <h3 id="autoregressive">Autoregressive Models</h3>
 
-    <p>Autoregressive models (<a href="https://arxiv.org/abs/1601.06759" target="_blank">van den Oord et al., 2016</a>) factor the joint distribution as a product of conditionals: $p(x) = \prod_i p(x_i \mid x_1, \ldots, x_{i-1})$. They predict one pixel (or token) at a time, conditioned on everything generated so far.</p>
+    <p><a href="https://en.wikipedia.org/wiki/Autoregressive_model" target="_blank">Autoregressive models</a> (<a href="https://arxiv.org/abs/1601.06759" target="_blank">van den Oord et al., 2016</a>) factor the joint distribution as a product of conditionals: $p(x) = \prod_i p(x_i \mid x_1, \ldots, x_{i-1})$. They predict one pixel (or token) at a time, conditioned on everything generated so far.</p>
 
     <p>This gives you <strong>exact likelihoods</strong> and powerful density estimation. PixelCNN and its variants are excellent at capturing fine-grained dependencies. The main limitation is that <strong>generation is sequential</strong>. To produce a 256&times;256 image, you need 65,536 sequential forward passes. You can't parallelize this. For large images, generation is painfully slow.</p>
 
@@ -130,8 +130,8 @@
 
     <ul>
       <li><strong>Stable training</strong> &mdash; The loss is a simple MSE (predict the noise that was added). No adversarial dynamics, no mode collapse.</li>
-      <li><strong>State-of-the-art sample quality</strong> &mdash; Diffusion models match or exceed GANs on FID scores while maintaining full mode coverage.</li>
-      <li><strong>Flexible architecture</strong> &mdash; No invertibility constraints. You can use any architecture: U-Nets, transformers, attention, whatever works best.</li>
+      <li><strong>State-of-the-art sample quality</strong> &mdash; Diffusion models match or exceed GANs on <a href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance" target="_blank">FID</a> scores while maintaining full mode coverage.</li>
+      <li><strong>Flexible architecture</strong> &mdash; No invertibility constraints. You can use any architecture: <a href="https://en.wikipedia.org/wiki/U-Net" target="_blank">U-Nets</a>, transformers, attention, whatever works best.</li>
       <li><strong>Principled framework</strong> &mdash; Built on a variational bound with a clean probabilistic interpretation.</li>
     </ul>
 
@@ -156,7 +156,7 @@
 
     <h3 id="beat-gans">2021 &mdash; Beating GANs</h3>
 
-    <p><a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal and Nichol</a> at OpenAI showed that diffusion models could <strong>surpass GANs on ImageNet FID</strong>, a watershed moment. Their key contributions: classifier guidance (steering generation with a classifier's gradients) and improved architecture choices. In the same year, <a href="https://arxiv.org/abs/2011.13456" target="_blank">Y. Song et al.</a> unified diffusion models and score matching into a continuous-time SDE framework.</p>
+    <p><a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal and Nichol</a> at OpenAI showed that diffusion models could <strong>surpass GANs on ImageNet FID</strong>, a watershed moment. Their key contributions: classifier guidance (steering generation with a classifier's gradients) and improved architecture choices. In the same year, <a href="https://arxiv.org/abs/2011.13456" target="_blank">Y. Song et al.</a> unified diffusion models and <a href="https://en.wikipedia.org/wiki/Score_matching" target="_blank">score matching</a> into a continuous-time SDE framework.</p>
 
     <h3 id="latent-diffusion">2022&ndash;Present &mdash; The Diffusion Explosion</h3>
 
@@ -178,7 +178,7 @@
       <li><strong>Lectures 2&ndash;3</strong> &mdash; The forward and reverse processes. The math that makes diffusion work: noise schedules, the ELBO, and the simplified loss.</li>
       <li><strong>Lectures 4&ndash;5</strong> &mdash; The U-Net architecture and noise schedules. How to build the neural network that powers denoising, and how the noise schedule shapes training.</li>
       <li><strong>Lectures 6&ndash;7</strong> &mdash; Training and sampling. DDPM Algorithm 1 in practice, plus DDIM and accelerated sampling methods.</li>
-      <li><strong>Lectures 8&ndash;9</strong> &mdash; Conditioning and guidance. Class-conditional generation, classifier guidance, and classifier-free guidance.</li>
+      <li><strong>Lectures 8&ndash;9</strong> &mdash; Conditioning and guidance. Class-conditional generation, classifier guidance, and <a href="https://arxiv.org/abs/2207.12598" target="_blank">classifier-free guidance</a>.</li>
       <li><strong>Lectures 10&ndash;11</strong> &mdash; Latent diffusion and modern directions. VAE encoders, flow matching, and the techniques behind Stable Diffusion 3 and beyond.</li>
     </ul>
 

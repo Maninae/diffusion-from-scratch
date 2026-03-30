@@ -198,8 +198,8 @@
     <p>When <a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al. (2020)</a> adopted the U-Net for DDPM, they made several modifications:</p>
 
     <ul>
-      <li><strong>GroupNorm instead of BatchNorm</strong> &mdash; BatchNorm's statistics depend on batch size, which varies during sampling. GroupNorm computes statistics per-sample, making it stable regardless of batch size.</li>
-      <li><strong>SiLU activation</strong> (also called Swish) instead of ReLU &mdash; smoother gradients, slightly better performance in practice.</li>
+      <li><strong><a href="https://en.wikipedia.org/wiki/Group_normalization" target="_blank">GroupNorm</a> instead of <a href="https://en.wikipedia.org/wiki/Batch_normalization" target="_blank">BatchNorm</a></strong> &mdash; BatchNorm's statistics depend on batch size, which varies during sampling. GroupNorm computes statistics per-sample, making it stable regardless of batch size.</li>
+      <li><strong><a href="https://en.wikipedia.org/wiki/Swish_function" target="_blank">SiLU activation</a></strong> (also called Swish) instead of <a href="https://en.wikipedia.org/wiki/Rectifier_(neural_networks)" target="_blank">ReLU</a> &mdash; smoother gradients, slightly better performance in practice.</li>
       <li><strong>Time conditioning</strong> &mdash; the network needs to know what noise level it's denoising (covered in Lecture 5).</li>
       <li><strong>Attention layers</strong> &mdash; self-attention at low resolutions for capturing global structure (also Lecture 5).</li>
     </ul>
@@ -217,7 +217,7 @@
     <p>Each level in the encoder contains:</p>
 
     <ul>
-      <li><strong>Two ResBlocks</strong> &mdash; each applies Conv &rarr; GroupNorm &rarr; SiLU &rarr; Conv with a residual connection. Channels stay constant within a level.</li>
+      <li><strong>Two ResBlocks</strong> &mdash; each applies Conv &rarr; GroupNorm &rarr; SiLU &rarr; Conv with a <a href="https://en.wikipedia.org/wiki/Residual_neural_network" target="_blank">residual connection</a>. Channels stay constant within a level.</li>
       <li><strong>Optional attention</strong> &mdash; at lower resolutions where the token count is manageable.</li>
       <li><strong>Downsample</strong> &mdash; a stride-2 convolution that halves spatial dimensions. The channel increase happens at the transition to the next level (the first conv of the next level's ResBlock projects to the new channel count).</li>
     </ul>
@@ -265,7 +265,7 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
 
     <h3 id="upsample-method">Upsampling Strategy</h3>
 
-    <p>The decoder uses <strong>nearest-neighbor interpolation followed by a convolution</strong> rather than transposed convolution (also called "deconvolution"). Why? Transposed convolutions are notorious for producing <strong>checkerboard artifacts</strong>, grid-like patterns caused by uneven overlap in the transposed operation. Nearest-neighbor upsampling followed by a regular convolution avoids this entirely.</p>
+    <p>The decoder uses <strong>nearest-neighbor interpolation followed by a convolution</strong> rather than <a href="https://en.wikipedia.org/wiki/Deconvolution#Transposed_convolution" target="_blank">transposed convolution</a> (also called "deconvolution"). Why? Transposed convolutions are notorious for producing <strong><a href="https://distill.pub/2016/deconv-checkerboard/" target="_blank">checkerboard artifacts</a></strong>, grid-like patterns caused by uneven overlap in the transposed operation. Nearest-neighbor upsampling followed by a regular convolution avoids this entirely.</p>
 
     <h3 id="skip-concat">Skip Concatenation &mdash; The Channel Math</h3>
 
@@ -410,7 +410,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
 
     <!-- Section 8: ResBlock Internals -->
-    <h2 id="resblock"><span class="section-number">4.8</span> Inside the ResBlock</h2>
+    <h2 id="resblock"><span class="section-number">4.8</span> The Network Blocks: ResBlock and Alternatives</h2>
 
     <p>The ResBlock is the fundamental building block. The U-Net is essentially built by stacking these. Let's look at what happens inside one:</p>
 

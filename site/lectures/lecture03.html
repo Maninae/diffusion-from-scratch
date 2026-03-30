@@ -85,7 +85,7 @@
     <!-- Section 3.3 -->
     <h2 id="tractable-posterior"><span class="section-number">3.3</span> The Tractable Posterior &mdash; q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>)</h2>
 
-    <p>There is a tractable alternative. If we condition on <strong>both</strong> $x_t$ and $x_0$&mdash;the noisy image and the clean original&mdash;the posterior becomes tractable. Using Bayes' rule:</p>
+    <p>There is a tractable alternative. If we condition on <strong>both</strong> $x_t$ and $x_0$&mdash;the noisy image and the clean original&mdash;the posterior becomes tractable. Using <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a>:</p>
 
     $$q(x_{t-1} \mid x_t, x_0) \propto q(x_t \mid x_{t-1}) \cdot q(x_{t-1} \mid x_0)$$
 
@@ -124,7 +124,7 @@
 
         <h4>Step 2: Introduce the forward process as a variational bound</h4>
 
-        <p>Using Jensen's inequality with the forward process $q(x_{1:T} \mid x_0)$ as the variational distribution:</p>
+        <p>Using <a href="https://en.wikipedia.org/wiki/Jensen%27s_inequality" target="_blank">Jensen's inequality</a> with the forward process $q(x_{1:T} \mid x_0)$ as the variational distribution:</p>
 
         $$\log p_\theta(x_0) \geq \mathbb{E}_q\!\left[\log \frac{p_\theta(x_{0:T})}{q(x_{1:T} \mid x_0)}\right]$$
 
@@ -140,7 +140,7 @@
 
         <h4>Step 4: KL between two Gaussians has a closed form</h4>
 
-        <p>Both $q(x_{t-1} \mid x_t, x_0)$ and $p_\theta(x_{t-1} \mid x_t)$ are Gaussian. The KL divergence between two Gaussians with the same (fixed) variance reduces to the squared difference of their means:</p>
+        <p>Both $q(x_{t-1} \mid x_t, x_0)$ and $p_\theta(x_{t-1} \mid x_t)$ are Gaussian. The <a href="https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence" target="_blank">KL divergence</a> between two Gaussians with the same (fixed) variance reduces to the squared difference of their means:</p>
 
         $$L_{t-1} = \frac{1}{2\sigma_t^2} \left\| \tilde{\mu}_t(x_t, x_0) - \mu_\theta(x_t, t) \right\|^2$$
 
