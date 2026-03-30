@@ -70,15 +70,13 @@
 
     <p>In Lecture 3, we derived the training objective for diffusion models: predict the noise $\varepsilon$ that was added to a clean image. The network takes a noisy image of shape $(B, 1, 28, 28)$ and must output a noise prediction of the <em>exact same shape</em>. But what neural network should we use?</p>
 
-    <p>A plain CNN could work in theory. Stack some convolutions, maybe some pooling layers, and output a prediction.</p>
-
-    <p>But there's a fundamental tension: convolutions with pooling compress spatial information &mdash; great for classification ("is this a 7?"), terrible for pixel-level prediction ("what noise was added to this specific pixel?"). Through successive convolutions, fine spatial detail &mdash; edges, textures, exact positions &mdash; gets progressively destroyed.</p>
+    <p>A plain CNN with pooling layers could work in theory, but there's a fundamental tension: pooling compresses spatial information, great for classification, terrible for pixel-level prediction. Fine spatial detail gets progressively destroyed.</p>
 
     <p>We need an architecture that can reason at multiple scales simultaneously: high-level understanding (what digit is this?) <em>and</em> fine spatial detail (where exactly are the edges?). That architecture is the <strong>U-Net</strong>.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      Denoising is fundamentally different from classification. Classification compresses an image into a single label. Denoising must produce a full image &mdash; every pixel matters. The architecture must preserve spatial detail while still understanding global structure.
+      Denoising must produce a full image, not a single label. The architecture needs both global understanding and pixel-level spatial detail.
     </div>
 
 
@@ -248,9 +246,7 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
                                           no downsample &mdash; this is the deepest point</pre>
     </div>
 
-    <p>Notice the trade-off: spatial resolution decreases ($28 \to 14 \to 7$) while channel count increases ($64 \to 128 \to 256$). The total information capacity stays roughly constant, but the <em>kind</em> of information changes.</p>
-
-    <p>Early layers have high spatial resolution with few channels (where are the edges?). Deep layers have low spatial resolution with many channels (what abstract features are present?).</p>
+    <p>Spatial resolution shrinks ($28 \to 14 \to 7$) while channel depth grows ($64 \to 128 \to 256$): early layers capture where edges are, deep layers capture what abstract features are present.</p>
 
     <div class="pseudocode">
       <div class="pseudocode-title">DownBlock &mdash; One Encoder Level</div>
@@ -269,7 +265,7 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
     <!-- Section 4: Decoder Path -->
     <h2 id="decoder"><span class="section-number">4.4</span> The Decoder Path &mdash; Upsampling + Skip Concatenation</h2>
 
-    <p>The decoder mirrors the encoder: it progressively increases spatial resolution while decreasing channels. But unlike a simple mirror, the decoder has a superpower: at each level, it receives the corresponding encoder feature map via a skip connection.</p>
+    <p>The decoder mirrors the encoder, increasing spatial resolution while decreasing channels, but at each level it also receives the encoder's feature map via a skip connection.</p>
 
     <h3 id="upsample-method">Upsampling Strategy</h3>
 
@@ -284,8 +280,6 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
       <li><strong>Concatenate</strong> with the encoder skip connection along the channel dimension</li>
       <li><strong>ResBlocks</strong> reduce the channel count back to the target</li>
     </ol>
-
-    <p>The channel math after concatenation: if the decoder has $C_\text{dec}$ channels and the skip has $C_\text{enc}$ channels, concatenation produces $C_\text{dec} + C_\text{enc}$ channels. The subsequent ResBlock's first convolution reduces this to the target channel count.</p>
 
     <h3 id="decoder-shapes">Tensor Shapes Through the Decoder</h3>
 
@@ -302,8 +296,6 @@ ResBlocks:      (B, 64, 28, 28)            &mdash; convs reduce 192 &rarr; 64
 
 Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
     </div>
-
-    <p>The output has exactly the same shape as the input. It's the predicted noise $\varepsilon_\theta$ &mdash; the network's best guess of what noise was added.</p>
 
     <div class="pseudocode">
       <div class="pseudocode-title">UpBlock &mdash; One Decoder Level</div>
@@ -330,25 +322,12 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <h3 id="with-skips">With Skip Connections</h3>
 
-    <p>With skips, fine-grained spatial information flows directly from encoder to decoder at every resolution level. The decoder doesn't need to recover spatial detail from the bottleneck; it receives it on a silver platter via the skip connections. The bottleneck can focus exclusively on high-level reasoning (what objects are present, what the global structure looks like), while the skips carry the low-level detail (exact edge positions, textures).</p>
+    <p>With skips, fine-grained spatial information flows directly from encoder to decoder at every resolution level. The decoder doesn't need to recover spatial detail from the bottleneck; it receives it on a silver platter via the skip connections. The bottleneck can focus exclusively on high-level reasoning (what objects are present, what the global structure looks like), while the skips carry the low-level detail (exact edge positions, textures). As a bonus, skips provide gradient shortcuts during training, the same principle that makes ResNets trainable.</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>Skip connection.</strong> A direct pathway that copies feature maps from an encoder level to the corresponding decoder level, bypassing the bottleneck. In DDPM's U-Net, skips use <strong>concatenation</strong> (stacking channels) rather than addition, giving the network maximum flexibility in how it combines the two information streams.
+      <strong>Skip connection.</strong> A direct pathway that copies feature maps from an encoder level to the corresponding decoder level, bypassing the bottleneck. DDPM uses channel concatenation rather than element-wise addition, giving the network separate access to both representations.
     </div>
-
-    <h3 id="concat-vs-add">Concatenation vs. Addition</h3>
-
-    <p>There are two ways to combine the skip with the decoder features:</p>
-
-    <ul>
-      <li><strong>Concatenation</strong> (DDPM) &mdash; stack along the channel dimension, then let convolutions learn how to merge. More expressive: the network has separate access to both representations.</li>
-      <li><strong>Addition</strong> (some architectures) &mdash; element-wise sum. Simpler and uses fewer parameters, but forces the two representations into the same space.</li>
-    </ul>
-
-    <h3 id="gradient-highway">The Gradient Highway</h3>
-
-    <p>Skip connections have a second benefit beyond spatial detail: they provide a <strong>shortcut for gradient flow</strong> during training. This is the same principle behind ResNets: gradients can flow directly from decoder loss back to early encoder layers without passing through the bottleneck. Training is faster and more stable.</p>
 
     <div class="callout note">
       <div class="callout-label">Note</div>
@@ -364,8 +343,6 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
     <p><strong>ResBlock &rarr; Self-Attention &rarr; ResBlock</strong></p>
 
     <p>This is where global reasoning happens. At 7&times;7 resolution, the self-attention layer processes only $49$ tokens (spatial positions). The attention matrix is $49 \times 49 = 2{,}401$ entries, trivially small. But the receptive field is global: every spatial position can attend to every other, capturing long-range dependencies that convolutions miss.</p>
-
-    <p>You can think of the middle block as the "brain" of the U-Net, the place where the network considers the image as a whole before the decoder begins reconstructing spatial detail.</p>
 
 
     <!-- Section 7: Full Architecture -->
@@ -414,7 +391,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
         <span class="keyword">return</span> <span class="function">final_conv</span>(h)                <span class="comment"># (B, 64, 28, 28) &rarr; (B, 1, 28, 28)</span></pre>
     </div>
 
-    <p>The output has the same shape as the input. It represents the predicted noise $\varepsilon_\theta(x_t, t)$ &mdash; the model's estimate of what Gaussian noise was added to the clean image to produce $x_t$ at timestep $t$.</p>
+    <p>The output $\varepsilon_\theta(x_t, t)$ has the same shape as the input: the predicted noise at timestep $t$.</p>
 
 
     <!-- Section 8: ResBlock Internals -->
@@ -445,7 +422,11 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <p>where GN is GroupNorm and $t_\text{proj}$ is the projected time embedding broadcast over spatial dimensions.</p>
 
-    <p>This two-conv ResBlock is the simplest member of a family of residual block designs. DDPM uses it because the U-Net is modest-sized and simplicity wins. But as architectures scale up or target constrained hardware, the block design becomes a critical lever for trading off compute, memory, and expressiveness. The three main alternatives are worth knowing.</p>
+    <details class="collapsible">
+      <summary>Alternative block designs (for reference)</summary>
+      <div class="collapsible-content">
+
+    <p>This two-conv ResBlock is the simplest member of a family of residual block designs. DDPM uses it because the U-Net is modest-sized and simplicity wins. The three main alternatives matter when scaling up or targeting constrained hardware.</p>
 
     <h3 id="bottleneck-blocks">Bottleneck Blocks</h3>
 
@@ -463,17 +444,20 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <h3 id="pointwise-depthwise">Pointwise and Depthwise Convolutions</h3>
 
-    <p>Two building blocks appear repeatedly in the patterns above. A <strong>pointwise convolution</strong> (1&times;1 conv) mixes information across channels at each spatial position without looking at neighboring pixels. It's a per-pixel linear transformation, cheap and useful for changing channel counts or combining features.</p>
+    <p>A <strong>pointwise convolution</strong> (1&times;1 conv) mixes information across channels at each spatial position without looking at neighboring pixels. A <strong>depthwise convolution</strong> applies a separate spatial filter to each channel independently. Together, a depthwise conv followed by a pointwise conv forms a <a href="https://en.wikipedia.org/wiki/Depthwise_separable_convolution" target="_blank">depthwise separable convolution</a>, which factorizes a standard convolution into two cheaper operations. For a $k \times k$ conv with $C$ input and $C$ output channels, the separable version reduces multiply-adds by roughly a factor of $C / k^2$.</p>
 
-    <p>A <strong>depthwise convolution</strong> applies a separate spatial filter to each channel independently. It captures local spatial patterns (edges, textures) without any cross-channel interaction. Together, a depthwise conv followed by a pointwise conv forms a <a href="https://en.wikipedia.org/wiki/Depthwise_separable_convolution" target="_blank">depthwise separable convolution</a>, which factorizes a standard convolution into two cheaper operations. For a $k \times k$ conv with $C$ input and $C$ output channels, the separable version reduces multiply-adds by roughly a factor of $C / k^2$.</p>
+    <p>For our MNIST U-Net, none of this matters. These alternatives become important when you scale to high-resolution generation, where channel counts reach 512&ndash;1024 and every redundant multiply-add adds up.</p>
 
-    <p>For our MNIST U-Net, none of this matters. The model is small, trains in minutes, and standard 3&times;3 convolutions are the right choice. These alternatives become important when you scale to high-resolution generation (256&times;256 and beyond), where the channel counts reach 512&ndash;1024 and every redundant multiply-add adds up. If you later encounter architectures like Efficient U-Net or ConvNeXt-based diffusion models, you'll recognize these blocks as the building blocks they're assembled from.</p>
+      </div>
+    </details>
 
 
     <!-- Section 9: Key Equations Summary -->
     <h2 id="equations"><span class="section-number">4.9</span> Key Operations &mdash; Summary</h2>
 
-    <p>Here are the four core operations that define the U-Net's data flow:</p>
+    <details class="collapsible">
+      <summary>Four core operations at a glance</summary>
+      <div class="collapsible-content">
 
     <h3 id="downsample-op">Downsampling</h3>
 
@@ -498,6 +482,9 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
     $$\text{output} = f(x) + \text{shortcut}(x)$$
 
     <p>where $\text{shortcut}(x) = x$ if channels match, or $\text{shortcut}(x) = \text{Conv}_{1 \times 1}(x)$ if they don't.</p>
+
+      </div>
+    </details>
 
 
     <!-- Section 10: PyTorch Reference -->
