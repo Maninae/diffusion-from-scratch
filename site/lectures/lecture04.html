@@ -134,13 +134,13 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
 
     <div class="pseudocode">
       <div class="pseudocode-title">DownBlock &mdash; One Encoder Level</div>
-<pre>class DownBlock:
-    def forward(x, time_emb):
-        h = resblock_1(x, time_emb)    # (B, C, H, W) &rarr; (B, C, H, W)
-        h = resblock_2(h, time_emb)    # same channels
-        skip = h                        # save for decoder!
-        h = downsample(h)               # (B, C, H, W) &rarr; (B, C, H/2, W/2)
-        return h, skip</pre>
+<pre><span class="keyword">class</span> DownBlock:
+    <span class="keyword">def</span> <span class="function">forward</span>(x, time_emb):
+        h = <span class="function">resblock_1</span>(x, time_emb)    <span class="comment"># (B, C, H, W) &rarr; (B, C, H, W)</span>
+        h = <span class="function">resblock_2</span>(h, time_emb)    <span class="comment"># same channels</span>
+        skip = h                        <span class="comment"># save for decoder!</span>
+        h = <span class="function">downsample</span>(h)               <span class="comment"># (B, C, H, W) &rarr; (B, C, H/2, W/2)</span>
+        <span class="keyword">return</span> h, skip</pre>
     </div>
 
     <p>That <code>skip = h</code> line is crucial &mdash; we're saving the feature map <em>before</em> downsampling, at full resolution. The decoder will need it.</p>
@@ -187,13 +187,13 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <div class="pseudocode">
       <div class="pseudocode-title">UpBlock &mdash; One Decoder Level</div>
-<pre>class UpBlock:
-    def forward(x, skip, time_emb):
-        x = upsample(x)                # (B, C, H, W) &rarr; (B, C, 2H, 2W)
-        x = concat(x, skip, dim=1)     # concat along channels
-        x = resblock_1(x, time_emb)    # reduce channel count
-        x = resblock_2(x, time_emb)
-        return x</pre>
+<pre><span class="keyword">class</span> UpBlock:
+    <span class="keyword">def</span> <span class="function">forward</span>(x, skip, time_emb):
+        x = <span class="function">upsample</span>(x)                <span class="comment"># (B, C, H, W) &rarr; (B, C, 2H, 2W)</span>
+        x = <span class="function">concat</span>(x, skip, dim=<span class="number">1</span>)     <span class="comment"># concat along channels</span>
+        x = <span class="function">resblock_1</span>(x, time_emb)    <span class="comment"># reduce channel count</span>
+        x = <span class="function">resblock_2</span>(x, time_emb)
+        <span class="keyword">return</span> x</pre>
     </div>
 
 
@@ -268,30 +268,30 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <div class="pseudocode">
       <div class="pseudocode-title">UNet &mdash; Complete Forward Pass</div>
-<pre>class UNet:
-    def forward(x, t):
-        # Time embedding (detailed in Lecture 5)
-        t_emb = time_mlp(sinusoidal_embedding(t))
+<pre><span class="keyword">class</span> UNet:
+    <span class="keyword">def</span> <span class="function">forward</span>(x, t):
+        <span class="comment"># Time embedding (detailed in Lecture 5)</span>
+        t_emb = <span class="function">time_mlp</span>(<span class="function">sinusoidal_embedding</span>(t))
 
-        # Initial projection
-        h = init_conv(x)                    # (B, 1, 28, 28) &rarr; (B, 64, 28, 28)
+        <span class="comment"># Initial projection</span>
+        h = <span class="function">init_conv</span>(x)                    <span class="comment"># (B, 1, 28, 28) &rarr; (B, 64, 28, 28)</span>
 
-        # Encoder &mdash; save skip connections
+        <span class="comment"># Encoder &mdash; save skip connections</span>
         skips = []
-        for down_block in encoder:
+        <span class="keyword">for</span> down_block <span class="keyword">in</span> encoder:
             h, skip = down_block(h, t_emb)
             skips.append(skip)
 
-        # Middle block
-        h = mid_block(h, t_emb)             # (B, 256, 7, 7) &rarr; (B, 256, 7, 7)
+        <span class="comment"># Middle block</span>
+        h = <span class="function">mid_block</span>(h, t_emb)             <span class="comment"># (B, 256, 7, 7) &rarr; (B, 256, 7, 7)</span>
 
-        # Decoder &mdash; use skips in reverse order
-        for up_block in decoder:
-            skip = skips.pop()               # LIFO!
+        <span class="comment"># Decoder &mdash; use skips in reverse order</span>
+        <span class="keyword">for</span> up_block <span class="keyword">in</span> decoder:
+            skip = skips.pop()               <span class="comment"># LIFO!</span>
             h = up_block(h, skip, t_emb)
 
-        # Output projection
-        return final_conv(h)                # (B, 64, 28, 28) &rarr; (B, 1, 28, 28)</pre>
+        <span class="comment"># Output projection</span>
+        <span class="keyword">return</span> <span class="function">final_conv</span>(h)                <span class="comment"># (B, 64, 28, 28) &rarr; (B, 1, 28, 28)</span></pre>
     </div>
 
     <p>The output has the same shape as the input. It represents the predicted noise $\varepsilon_\theta(x_t, t)$ &mdash; the model's estimate of what Gaussian noise was added to the clean image to produce $x_t$ at timestep $t$.</p>

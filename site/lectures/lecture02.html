@@ -71,10 +71,10 @@
     <p>This is a <strong>Markov chain</strong>&mdash;each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
 
     <div class="pseudocode">
-<span class="keyword">def</span> single_forward_step(x_prev, beta_t):<br>
+<span class="keyword">def</span> <span class="function">single_forward_step</span>(x_prev, beta_t):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># One step of the forward noising chain</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise = sample_gaussian(shape=x_prev.shape)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt(1 - beta_t) * x_prev + sqrt(beta_t) * noise<br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise = <span class="function">sample_gaussian</span>(shape=x_prev.shape)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;x_t = <span class="function">sqrt</span>(<span class="number">1</span> - beta_t) * x_prev + <span class="function">sqrt</span>(beta_t) * noise<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t
     </div>
 
@@ -101,9 +101,9 @@
     <p>These cumulative products are <strong>precomputed once</strong> when you set up the model and stored as tensors. They're the heart of the noise schedule.</p>
 
     <div class="pseudocode">
-betas = linear_schedule(T=1000)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
-alphas = 1 - betas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
-alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) — this is ᾱ_t</span>
+betas = <span class="function">linear_schedule</span>(T=<span class="number">1000</span>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
+alphas = <span class="number">1</span> - betas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
+alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<span class="comment"># (T,) — this is ᾱ_t</span>
     </div>
 
     <!-- Section 2.3 -->
@@ -139,11 +139,11 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) �
     </div>
 
     <div class="pseudocode">
-<span class="keyword">def</span> q_sample(x_0, t, alphas_cumprod):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment">"""Noise x_0 to timestep t in one shot."""</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise = sample_gaussian(shape=x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_alpha_bar = sqrt(alphas_cumprod[t])&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># signal coefficient</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_one_minus = sqrt(1 - alphas_cumprod[t])&nbsp;<span class="comment"># noise coefficient</span><br>
+<span class="keyword">def</span> <span class="function">q_sample</span>(x_0, t, alphas_cumprod):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Noise x_0 to timestep t in one shot."""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;noise = <span class="function">sample_gaussian</span>(shape=x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_alpha_bar = <span class="function">sqrt</span>(alphas_cumprod[t])&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># signal coefficient</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;sqrt_one_minus = <span class="function">sqrt</span>(<span class="number">1</span> - alphas_cumprod[t])&nbsp;<span class="comment"># noise coefficient</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt_alpha_bar * x_0 + sqrt_one_minus * noise<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t, noise&nbsp;&nbsp;<span class="comment"># return noise too — it's the training target!</span>
     </div>
@@ -437,15 +437,15 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) �
     </div>
 
     <div class="pseudocode">
-<span class="keyword">def</span> linear_schedule(T, beta_start=0.0001, beta_end=0.02):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> linspace(beta_start, beta_end, T)<br>
+<span class="keyword">def</span> <span class="function">linear_schedule</span>(T, beta_start=<span class="number">0.0001</span>, beta_end=<span class="number">0.02</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> <span class="function">linspace</span>(beta_start, beta_end, T)<br>
 <br>
-<span class="keyword">def</span> cosine_schedule(T, s=0.008):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;steps = linspace(0, T, T+1)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;f_t = cos((steps/T + s) / (1+s) * pi/2) ** 2<br>
-&nbsp;&nbsp;&nbsp;&nbsp;alphas_cumprod = f_t / f_t[0]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;betas = 1 - alphas_cumprod[1:] / alphas_cumprod[:-1]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> clip(betas, max=0.999)
+<span class="keyword">def</span> <span class="function">cosine_schedule</span>(T, s=<span class="number">0.008</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;steps = <span class="function">linspace</span>(<span class="number">0</span>, T, T+<span class="number">1</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;f_t = <span class="function">cos</span>((steps/T + s) / (<span class="number">1</span>+s) * pi/<span class="number">2</span>) ** <span class="number">2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;alphas_cumprod = f_t / f_t[<span class="number">0</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;betas = <span class="number">1</span> - alphas_cumprod[<span class="number">1</span>:] / alphas_cumprod[:-<span class="number">1</span>]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> <span class="function">clip</span>(betas, max=<span class="number">0.999</span>)
     </div>
 
     <!-- Schedule comparison: ᾱ_t and log-SNR side by side -->
