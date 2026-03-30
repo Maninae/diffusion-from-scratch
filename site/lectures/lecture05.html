@@ -258,7 +258,7 @@
         ctx.fillRect(0, 0, w, h);
 
         const gap = 32;
-        const leftW = Math.floor(w * 0.38);
+        const leftW = Math.floor(w * 0.45);
         const rightW = w - leftW - gap;
         const leftX = 0;
         const rightX = leftW + gap;
@@ -270,32 +270,52 @@
         ctx.fillText('EMBEDDING VECTOR', leftX + leftW / 2, 18);
         ctx.fillText('FREQUENCY PAIRS', rightX + rightW / 2, 18);
 
-        // --- LEFT PANEL: Heatmap ---
-        const heatTop = 32;
-        const heatH = h - heatTop - 24;
-        const barW = Math.max(1, (leftW - 4) / DIM);
+        // --- LEFT PANEL: Numeric grid (8 cols × 8 rows) ---
+        const gridTop = 32;
+        const gridBottom = h - 24;
+        const gridCols = 8;
+        const gridRows = 8;
+        const bracketW = 14;
+        const gridInnerW = leftW - bracketW * 2 - 4;
+        const cellW = gridInnerW / gridCols;
+        const cellH = (gridBottom - gridTop) / gridRows;
+        const fontSize = Math.min(11, Math.max(8, cellW / 5.2));
+
+        ctx.font = fontSize + 'px "IBM Plex Mono", monospace';
+
+        // Draw opening bracket [
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = 'bold ' + Math.min(120, gridBottom - gridTop) + 'px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('[', leftX, (gridTop + gridBottom) / 2);
+
+        // Draw closing bracket ]
+        ctx.textAlign = 'right';
+        ctx.fillText(']', leftX + leftW, (gridTop + gridBottom) / 2);
+
+        // Draw numeric values
+        ctx.font = fontSize + 'px "IBM Plex Mono", monospace';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'right';
 
         for (let d = 0; d < DIM; d++) {
+          const col = d % gridCols;
+          const row = Math.floor(d / gridCols);
           const val = emb[d];
-          const absVal = Math.abs(val);
           const isSin = (d % 2 === 0);
-          const baseColor = isSin ? TEAL : ORANGE;
+          ctx.fillStyle = isSin ? TEAL : ORANGE;
 
-          // Parse hex to RGB
-          const r = parseInt(baseColor.slice(1, 3), 16);
-          const g = parseInt(baseColor.slice(3, 5), 16);
-          const b = parseInt(baseColor.slice(5, 7), 16);
-
-          const alpha = 0.08 + absVal * 0.88;
-          ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
-
-          const x = leftX + 2 + d * barW;
-          ctx.fillRect(x, heatTop, Math.max(1, barW - 0.5), heatH);
+          const x = leftX + bracketW + (col + 1) * cellW - 2;
+          const y = gridTop + (row + 0.5) * cellH;
+          const formatted = val >= 0 ? ' ' + val.toFixed(2) : val.toFixed(2);
+          ctx.fillText(formatted, x, y);
         }
 
-        // Heatmap legend
+        // Legend
         ctx.font = '10px "IBM Plex Mono", monospace';
         ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
         ctx.fillStyle = TEAL;
         ctx.fillText('sin', leftX + 2, h - 4);
         ctx.fillStyle = ORANGE;
