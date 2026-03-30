@@ -30,7 +30,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 2</div>
     <h2>The Forward Process &amp; Noise Schedules</h2>
-    <p class="lecture-desc">How to destroy an image in exactly the right way&mdash;and why the math that lets us skip ahead to any noise level is the key to efficient training.</p>
+    <p class="lecture-desc">How to destroy an image in exactly the right way, and why the math that lets us skip ahead to any noise level is the key to efficient training.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">Forward Process</span>
       <span class="lecture-tag">Noise Schedules</span>
@@ -63,12 +63,12 @@
       <li><strong>Add noise</strong> sampled from $\mathcal{N}(0, \beta_t\, I)$. This injects a small amount of random static.</li>
     </ul>
 
-    <p>The parameter $\beta_t$ is the <strong>noise variance</strong> at step $t$. It's small&mdash;typically ranging from $\beta_1 = 0.0001$ to $\beta_T = 0.02$.</p>
+    <p>The parameter $\beta_t$ is the <strong>noise variance</strong> at step $t$. It's small, typically ranging from $\beta_1 = 0.0001$ to $\beta_T = 0.02$.</p>
 
     <p>The shrinking factor $\sqrt{1 - \beta_t}$ is crucial: without it, the variance of $x_t$ would grow without bound as we keep adding noise. The shrinking ensures the overall variance stays controlled.</p>
 
 
-    <p>This is a <strong>Markov chain</strong>&mdash;each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
+    <p>This is a <strong>Markov chain</strong>: each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
 
     <div class="pseudocode">
 <span class="keyword">def</span> <span class="function">single_forward_step</span>(x_prev, beta_t):<br>
@@ -78,7 +78,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t
     </div>
 
-    <p>After $T = 1000$ steps, the cumulative effect is devastating: the original image is completely gone. $x_T$ is indistinguishable from pure Gaussian noise $\mathcal{N}(0, I)$. Every trace of the face, the digit, the landscape&mdash;erased. That's exactly what we want.</p>
+    <p>After $T = 1000$ steps, the cumulative effect is devastating: the original image is completely gone. $x_T$ is indistinguishable from pure Gaussian noise $\mathcal{N}(0, I)$. Every trace of the face, the digit, the landscape: erased. That's exactly what we want.</p>
 
     <!-- Section 2.2 -->
     <h2 id="cumulative-products">The Cumulative Products &mdash; &alpha;<sub>t</sub> and &alpha;&#772;<sub>t</sub></h2>
@@ -109,7 +109,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     <!-- Section 2.3 -->
     <h2 id="closed-form">The Closed-Form Shortcut</h2>
 
-    <p>Training a diffusion model means generating millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, this would be impossibly slow&mdash;500 sequential noise operations just to produce a single noised image for one gradient step.</p>
+    <p>Training a diffusion model means generating millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, this would be impossibly slow: 500 sequential noise operations just to produce a single noised image for one gradient step.</p>
 
     <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and <a href="https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables" target="_blank" rel="noopener">Gaussians compose</a> beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any noised $x_t$:</p>
 
@@ -129,13 +129,13 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
       <li>$\sqrt{1 - \bar{\alpha}_t} \cdot \varepsilon$ &mdash; the <strong>noise component</strong>. How much random noise has been injected.</li>
     </ul>
 
-    <p>The two coefficients are complementary: $(\sqrt{\bar{\alpha}_t})^2 + (\sqrt{1-\bar{\alpha}_t})^2 = 1$. As $t$ increases, the signal fades and the noise grows&mdash;a smooth interpolation from data to noise.</p>
+    <p>The two coefficients are complementary: $(\sqrt{\bar{\alpha}_t})^2 + (\sqrt{1-\bar{\alpha}_t})^2 = 1$. As $t$ increases, the signal fades and the noise grows, a smooth interpolation from data to noise.</p>
 
     <div class="callout example">
       <div class="callout-label">Concrete Example</div>
       <p>Say we want to generate the noised version of an image at timestep $t = 250$ out of $T = 1000$. The cumulative schedule tells us how much signal remains at that point: $\bar{\alpha}_{250} = 0.5$, meaning half the original signal has been preserved and half has been replaced by noise. Plugging into the closed-form equation:</p>
       <p>$x_{250} = \sqrt{0.5} \cdot x_0 + \sqrt{0.5} \cdot \varepsilon \approx 0.707 \cdot x_0 + 0.707 \cdot \varepsilon$</p>
-      <p>The signal and noise coefficients are equal&mdash;the image and noise contribute in exactly the same proportion. Visually, you'd see a ghostly outline of the original with heavy static overlay.</p>
+      <p>The signal and noise coefficients are equal, so the image and noise contribute in exactly the same proportion. Visually, you'd see a ghostly outline of the original with heavy static overlay.</p>
     </div>
 
     <div class="pseudocode">
@@ -148,7 +148,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t, noise&nbsp;&nbsp;<span class="comment"># return noise too — it's the training target!</span>
     </div>
 
-    <p>One multiplication, one addition&mdash;constant time regardless of $t$. This is why diffusion training is efficient despite the 1000-step forward chain.</p>
+    <p>One multiplication, one addition, constant time regardless of $t$. This is why diffusion training is efficient despite the 1000-step forward chain.</p>
 
     <div class="callout note">
       <div class="callout-label">Looking Ahead</div>
@@ -158,11 +158,11 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     <!-- Section 2.5 -->
     <h2 id="noise-schedules">Noise Schedules</h2>
 
-    <p>Recall that at every timestep, we add a bit more noise to the image. The value $\beta_t$ controls exactly how much noise gets added at step $t$&mdash;it's the knob that governs the pace of destruction.</p>
+    <p>Recall that at every timestep, we add a bit more noise to the image. The value $\beta_t$ controls exactly how much noise gets added at step $t$. It's the knob that governs the pace of destruction.</p>
 
     <p>This is entirely a design choice. You could blast the image with massive noise from step one and destroy it almost immediately. You could add a tiny, uniform amount at every step and let the process creep along. There are infinitely many ways to configure how $\beta_t$ ramps from start to finish.</p>
 
-    <p>But the choice has real consequences for training. The shape of the $\beta_t$ curve determines which noise levels the model spends most of its time learning to handle. Rush through the early steps too fast, and the model rarely sees medium-noise images&mdash;the ones where learning is hardest and most productive. Go too slow, and you waste training compute on nearly-clean images the model can already handle.</p>
+    <p>But the choice has real consequences for training. The shape of the $\beta_t$ curve determines which noise levels the model spends most of its time learning to handle. Rush through the early steps too fast, and the model rarely sees medium-noise images, the ones where learning is hardest and most productive. Go too slow, and you waste training compute on nearly-clean images the model can already handle.</p>
 
     <p>Three schedules have emerged as practical defaults:</p>
 
@@ -170,7 +170,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     <p>The original DDPM (<a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al., 2020</a>) used a linear schedule: $\beta_t$ increases linearly from $\beta_1 = 0.0001$ to $\beta_T = 0.02$.</p>
 
-    <p>Simple and effective&mdash;but it has a problem. The $\bar{\alpha}_t$ curve drops quickly in the early steps and then flattens. This means the model spends too many timesteps in the "nearly destroyed" regime and not enough in the perceptually important middle range.</p>
+    <p>Simple and effective, but it has a problem. The $\bar{\alpha}_t$ curve drops quickly in the early steps and then flattens. This means the model spends too many timesteps in the "nearly destroyed" regime and not enough in the perceptually important middle range.</p>
 
     <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
       <canvas id="linearAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
@@ -261,7 +261,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     $$\bar{\alpha}_t = \cos^2\!\left(\frac{t/T + s}{1 + s} \cdot \frac{\pi}{2}\right), \quad s = 0.008$$
 
-    <p>The cosine curve gives a <strong>much smoother SNR decay</strong>. Information is preserved longer in the early steps, and the model spends more time at medium noise levels&mdash;exactly where the denoising problem is most interesting. The small offset $s$ prevents $\bar{\alpha}_T$ from hitting exactly zero.</p>
+    <p>The cosine curve gives a <strong>much smoother SNR decay</strong>. Information is preserved longer in the early steps, and the model spends more time at medium noise levels, exactly where the denoising problem is most interesting. The small offset $s$ prevents $\bar{\alpha}_T$ from hitting exactly zero.</p>
 
     <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
       <canvas id="cosineAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
@@ -350,7 +350,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     $$\beta_t = \sigma\!\left(\frac{t}{T} \cdot 12 - 6\right) \cdot (\beta_{\text{end}} - \beta_{\text{start}}) + \beta_{\text{start}}$$
 
-    <p>where $\sigma$ is the standard sigmoid. The S-shaped ramp changes $\beta_t$ slowly at both extremes and quickly in the middle, producing an $\bar{\alpha}_t$ curve that sits between linear and cosine&mdash;smoother than linear, less conservative than cosine. It has become a popular default in recent implementations for its robustness across datasets and resolutions.</p>
+    <p>where $\sigma$ is the standard sigmoid. The S-shaped ramp changes $\beta_t$ slowly at both extremes and quickly in the middle, producing an $\bar{\alpha}_t$ curve that sits between linear and cosine: smoother than linear, less conservative than cosine. It has become a popular default in recent implementations for its robustness across datasets and resolutions.</p>
 
     <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
       <canvas id="sigmoidAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
@@ -606,12 +606,12 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     })();
     </script>
 
-    <p>The three schedules start and end at the same place&mdash;pure signal and pure noise&mdash;but they differ dramatically in how they distribute the transition. The linear schedule burns through signal quickly in the early steps, wasting capacity on timesteps where the image is already mostly destroyed. The cosine schedule preserves signal longer, giving the model more training time at medium noise levels&mdash;exactly where the denoising problem is hardest and learning is richest.</p>
+    <p>The three schedules start and end at the same place&mdash;pure signal and pure noise&mdash;but they differ dramatically in how they distribute the transition. The linear schedule burns through signal quickly in the early steps, wasting capacity on timesteps where the image is already mostly destroyed. The cosine schedule preserves signal longer, giving the model more training time at medium noise levels, exactly where the denoising problem is hardest and learning is richest.</p>
 
     <!-- Section 2.6 -->
     <h2 id="snr">Signal-to-Noise Ratio</h2>
 
-    <p>We've now seen three schedules that distribute the transition from image to noise in very different ways&mdash;but how do we compare them on equal footing? We need a single quantity that captures how much signal remains relative to noise at any given timestep. That quantity is the <strong>signal-to-noise ratio</strong> (SNR).</p>
+    <p>We've now seen three schedules that distribute the transition from image to noise in very different ways, but how do we compare them on equal footing? We need a single quantity that captures how much signal remains relative to noise at any given timestep. That quantity is the <strong>signal-to-noise ratio</strong> (SNR).</p>
 
     $$\text{SNR}(t) = \frac{\bar{\alpha}_t}{1 - \bar{\alpha}_t}$$
 
@@ -620,7 +620,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     <ul>
       <li>At $t = 0$: SNR is very large (mostly signal)</li>
       <li>At $t = T$: SNR $\approx 0$ (pure noise)</li>
-      <li>The hardest timesteps are in the <strong>middle range</strong>, where signal and noise are roughly balanced&mdash;the model can see some structure but must fill in significant detail</li>
+      <li>The hardest timesteps are in the <strong>middle range</strong>, where signal and noise are roughly balanced, where the model can see some structure but must fill in significant detail</li>
     </ul>
 
     <p>In practice, the <strong>log-SNR</strong> metric is more useful because it spreads the range linearly:</p>
@@ -634,11 +634,11 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     <p>To build intuition, let's watch what happens to a single image as the forward process runs.</p>
 
-    <p>At $t = 0$, you see the original image clearly. By $t = 100$, there's a subtle graininess&mdash;like a slightly noisy photograph. At $t = 250$, you can still make out the overall shape and structure, but details are fading. At $t = 500$, it's a ghostly outline buried in static.</p>
+    <p>At $t = 0$, you see the original image clearly. By $t = 100$, there's a subtle graininess, like a slightly noisy photograph. At $t = 250$, you can still make out the overall shape and structure, but details are fading. At $t = 500$, it's a ghostly outline buried in static.</p>
 
-    <p>By $t = 750$, you're squinting to see any structure at all. At $t = 1000$, it's pure noise&mdash;no trace of the original image remains.</p>
+    <p>By $t = 750$, you're squinting to see any structure at all. At $t = 1000$, it's pure noise. No trace of the original image remains.</p>
 
-    <p>Now think about this from the model's perspective. At each timestep, the model sees $x_t$ and must predict the noise $\varepsilon$ that was added. At low $t$ (clean images), this is easy&mdash;the noise is small and the image provides strong context. At high $t$ (nearly pure noise), the model must essentially hallucinate plausible image structure.</p>
+    <p>Now think about this from the model's perspective. At each timestep, the model sees $x_t$ and must predict the noise $\varepsilon$ that was added. At low $t$ (clean images), this is easy; the noise is small and the image provides strong context. At high $t$ (nearly pure noise), the model must essentially hallucinate plausible image structure.</p>
 
     <p>The <strong>choice of noise schedule determines how often the model trains at each difficulty level</strong>.</p>
 
@@ -649,7 +649,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     <h3 id="pytorch-reference">PyTorch Reference</h3>
 
-    <p>Here's how the forward process looks in real PyTorch code. We'll build this from scratch in the notebooks&mdash;this is just a reference to ground the pseudocode in practice.</p>
+    <p>Here's how the forward process looks in real PyTorch code. We'll build this from scratch in the notebooks; this is just a reference to ground the pseudocode in practice.</p>
 
     <div class="code-block">
       <div class="code-block-label">PyTorch</div>
@@ -680,7 +680,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> sqrt_ab * x_0 + sqrt_om * noise, noise
     </div>
 
-    <p>In the next lecture, we'll tackle the reverse process&mdash;how to train a neural network to undo the noise we just learned to add.</p>
+    <p>In the next lecture, we'll tackle the reverse process: how to train a neural network to undo the noise we just learned to add.</p>
 
   </article>
 

@@ -55,7 +55,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">A diffusion model needs a neural network that takes a noisy image and outputs a noise prediction of the <em>exact same shape</em>. That rules out standard classifiers &mdash; they compress spatial detail away. We'll build the U-Net from scratch: an encoder that captures <em>what's</em> in the image, a decoder that recovers <em>where</em> things are, and skip connections that carry fine detail across the gap.</p>
+    <p class="lecture-roadmap">A diffusion model needs a neural network that takes a noisy image and outputs a noise prediction of the <em>exact same shape</em>. That rules out standard classifiers, which compress spatial detail away. We'll build the U-Net from scratch: an encoder that captures <em>what's</em> in the image, a decoder that recovers <em>where</em> things are, and skip connections that carry fine detail across the gap.</p>
 
     <!-- Section 1: The Architecture Problem -->
     <h2 id="architecture-problem">The Architecture Problem</h2>
@@ -77,7 +77,7 @@
     <!-- Section 2: U-Net History -->
     <h2 id="history">From Segmentation to Generation</h2>
 
-    <p>The U-Net was originally designed by <a href="https://arxiv.org/abs/1505.04597" target="_blank">Ronneberger et al. (2015)</a> for biomedical image segmentation &mdash; labeling every pixel in a microscopy image as "cell" or "background." That task has the same structural requirement as denoising: the output must be the same resolution as the input, and every pixel needs a prediction.</p>
+    <p>The U-Net was originally designed by <a href="https://arxiv.org/abs/1505.04597" target="_blank">Ronneberger et al. (2015)</a> for biomedical image segmentation, labeling every pixel in a microscopy image as "cell" or "background." That task has the same structural requirement as denoising: the output must be the same resolution as the input, and every pixel needs a prediction.</p>
 
     <p>The key insight was simple but powerful: combine <strong>high-level semantics</strong> from deep layers with <strong>fine spatial detail</strong> from shallow layers. An encoder compresses the image (capturing what's in it), a decoder expands it back (recovering where things are), and <strong>skip connections</strong> carry detail directly from encoder to decoder at each resolution level.</p>
 
@@ -143,17 +143,17 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
         <span class="keyword">return</span> h, skip</pre>
     </div>
 
-    <p>That <code>skip = h</code> line is crucial &mdash; we're saving the feature map <em>before</em> downsampling, at full resolution. The decoder will need it.</p>
+    <p>That <code>skip = h</code> line is crucial: we're saving the feature map <em>before</em> downsampling, at full resolution. The decoder will need it.</p>
 
 
     <!-- Section 4: Decoder Path -->
     <h2 id="decoder">The Decoder Path &mdash; Upsampling + Skip Concatenation</h2>
 
-    <p>The decoder mirrors the encoder: it progressively increases spatial resolution while decreasing channels. But unlike a simple mirror, the decoder has a superpower &mdash; at each level, it receives the corresponding encoder feature map via a skip connection.</p>
+    <p>The decoder mirrors the encoder: it progressively increases spatial resolution while decreasing channels. But unlike a simple mirror, the decoder has a superpower: at each level, it receives the corresponding encoder feature map via a skip connection.</p>
 
     <h3 id="upsample-method">Upsampling Strategy</h3>
 
-    <p>The decoder uses <strong>nearest-neighbor interpolation followed by a convolution</strong> rather than transposed convolution (also called "deconvolution"). Why? Transposed convolutions are notorious for producing <strong>checkerboard artifacts</strong> &mdash; grid-like patterns caused by uneven overlap in the transposed operation. Nearest-neighbor upsampling followed by a regular convolution avoids this entirely.</p>
+    <p>The decoder uses <strong>nearest-neighbor interpolation followed by a convolution</strong> rather than transposed convolution (also called "deconvolution"). Why? Transposed convolutions are notorious for producing <strong>checkerboard artifacts</strong>, grid-like patterns caused by uneven overlap in the transposed operation. Nearest-neighbor upsampling followed by a regular convolution avoids this entirely.</p>
 
     <h3 id="skip-concat">Skip Concatenation &mdash; The Channel Math</h3>
 
@@ -200,17 +200,17 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
     <!-- Section 5: Skip Connections -->
     <h2 id="skip-connections">Why Skip Connections Are Critical</h2>
 
-    <p>Skip connections are the feature that makes U-Net a U-Net. Without them, you'd have a vanilla encoder-decoder &mdash; and the results would be dramatically worse. Let's understand why.</p>
+    <p>Skip connections are the feature that makes U-Net a U-Net. Without them, you'd have a vanilla encoder-decoder, and the results would be dramatically worse. Let's understand why.</p>
 
     <h3 id="without-skips">Without Skip Connections</h3>
 
-    <p>Without skips, the decoder must reconstruct <em>all</em> spatial detail from the bottleneck alone. For our MNIST model, that bottleneck is $(B, 256, 7, 7)$ &mdash; a 7&times;7 spatial grid. Every fine detail of the original 28&times;28 image (exact edge positions, subtle textures, thin strokes) must be encoded in those 49 spatial positions. Information gets crushed.</p>
+    <p>Without skips, the decoder must reconstruct <em>all</em> spatial detail from the bottleneck alone. For our MNIST model, that bottleneck is $(B, 256, 7, 7)$, a 7&times;7 spatial grid. Every fine detail of the original 28&times;28 image (exact edge positions, subtle textures, thin strokes) must be encoded in those 49 spatial positions. Information gets crushed.</p>
 
     <p>The result: blurry, smooth noise predictions. The network captures the rough structure but loses the fine details that matter for sharp denoising.</p>
 
     <h3 id="with-skips">With Skip Connections</h3>
 
-    <p>With skips, fine-grained spatial information flows directly from encoder to decoder at every resolution level. The decoder doesn't need to recover spatial detail from the bottleneck &mdash; it receives it on a silver platter via the skip connections. The bottleneck can focus exclusively on high-level reasoning (what objects are present, what the global structure looks like), while the skips carry the low-level detail (exact edge positions, textures).</p>
+    <p>With skips, fine-grained spatial information flows directly from encoder to decoder at every resolution level. The decoder doesn't need to recover spatial detail from the bottleneck; it receives it on a silver platter via the skip connections. The bottleneck can focus exclusively on high-level reasoning (what objects are present, what the global structure looks like), while the skips carry the low-level detail (exact edge positions, textures).</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
@@ -228,11 +228,11 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <h3 id="gradient-highway">The Gradient Highway</h3>
 
-    <p>Skip connections have a second benefit beyond spatial detail: they provide a <strong>shortcut for gradient flow</strong> during training. This is the same principle behind ResNets &mdash; gradients can flow directly from decoder loss back to early encoder layers without passing through the bottleneck. Training is faster and more stable.</p>
+    <p>Skip connections have a second benefit beyond spatial detail: they provide a <strong>shortcut for gradient flow</strong> during training. This is the same principle behind ResNets: gradients can flow directly from decoder loss back to early encoder layers without passing through the bottleneck. Training is faster and more stable.</p>
 
     <div class="callout note">
       <div class="callout-label">Note</div>
-      <strong>Memory cost.</strong> Skip connections require storing all encoder feature maps during the forward pass. For a large model with high-resolution inputs, these stored feature maps are often the dominant memory cost during training &mdash; more than the model parameters themselves.
+      <strong>Memory cost.</strong> Skip connections require storing all encoder feature maps during the forward pass. For a large model with high-resolution inputs, these stored feature maps are often the dominant memory cost during training, more than the model parameters themselves.
     </div>
 
 
@@ -243,9 +243,9 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <p><strong>ResBlock &rarr; Self-Attention &rarr; ResBlock</strong></p>
 
-    <p>This is where global reasoning happens. At 7&times;7 resolution, the self-attention layer processes only $49$ tokens (spatial positions). The attention matrix is $49 \times 49 = 2{,}401$ entries &mdash; trivially small. But the receptive field is global: every spatial position can attend to every other, capturing long-range dependencies that convolutions miss.</p>
+    <p>This is where global reasoning happens. At 7&times;7 resolution, the self-attention layer processes only $49$ tokens (spatial positions). The attention matrix is $49 \times 49 = 2{,}401$ entries, trivially small. But the receptive field is global: every spatial position can attend to every other, capturing long-range dependencies that convolutions miss.</p>
 
-    <p>You can think of the middle block as the "brain" of the U-Net &mdash; the place where the network considers the image as a whole before the decoder begins reconstructing spatial detail.</p>
+    <p>You can think of the middle block as the "brain" of the U-Net, the place where the network considers the image as a whole before the decoder begins reconstructing spatial detail.</p>
 
 
     <!-- Section 7: Full Architecture -->
@@ -263,7 +263,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      The skip connections are consumed in <strong>LIFO order</strong> (last in, first out). The deepest encoder level's skip connects to the first decoder level, because the decoder mirrors the encoder &mdash; it starts at the lowest resolution and works upward.
+      The skip connections are consumed in <strong>LIFO order</strong> (last in, first out). The deepest encoder level's skip connects to the first decoder level, because the decoder mirrors the encoder; it starts at the lowest resolution and works upward.
     </div>
 
     <div class="pseudocode">
@@ -300,7 +300,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
     <!-- Section 8: ResBlock Internals -->
     <h2 id="resblock">Inside the ResBlock</h2>
 
-    <p>The ResBlock is the fundamental building block &mdash; the U-Net is essentially built by stacking these. Let's look at what happens inside one:</p>
+    <p>The ResBlock is the fundamental building block. The U-Net is essentially built by stacking these. Let's look at what happens inside one:</p>
 
     <div class="code-block">
 <pre>ResBlock forward pass:
@@ -396,7 +396,7 @@ assert noise_pred.shape == x_t.shape  <span style="color: var(--text-muted)"># (
     <!-- Section 11: Looking Ahead -->
     <h2 id="looking-ahead">Looking Ahead</h2>
 
-    <p>We now have the architectural skeleton of our denoising network &mdash; the U-shaped encoder-decoder with skip connections that can take a noisy image and predict the noise. But there's a critical piece missing: the network has no idea what noise level it's working with.</p>
+    <p>We now have the architectural skeleton of our denoising network: the U-shaped encoder-decoder with skip connections that can take a noisy image and predict the noise. But there's a critical piece missing: the network has no idea what noise level it's working with.</p>
 
     <p>Denoising at $t = 50$ (slight haze over a clean image) is a fundamentally different task from denoising at $t = 950$ (almost pure static). In Lecture 5, we'll add <strong>time conditioning</strong> via sinusoidal embeddings and <strong>spatial self-attention</strong> for capturing long-range dependencies. These two additions will complete the architecture, making it ready for training.</p>
 
