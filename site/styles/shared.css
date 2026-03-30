@@ -1004,7 +1004,7 @@ body::before {
   overflow-x: auto;
   font-family: var(--mono);
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.45;
   color: var(--text-primary);
   white-space: pre-wrap;
   position: relative;
@@ -1028,6 +1028,14 @@ body::before {
 .code-block .number { color: var(--amber); }
 .code-block .function { color: var(--blue); }
 .code-block .type { color: var(--purple); }
+
+/* Pseudocode syntax highlighting — same tokens, slightly muted */
+.pseudocode .comment { color: var(--text-muted); font-style: italic; }
+.pseudocode .keyword { color: var(--teal); }
+.pseudocode .string { color: var(--green); }
+.pseudocode .number { color: var(--amber); }
+.pseudocode .function { color: var(--blue); }
+.pseudocode .type { color: var(--purple); }
 
 /* Pseudocode block (distinct from real code) */
 .pseudocode {
@@ -1101,6 +1109,33 @@ body::before {
   margin-left: auto;
 }
 
+/* Top navigation — compact prev/next links */
+.lecture-nav-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 60px;
+  max-width: 1200px;
+  margin: 0 auto 8px auto;
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.lecture-nav-top a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.lecture-nav-top a:hover {
+  color: var(--accent);
+}
+
+.lecture-nav-top .next {
+  margin-left: auto;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════════════ */
@@ -1138,6 +1173,7 @@ body::before {
   .lecture-nav { padding: 24px; flex-direction: column; }
   .lecture-nav a { min-width: unset; }
   .lecture-nav .next { text-align: left; }
+  .lecture-nav-top { padding: 12px 24px; font-size: 12px; }
 
   .callout { padding: 18px 20px; }
   .algorithm { padding: 18px 20px; }

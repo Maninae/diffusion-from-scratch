@@ -49,6 +49,11 @@
     </div>
   </div>
 
+  <nav class="lecture-nav-top">
+    <a class="prev" href="lecture08.html">&#8592; Conditioning &amp; Classifier Guidance</a>
+    <a class="next" href="lecture10.html">Latent Diffusion &amp; Stable Diffusion &#8594;</a>
+  </nav>
+
   <article class="lecture-article">
 
     <p class="lecture-roadmap">Classifier guidance works, but it needs a separate classifier trained on noisy images &mdash; expensive and inflexible. What if one model could guide itself? The answer is classifier-free guidance: randomly drop labels during training so the model learns both conditional and unconditional prediction, then extrapolate between them at sampling time. This single trick &mdash; just label dropout &mdash; is behind every modern text-to-image system.</p>

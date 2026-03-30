@@ -48,6 +48,11 @@
     </div>
   </div>
 
+  <nav class="lecture-nav-top">
+    <a class="prev" href="lecture11.html">&#8592; Prediction Targets</a>
+    <a class="next" href="lecture13.html">Flow Matching &amp; Rectified Flows &#8594;</a>
+  </nav>
+
   <article class="lecture-article">
 
     <p class="lecture-roadmap">The U-Net has been diffusion's workhorse, but it doesn't scale cleanly &mdash; you can't just make it bigger and reliably get better results. Transformers can. We'll replace the U-Net with a simpler architecture: patchify the image into tokens, process them with standard transformer blocks conditioned via adaLN-Zero, and unpatchify back. The result scales predictably with compute, and it's what powers Stable Diffusion 3 and DALL-E 3.</p>

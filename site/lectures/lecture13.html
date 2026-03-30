@@ -48,6 +48,11 @@
     </div>
   </div>
 
+  <nav class="lecture-nav-top">
+    <a class="prev" href="lecture12.html">&#8592; Diffusion Transformers (DiT)</a>
+    <a class="next" href="assessment.html">Assessment &#8594;</a>
+  </nav>
+
   <article class="lecture-article">
 
     <p class="lecture-roadmap">What if we could generate images from noise with dramatically less scaffolding? In this lecture, we trace the arc from DDPM to a cleaner modern framework called <strong>flow matching</strong>. We start by cataloguing all the machinery DDPM requires, then see how <strong>v-prediction</strong> &mdash; a key intermediate improvement &mdash; pointed toward the right idea but couldn't escape the framework's complexity. Flow matching completes that arc: it builds the entire generative process around straight-line transport and learned velocity fields, dropping the noise schedules, cumulative products, and ELBO derivation that turned out to be scaffolding, not structure.</p>

@@ -48,6 +48,11 @@
     </div>
   </div>
 
+  <nav class="lecture-nav-top">
+    <a class="prev" href="lecture04.html">&#8592; U-Net: Encoder, Decoder &amp; Skips</a>
+    <a class="next" href="lecture06.html">Training a Diffusion Model &#8594;</a>
+  </nav>
+
   <article class="lecture-article">
 
     <p class="lecture-roadmap">Our U-Net can denoise, but it doesn't know <em>how much</em> noise it's looking at. Denoising at $t = 10$ and $t = 990$ are fundamentally different tasks, yet the network treats them identically. We'll fix that with sinusoidal timestep embeddings borrowed from transformers, inject them into every ResBlock, and then add self-attention so the network can coordinate distant spatial regions &mdash; completing the architecture.</p>
