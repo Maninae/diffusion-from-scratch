@@ -210,7 +210,7 @@
       <li><strong>Attention layers</strong> &mdash; self-attention at low resolutions for capturing global structure (also Lecture 5).</li>
     </ul>
 
-    <p>The core encoder-decoder-skip architecture, however, is unchanged. Let's trace through each piece.</p>
+    <p>The core encoder-decoder-skip architecture, however, is unchanged. What follows traces through the architecture as described in the <a href="https://arxiv.org/abs/2006.11239" target="_blank">original DDPM paper</a>, piece by piece.</p>
 
 
     <!-- Section 3: Encoder Path -->
@@ -442,7 +442,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <p>The design puts most of the computation into the depthwise conv, which is far cheaper than a standard conv because it processes each channel independently. The 1&times;1 convs handle cross-channel mixing at minimal cost. The result is comparable accuracy to standard blocks at a fraction of the FLOPs, which is why this pattern dominates efficient architectures like EfficientNet and ConvNeXt.</p>
 
-    <h3 id="pointwise-depthwise">Pointwise and Depthwise Convolutions</h3>
+    <h3 id="pointwise-depthwise">What Are Pointwise and Depthwise Convolutions?</h3>
 
     <p>A <strong>pointwise convolution</strong> (1&times;1 conv) mixes information across channels at each spatial position without looking at neighboring pixels. A <strong>depthwise convolution</strong> applies a separate spatial filter to each channel independently. Together, a depthwise conv followed by a pointwise conv forms a <a href="https://en.wikipedia.org/wiki/Depthwise_separable_convolution" target="_blank">depthwise separable convolution</a>, which factorizes a standard convolution into two cheaper operations. For a $k \times k$ conv with $C$ input and $C$ output channels, the separable version reduces multiply-adds by roughly a factor of $C / k^2$.</p>
 
@@ -454,10 +454,6 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <!-- Section 9: Key Equations Summary -->
     <h2 id="equations"><span class="section-number">4.9</span> Key Operations &mdash; Summary</h2>
-
-    <details class="collapsible">
-      <summary>Four core operations at a glance</summary>
-      <div class="collapsible-content">
 
     <h3 id="downsample-op">Downsampling</h3>
 
@@ -482,9 +478,6 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
     $$\text{output} = f(x) + \text{shortcut}(x)$$
 
     <p>where $\text{shortcut}(x) = x$ if channels match, or $\text{shortcut}(x) = \text{Conv}_{1 \times 1}(x)$ if they don't.</p>
-
-      </div>
-    </details>
 
 
     <!-- Section 10: PyTorch Reference -->
