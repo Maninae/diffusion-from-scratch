@@ -74,7 +74,7 @@
 
     <ul>
       <li><strong>$t = 10$:</strong> The image is nearly clean. Only a faint haze of noise has been added. The network should make tiny, careful corrections. Most of the image is already signal.</li>
-      <li><strong>$t = 500$:</strong> Half signal, half noise. The underlying digit is visible but degraded. The network must separate genuine structure from noise at every pixel.</li>
+      <li><strong>$t = 500$:</strong> Half signal, half noise. The underlying image is visible but degraded. The network must separate genuine structure from noise at every pixel.</li>
       <li><strong>$t = 990$:</strong> Almost pure Gaussian static. The original image is essentially destroyed. The network must <em>hallucinate</em> plausible structure from nearly zero signal.</li>
     </ul>
 
@@ -108,6 +108,8 @@
       <li><strong>High dimensions</strong> ($i$ large): low frequency &mdash; oscillates slowly, capturing the broad "early vs. late" distinction.</li>
     </ul>
 
+    <p>There's a clean geometric intuition here. Each adjacent pair of indices $(2i, 2i{+}1)$ in the embedding encodes a $(\sin, \cos)$ pair at the same frequency, which is equivalent to a point on a unit circle at angle $\theta_i = t / 10000^{2i/d}$. As $t$ increases, each pair rotates around its circle. Low-frequency pairs (small $i$) rotate slowly, completing one revolution over thousands of timesteps. High-frequency pairs (large $i$) spin fast, cycling many times before $t$ reaches 1000.</p>
+
     <p>The result is a unique "fingerprint" for every timestep, a vector in $\mathbb{R}^d$ where nearby timesteps have similar (but distinct) embeddings, and distant timesteps have very different embeddings.</p>
 
     <div class="callout example">
@@ -127,6 +129,298 @@
 
     <p>Input: a batch of integer timesteps, shape $(B,)$. Output: a batch of embedding vectors, shape $(B, d)$. No spatial dimensions; this is a single vector per sample.</p>
 
+    <!-- Interactive sinusoidal embedding visualization -->
+    <div style="margin: 32px 0; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px; overflow: hidden;">
+      <canvas id="sinEmbed-canvas"></canvas>
+      <style>
+        .sinEmbed-controls {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-top: 16px;
+          font-family: 'IBM Plex Mono', monospace;
+        }
+        .sinEmbed-controls button {
+          background: rgba(45,212,191,0.12);
+          border: 1px solid rgba(45,212,191,0.3);
+          color: #2dd4bf;
+          font-family: 'IBM Plex Mono', monospace;
+          font-size: 13px;
+          padding: 6px 16px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s;
+          white-space: nowrap;
+        }
+        .sinEmbed-controls button:hover {
+          background: rgba(45,212,191,0.22);
+          border-color: rgba(45,212,191,0.5);
+        }
+        .sinEmbed-controls input[type="range"] {
+          flex: 1;
+          -webkit-appearance: none;
+          appearance: none;
+          height: 4px;
+          background: rgba(255,255,255,0.08);
+          border-radius: 2px;
+          outline: none;
+        }
+        .sinEmbed-controls input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #2dd4bf;
+          cursor: pointer;
+          box-shadow: 0 0 6px rgba(45,212,191,0.4);
+        }
+        .sinEmbed-controls input[type="range"]::-moz-range-thumb {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #2dd4bf;
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 0 6px rgba(45,212,191,0.4);
+        }
+        .sinEmbed-timestep {
+          color: #e8dcc8;
+          font-size: 14px;
+          font-family: 'IBM Plex Mono', monospace;
+          min-width: 72px;
+          text-align: right;
+        }
+      </style>
+      <div class="sinEmbed-controls">
+        <button id="sinEmbed-playBtn">Pause</button>
+        <input type="range" id="sinEmbed-slider" min="1" max="1000" value="1">
+        <span class="sinEmbed-timestep" id="sinEmbed-tLabel">t = 1</span>
+      </div>
+    </div>
+
+    <script>
+    (function() {
+      const canvas = document.getElementById('sinEmbed-canvas');
+      const ctx = canvas.getContext('2d');
+      const slider = document.getElementById('sinEmbed-slider');
+      const tLabel = document.getElementById('sinEmbed-tLabel');
+      const playBtn = document.getElementById('sinEmbed-playBtn');
+
+      const DIM = 64;
+      const HALF = DIM / 2;
+      const TRAIL_LEN = 30;
+      const PHASOR_COUNT = 6;
+      const PHASOR_INDICES = [0, 3, 7, 14, 22, 31]; // spread across frequencies
+
+      const TEAL = '#2dd4bf';
+      const ORANGE = '#f97316';
+      const BG = '#0f1621';
+      const LABEL_COLOR = '#b8ad98';
+      const RING_COLOR = 'rgba(255,255,255,0.08)';
+
+      let playing = true;
+      let currentT = 1;
+      let animT = 1;
+      let lastFrameTime = null;
+      let trails = PHASOR_INDICES.map(() => []);
+
+      function computeEmbedding(t) {
+        const emb = new Float32Array(DIM);
+        for (let i = 0; i < HALF; i++) {
+          const freq = 1.0 / Math.pow(10000, (2 * i) / DIM);
+          const angle = t * freq;
+          emb[2 * i] = Math.sin(angle);
+          emb[2 * i + 1] = Math.cos(angle);
+        }
+        return emb;
+      }
+
+      function resize() {
+        const container = canvas.parentElement;
+        const w = container.clientWidth - 48; // account for padding
+        const dpr = window.devicePixelRatio || 1;
+        const h = 450;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function draw() {
+        const w = parseFloat(canvas.style.width);
+        const h = parseFloat(canvas.style.height);
+        const emb = computeEmbedding(currentT);
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = BG;
+        ctx.fillRect(0, 0, w, h);
+
+        const gap = 32;
+        const leftW = Math.floor(w * 0.38);
+        const rightW = w - leftW - gap;
+        const leftX = 0;
+        const rightX = leftW + gap;
+
+        // --- Panel titles ---
+        ctx.font = '11px "IBM Plex Mono", monospace';
+        ctx.fillStyle = LABEL_COLOR;
+        ctx.textAlign = 'center';
+        ctx.fillText('EMBEDDING VECTOR', leftX + leftW / 2, 18);
+        ctx.fillText('FREQUENCY PAIRS', rightX + rightW / 2, 18);
+
+        // --- LEFT PANEL: Heatmap ---
+        const heatTop = 32;
+        const heatH = h - heatTop - 24;
+        const barW = Math.max(1, (leftW - 4) / DIM);
+
+        for (let d = 0; d < DIM; d++) {
+          const val = emb[d];
+          const absVal = Math.abs(val);
+          const isSin = (d % 2 === 0);
+          const baseColor = isSin ? TEAL : ORANGE;
+
+          // Parse hex to RGB
+          const r = parseInt(baseColor.slice(1, 3), 16);
+          const g = parseInt(baseColor.slice(3, 5), 16);
+          const b = parseInt(baseColor.slice(5, 7), 16);
+
+          const alpha = 0.08 + absVal * 0.88;
+          ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+
+          const x = leftX + 2 + d * barW;
+          ctx.fillRect(x, heatTop, Math.max(1, barW - 0.5), heatH);
+        }
+
+        // Heatmap legend
+        ctx.font = '10px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = TEAL;
+        ctx.fillText('sin', leftX + 2, h - 4);
+        ctx.fillStyle = ORANGE;
+        ctx.fillText('cos', leftX + 34, h - 4);
+
+        // --- RIGHT PANEL: Phasor circles ---
+        const cols = 3;
+        const rows = 2;
+        const circleTop = 32;
+        const circleArea = h - circleTop - 16;
+        const cellW = rightW / cols;
+        const cellH = circleArea / rows;
+        const radius = Math.min(cellW, cellH) * 0.33;
+
+        for (let p = 0; p < PHASOR_COUNT; p++) {
+          const col = p % cols;
+          const row = Math.floor(p / cols);
+          const cx = rightX + cellW * (col + 0.5);
+          const cy = circleTop + cellH * (row + 0.5);
+          const freqIdx = PHASOR_INDICES[p];
+
+          const freq = 1.0 / Math.pow(10000, (2 * freqIdx) / DIM);
+          const angle = currentT * freq;
+          const sinV = Math.sin(angle);
+          const cosV = Math.cos(angle);
+
+          // Circle ring
+          ctx.beginPath();
+          ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx.strokeStyle = RING_COLOR;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Trail
+          const trail = trails[p];
+          for (let ti = 0; ti < trail.length; ti++) {
+            const tp = trail[ti];
+            const alpha = 0.04 + (ti / trail.length) * 0.3;
+            const dotR = 2 + (ti / trail.length) * 2;
+            ctx.beginPath();
+            ctx.arc(cx + tp[0] * radius, cy - tp[1] * radius, dotR, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(45,212,191,${alpha})`;
+            ctx.fill();
+          }
+
+          // Current dot with glow
+          const dotX = cx + sinV * radius;
+          const dotY = cy - cosV * radius;
+
+          ctx.save();
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = 'rgba(45,212,191,0.4)';
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
+          ctx.fillStyle = TEAL;
+          ctx.fill();
+          ctx.restore();
+
+          // Label
+          ctx.font = '10px "IBM Plex Mono", monospace';
+          ctx.fillStyle = LABEL_COLOR;
+          ctx.textAlign = 'center';
+          ctx.fillText('i = ' + freqIdx, cx, cy + radius + 16);
+        }
+      }
+
+      function updateTrails() {
+        for (let p = 0; p < PHASOR_COUNT; p++) {
+          const freqIdx = PHASOR_INDICES[p];
+          const freq = 1.0 / Math.pow(10000, (2 * freqIdx) / DIM);
+          const angle = currentT * freq;
+          const sinV = Math.sin(angle);
+          const cosV = Math.cos(angle);
+          trails[p].push([sinV, cosV]);
+          if (trails[p].length > TRAIL_LEN) trails[p].shift();
+        }
+      }
+
+      function animate(now) {
+        if (!lastFrameTime) lastFrameTime = now;
+        const dt = now - lastFrameTime;
+        lastFrameTime = now;
+
+        if (playing) {
+          animT += dt * 0.06; // ~60 timesteps per second
+          if (animT > 1000) animT = 1;
+          currentT = Math.round(animT);
+          slider.value = currentT;
+          tLabel.textContent = 't = ' + currentT;
+          updateTrails();
+        }
+
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      slider.addEventListener('input', function() {
+        playing = false;
+        playBtn.textContent = 'Play';
+        currentT = parseInt(this.value);
+        animT = currentT;
+        tLabel.textContent = 't = ' + currentT;
+        // Reset trails and rebuild for current position
+        trails = PHASOR_INDICES.map(() => []);
+        updateTrails();
+        draw();
+      });
+
+      playBtn.addEventListener('click', function() {
+        playing = !playing;
+        this.textContent = playing ? 'Pause' : 'Play';
+        if (playing) lastFrameTime = null;
+      });
+
+      window.addEventListener('resize', function() {
+        resize();
+        draw();
+      });
+
+      resize();
+      updateTrails();
+      requestAnimationFrame(animate);
+    })();
+    </script>
+
 
     <!-- Section 3: MLP Projection -->
     <h2 id="mlp-projection"><span class="section-number">5.3</span> The Time MLP</h2>
@@ -135,7 +429,7 @@
 
     $$t \;\xrightarrow{\text{sinusoidal}}\; \mathbb{R}^d \;\xrightarrow{\text{Linear}}\; \mathbb{R}^{4d} \;\xrightarrow{\text{SiLU}}\; \mathbb{R}^{4d} \;\xrightarrow{\text{Linear}}\; \mathbb{R}^{4d}$$
 
-    <p>The MLP learns to transform the raw sinusoidal features into whatever representation is most useful for the downstream ResBlocks. The expansion to $4d$ (typically $4 \times 64 = 256$) gives the MLP enough capacity to learn complex, nonlinear functions of the timestep.</p>
+    <p>The MLP learns to transform the raw sinusoidal features into whatever representation is most useful for the downstream ResBlocks. The expansion to $4d$ gives the MLP enough capacity to learn complex, nonlinear functions of the timestep.</p>
 
     <div class="pseudocode">
       <div class="pseudocode-title">TimestepMLP</div>
