@@ -350,13 +350,11 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <h3 id="sigmoid-schedule">Sigmoid Schedule</h3>
 
-    <p>The sigmoid schedule maps each timestep through a sigmoid function&mdash;typically over the range $[-6, 6]$&mdash;to interpolate between $\beta_{\text{start}}$ and $\beta_{\text{end}}$. Instead of a straight line or a trigonometric curve, you get an S-shaped ramp: $\beta_t$ changes slowly at the beginning and end, then sweeps quickly through the middle.</p>
+    <p>The sigmoid schedule maps timesteps through a sigmoid function to interpolate between $\beta_{\text{start}}$ and $\beta_{\text{end}}$:</p>
 
-    <p>Why does the S-shape help? The gentle ramp at both extremes means the schedule doesn't waste capacity where it matters least. At early timesteps, $\beta_t$ stays small&mdash;the model isn't rushed through the near-clean regime. At late timesteps, $\beta_t$ doesn't spike aggressively into the nearly-destroyed regime either. The steep middle section moves quickly through the range where predictions are easiest, concentrating more of the schedule's budget on the transitions that actually challenge the model.</p>
+    $$\beta_t = \sigma\!\left(\frac{t}{T} \cdot 12 - 6\right) \cdot (\beta_{\text{end}} - \beta_{\text{start}}) + \beta_{\text{start}}$$
 
-    <p>In terms of the $\bar{\alpha}_t$ curve, the sigmoid schedule sits between linear and cosine. It decays more smoothly than linear&mdash;no sudden early collapse&mdash;but it doesn't preserve signal quite as long as cosine does. Think of it as a practical middle ground: less aggressive than linear, less conservative than cosine.</p>
-
-    <p>The sigmoid schedule has become a popular default in recent diffusion implementations. It's robust across different datasets and resolutions, and requires minimal tuning beyond choosing the sigmoid range.</p>
+    <p>where $\sigma$ is the standard sigmoid. The S-shaped ramp changes $\beta_t$ slowly at both extremes and quickly in the middle, producing an $\bar{\alpha}_t$ curve that sits between linear and cosine&mdash;smoother than linear, less conservative than cosine. It has become a popular default in recent implementations for its robustness across datasets and resolutions.</p>
 
     <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
       <canvas id="sigmoidAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
