@@ -76,7 +76,7 @@
 
     <h3 id="gans">GANs &mdash; Generative Adversarial Networks</h3>
 
-    <p>GANs (Goodfellow et al., 2014) frame generation as a game between two networks. A <strong>generator</strong> $G$ tries to produce realistic images from random noise. A <strong>discriminator</strong> $D$ tries to distinguish real images from generated ones. They train against each other: $G$ improves at fooling $D$, and $D$ improves at catching $G$.</p>
+    <p>GANs (<a href="https://arxiv.org/abs/1406.2661" target="_blank">Goodfellow et al., 2014</a>) frame generation as a game between two networks. A <strong>generator</strong> $G$ tries to produce realistic images from random noise. A <strong>discriminator</strong> $D$ tries to distinguish real images from generated ones. They train against each other: $G$ improves at fooling $D$, and $D$ improves at catching $G$.</p>
 
     <p>GANs produce <strong>stunningly sharp images</strong>&mdash;for years, they held the crown for visual quality.</p>
 
@@ -84,19 +84,19 @@
 
     <h3 id="vaes">VAEs &mdash; Variational Autoencoders</h3>
 
-    <p>VAEs (Kingma &amp; Welling, 2014) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the ELBO).</p>
+    <p>VAEs (<a href="https://arxiv.org/abs/1312.6114" target="_blank">Kingma &amp; Welling, 2014</a>) take a probabilistic approach. An <strong>encoder</strong> maps images to a low-dimensional latent space, and a <strong>decoder</strong> reconstructs images from latent codes. The model is trained by maximizing a lower bound on the log-likelihood (the ELBO).</p>
 
     <p>VAEs give you a proper probabilistic framework&mdash;smooth latent spaces, meaningful interpolations, and a principled training objective. But VAE samples tend to be <strong>blurry</strong>. The reconstruction loss (typically MSE) encourages the decoder to hedge its bets, producing the average of possible outputs rather than committing to sharp details.</p>
 
     <h3 id="flows">Normalizing Flows</h3>
 
-    <p>Normalizing flows (Rezende &amp; Mohamed, 2015) build a chain of <strong>invertible transformations</strong> that map a simple distribution (Gaussian) to the data distribution. Because every transformation is invertible, you can compute exact log-likelihoods using the change-of-variables formula.</p>
+    <p>Normalizing flows (<a href="https://arxiv.org/abs/1505.05770" target="_blank">Rezende &amp; Mohamed, 2015</a>) build a chain of <strong>invertible transformations</strong> that map a simple distribution (Gaussian) to the data distribution. Because every transformation is invertible, you can compute exact log-likelihoods using the change-of-variables formula.</p>
 
     <p>This is mathematically elegant&mdash;exact density evaluation is a powerful tool. But the <strong>invertibility constraint</strong> severely limits what architectures you can use. You can't use standard convolutions, attention, or most modern building blocks. This architectural straitjacket limits the expressiveness of the model.</p>
 
     <h3 id="autoregressive">Autoregressive Models</h3>
 
-    <p>Autoregressive models (van den Oord et al., 2016) factor the joint distribution as a product of conditionals: $p(x) = \prod_i p(x_i \mid x_1, \ldots, x_{i-1})$. They predict one pixel (or token) at a time, conditioned on everything generated so far.</p>
+    <p>Autoregressive models (<a href="https://arxiv.org/abs/1601.06759" target="_blank">van den Oord et al., 2016</a>) factor the joint distribution as a product of conditionals: $p(x) = \prod_i p(x_i \mid x_1, \ldots, x_{i-1})$. They predict one pixel (or token) at a time, conditioned on everything generated so far.</p>
 
     <p>This gives you <strong>exact likelihoods</strong> and powerful density estimation&mdash;PixelCNN and its variants are excellent at capturing fine-grained dependencies. The main limitation is that <strong>generation is sequential</strong>. To produce a 256&times;256 image, you need 65,536 sequential forward passes. You can't parallelize this. For large images, generation is painfully slow.</p>
 
@@ -144,7 +144,7 @@
 
     <h3 id="origins">2015 &mdash; The Original Idea</h3>
 
-    <p>Sohl-Dickstein et al. published <em>"Deep Unsupervised Learning using Nonequilibrium Thermodynamics"</em>&mdash;the paper that started it all. They drew on ideas from statistical physics: a diffusion process that gradually destroys data, paired with a learned reverse process. The framework was theoretically elegant but produced modest results.</p>
+    <p><a href="https://arxiv.org/abs/1503.03585" target="_blank">Sohl-Dickstein et al.</a> published <em>"Deep Unsupervised Learning using Nonequilibrium Thermodynamics"</em>&mdash;the paper that started it all. They drew on ideas from statistical physics: a diffusion process that gradually destroys data, paired with a learned reverse process. The framework was theoretically elegant but produced modest results.</p>
 
     <p>It wasn't competitive with GANs, and the community largely moved on.</p>
 
@@ -156,11 +156,11 @@
 
     <h3 id="beat-gans">2021 &mdash; Beating GANs</h3>
 
-    <p>Dhariwal and Nichol at OpenAI showed that diffusion models could <strong>surpass GANs on ImageNet FID</strong>&mdash;a watershed moment. Their key contributions: classifier guidance (steering generation with a classifier's gradients) and improved architecture choices. In the same year, Y. Song et al. unified diffusion models and score matching into a continuous-time SDE framework.</p>
+    <p><a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal and Nichol</a> at OpenAI showed that diffusion models could <strong>surpass GANs on ImageNet FID</strong>&mdash;a watershed moment. Their key contributions: classifier guidance (steering generation with a classifier's gradients) and improved architecture choices. In the same year, <a href="https://arxiv.org/abs/2011.13456" target="_blank">Y. Song et al.</a> unified diffusion models and score matching into a continuous-time SDE framework.</p>
 
     <h3 id="latent-diffusion">2022&ndash;Present &mdash; The Diffusion Explosion</h3>
 
-    <p>Rombach et al. introduced <strong>Latent Diffusion</strong>&mdash;running the diffusion process in a compressed latent space instead of pixel space. This made high-resolution generation practical and became <strong>Stable Diffusion</strong>, one of the most widely used generative models in history. Since then: DALL-E 2, Imagen, SDXL, Sora, Flux. Diffusion is now the default backbone for image, video, and audio generation.</p>
+    <p><a href="https://arxiv.org/abs/2112.10752" target="_blank">Rombach et al.</a> introduced <strong>Latent Diffusion</strong>&mdash;running the diffusion process in a compressed latent space instead of pixel space. This made high-resolution generation practical and became <strong>Stable Diffusion</strong>, one of the most widely used generative models in history. Since then: DALL-E 2, Imagen, SDXL, Sora, Flux. Diffusion is now the default backbone for image, video, and audio generation.</p>
 
     <div class="callout example">
       <div class="callout-label">Perspective</div>

@@ -168,7 +168,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     <h3 id="linear-schedule">Linear Schedule (DDPM)</h3>
 
-    <p>The original DDPM (Ho et al., 2020) used a linear schedule: $\beta_t$ increases linearly from $\beta_1 = 0.0001$ to $\beta_T = 0.02$.</p>
+    <p>The original DDPM (<a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al., 2020</a>) used a linear schedule: $\beta_t$ increases linearly from $\beta_1 = 0.0001$ to $\beta_T = 0.02$.</p>
 
     <p>Simple and effective&mdash;but it has a problem. The $\bar{\alpha}_t$ curve drops quickly in the early steps and then flattens. This means the model spends too many timesteps in the "nearly destroyed" regime and not enough in the perceptually important middle range.</p>
 
@@ -257,7 +257,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     <h3 id="cosine-schedule">Cosine Schedule (Improved DDPM)</h3>
 
-    <p>Nichol &amp; Dhariwal (2021) proposed a cosine schedule that defines $\bar{\alpha}_t$ directly:</p>
+    <p><a href="https://arxiv.org/abs/2102.09672" target="_blank">Nichol &amp; Dhariwal (2021)</a> proposed a cosine schedule that defines $\bar{\alpha}_t$ directly:</p>
 
     $$\bar{\alpha}_t = \cos^2\!\left(\frac{t/T + s}{1 + s} \cdot \frac{\pi}{2}\right), \quad s = 0.008$$
 

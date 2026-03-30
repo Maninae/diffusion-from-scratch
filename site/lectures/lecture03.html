@@ -155,7 +155,7 @@
     <!-- Section 3.5 -->
     <h2 id="epsilon-prediction">The &epsilon;-Prediction Reparameterization</h2>
 
-    <p>We could train the model to predict $\tilde{\mu}_t$ directly. But Ho et al. (2020) found a much better parameterization.</p>
+    <p>We could train the model to predict $\tilde{\mu}_t$ directly. But <a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al. (2020)</a> found a much better parameterization.</p>
 
     <p>Recall from Lecture 2 that $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. We can rearrange this to express $x_0$ in terms of $x_t$ and $\varepsilon$:</p>
 
@@ -188,7 +188,7 @@
 
     <p>The full ELBO loss has <strong>timestep-dependent weights</strong> in front of each $L_t$ term (related to $1/\text{SNR}(t)$). These weights emphasize high-noise timesteps where the KL divergence is largest.</p>
 
-    <p>Ho et al. made a surprising empirical finding: <strong>dropping these weights and using uniform weighting works better.</strong> The simplified loss is:</p>
+    <p><a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al.</a> made a surprising empirical finding: <strong>dropping these weights and using uniform weighting works better.</strong> The simplified loss is:</p>
 
     $$L_\text{simple} = \mathbb{E}_{t, x_0, \varepsilon}\!\left[\left\| \varepsilon - \varepsilon_\theta\!\left(\sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon,\; t\right) \right\|^2\right]$$
 
