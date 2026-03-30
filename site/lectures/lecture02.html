@@ -283,6 +283,166 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> clip(betas, max=0.999)
     </div>
 
+    <!-- Schedule comparison: á¾±_t and log-SNR side by side -->
+    <div style="display: flex; gap: 24px; margin: 32px 0; flex-wrap: wrap; justify-content: center;">
+      <canvas id="alphaBarCompare" width="460" height="320" style="max-width: 100%; border-radius: 8px;"></canvas>
+      <canvas id="logSnrCompare" width="460" height="320" style="max-width: 100%; border-radius: 8px;"></canvas>
+    </div>
+    <script>
+    (function() {
+      var T = 1000;
+      var pad = { top: 40, right: 24, bottom: 50, left: 58 };
+
+      function linspace(a, b, n) {
+        var arr = new Float64Array(n);
+        for (var i = 0; i < n; i++) arr[i] = a + (b - a) * i / (n - 1);
+        return arr;
+      }
+
+      // Linear schedule
+      var alphaBarLin = new Float64Array(T);
+      var cum = 1.0;
+      for (var i = 0; i < T; i++) {
+        cum *= (1 - (1e-4 + (0.02 - 1e-4) * i / (T - 1)));
+        alphaBarLin[i] = cum;
+      }
+
+      // Cosine schedule
+      var s = 0.008;
+      var alphaBarCos = new Float64Array(T);
+      for (var i = 0; i < T; i++) {
+        var t = (i + 1) / T;
+        alphaBarCos[i] = Math.pow(Math.cos((t + s) / (1 + s) * Math.PI / 2), 2);
+      }
+
+      // Sigmoid schedule
+      var alphaBarSig = new Float64Array(T);
+      cum = 1.0;
+      for (var i = 0; i < T; i++) {
+        var x = 12 * (i / (T - 1)) - 6;
+        var beta = 1e-4 + (0.02 - 1e-4) / (1 + Math.exp(-x));
+        cum *= (1 - beta);
+        alphaBarSig[i] = cum;
+      }
+
+      // log-SNR
+      function logSNR(ab) {
+        var out = new Float64Array(ab.length);
+        for (var i = 0; i < ab.length; i++) {
+          var a = Math.max(ab[i], 1e-8);
+          out[i] = Math.log(a / Math.max(1 - a, 1e-8));
+        }
+        return out;
+      }
+
+      var logSnrLin = logSNR(alphaBarLin);
+      var logSnrCos = logSNR(alphaBarCos);
+      var logSnrSig = logSNR(alphaBarSig);
+
+      var colors = ['#2dd4bf', '#f97316', '#a78bfa']; // teal, orange, purple
+      var labels = ['Linear', 'Cosine', 'Sigmoid'];
+
+      function drawPlot(id, title, yLabel, curves, yMin, yMax) {
+        var c = document.getElementById(id);
+        var ctx = c.getContext('2d');
+        var W = c.width, H = c.height;
+        var pw = W - pad.left - pad.right;
+        var ph = H - pad.top - pad.bottom;
+
+        // Background
+        ctx.fillStyle = '#111827';
+        ctx.beginPath(); ctx.roundRect(0, 0, W, H, 8); ctx.fill();
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (var i = 0; i <= 4; i++) {
+          var gy = pad.top + ph * i / 4;
+          ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(pad.left + pw, gy); ctx.stroke();
+          var gx = pad.left + pw * i / 4;
+          ctx.beginPath(); ctx.moveTo(gx, pad.top); ctx.lineTo(gx, pad.top + ph); ctx.stroke();
+        }
+
+        // Axes
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + ph);
+        ctx.lineTo(pad.left + pw, pad.top + ph); ctx.stroke();
+
+        // Curves
+        curves.forEach(function(data, ci) {
+          ctx.strokeStyle = colors[ci];
+          ctx.lineWidth = 2.2;
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          for (var i = 0; i < data.length; i++) {
+            var x = pad.left + pw * i / (data.length - 1);
+            var yNorm = (data[i] - yMin) / (yMax - yMin);
+            var y = pad.top + ph * (1 - yNorm);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        });
+
+        // Title
+        ctx.fillStyle = '#e8dcc8';
+        ctx.font = '600 13px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(title, W / 2, 22);
+
+        // X-axis labels
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '10px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        for (var i = 0; i <= 4; i++) ctx.fillText(String(i * 250), pad.left + pw * i / 4, pad.top + ph + 18);
+
+        // Y-axis labels
+        ctx.textAlign = 'right';
+        for (var i = 0; i <= 4; i++) {
+          var val = yMax - (yMax - yMin) * i / 4;
+          ctx.fillText(val.toFixed(1), pad.left - 8, pad.top + ph * i / 4 + 4);
+        }
+
+        // Axis titles
+        ctx.fillStyle = '#b8ad98';
+        ctx.font = '12px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Timestep t', pad.left + pw / 2, H - 4);
+        ctx.save();
+        ctx.translate(14, pad.top + ph / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(yLabel, 0, 0);
+        ctx.restore();
+
+        // Legend
+        var legX = pad.left + pw - 86, legY = pad.top + 8;
+        labels.forEach(function(label, i) {
+          var ly = legY + i * 18;
+          ctx.strokeStyle = colors[i];
+          ctx.lineWidth = 2.2;
+          ctx.beginPath(); ctx.moveTo(legX, ly + 4); ctx.lineTo(legX + 18, ly + 4); ctx.stroke();
+          ctx.fillStyle = '#e8dcc8';
+          ctx.font = '11px "Source Sans 3", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(label, legX + 24, ly + 8);
+        });
+      }
+
+      // Find log-SNR range
+      var allLs = Array.from(logSnrLin).concat(Array.from(logSnrCos), Array.from(logSnrSig));
+      var lsMin = Math.floor(Math.min.apply(null, allLs));
+      var lsMax = Math.ceil(Math.max.apply(null, allLs));
+
+      drawPlot('alphaBarCompare', '\u0101\u0305\u209C  (Signal Retention)', '\u0101\u0305\u209C',
+        [alphaBarLin, alphaBarCos, alphaBarSig], 0, 1);
+      drawPlot('logSnrCompare', 'log SNR  (Signal vs. Noise)', 'log SNR',
+        [logSnrLin, logSnrCos, logSnrSig], lsMin, lsMax);
+    })();
+    </script>
+
+    <p>The three schedules start and end at the same place&mdash;pure signal and pure noise&mdash;but they differ dramatically in how they distribute the transition. The linear schedule burns through signal quickly in the early steps, wasting capacity on timesteps where the image is already mostly destroyed. The cosine schedule preserves signal longer, giving the model more training time at medium noise levels&mdash;exactly where the denoising problem is hardest and learning is richest.</p>
+
     <!-- Section 2.6 -->
     <h2 id="snr">Signal-to-Noise Ratio</h2>
 
