@@ -249,15 +249,15 @@
     <p>The simplicity is remarkable, and it all follows from the math. The ELBO decomposition, the Gaussian posterior, the $\varepsilon$-reparameterization, and the uniform weighting simplification all conspire to produce this clean training loop.</p>
 
     <div class="pseudocode">
-<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># The entire DDPM training step</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;t = <span class="function">random_integers</span>(<span class="number">0</span>, T, batch_size)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># random timesteps</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise = <span class="function">sample_gaussian</span>(x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;x_t = <span class="function">sqrt</span>(schedule.alpha_bar[t]) * x_0<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="function">sqrt</span>(<span class="number">1</span> - schedule.alpha_bar[t]) * noise&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># forward process</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise_pred = model(x_t, t)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># predict the noise</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss = <span class="function">mean_squared_error</span>(noise, noise_pred)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># L_simple</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> loss
+<pre><span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule):
+    <span class="comment"># The entire DDPM training step</span>
+    t = <span class="function">random_integers</span>(<span class="number">0</span>, T, batch_size)               <span class="comment"># random timesteps</span>
+    noise = <span class="function">sample_gaussian</span>(x_0.shape)                  <span class="comment"># ε ~ N(0, I)</span>
+    x_t = <span class="function">sqrt</span>(schedule.alpha_bar[t]) * x_0
+        + <span class="function">sqrt</span>(<span class="number">1</span> - schedule.alpha_bar[t]) * noise      <span class="comment"># forward process</span>
+    noise_pred = model(x_t, t)                         <span class="comment"># predict the noise</span>
+    loss = <span class="function">mean_squared_error</span>(noise, noise_pred)        <span class="comment"># L_simple</span>
+    <span class="keyword">return</span> loss</pre>
     </div>
 
     <!-- Section 3.8 -->
@@ -285,38 +285,31 @@
 
     <div class="code-block">
       <div class="code-block-label">PyTorch</div>
-<span class="keyword">import</span> torch<br>
-<span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F<br>
-<br>
-<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule, optimizer):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""One training step of DDPM (Algorithm 1)."""</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;B = x_0.shape[<span class="number">0</span>]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;device = x_0.device<br>
-<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Sample random timesteps</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;t = torch.randint(<span class="number">0</span>, schedule[<span class="string">'T'</span>], (B,), device=device)<br>
-<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Sample noise ε ~ N(0, I)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise = torch.randn_like(x_0)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B, C, H, W)</span><br>
-<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Forward process: noise x_0 to timestep t</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = schedule[<span class="string">'sqrt_alphas_cumprod'</span>][t]&nbsp;&nbsp;&nbsp;<span class="comment"># (B,)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = schedule[<span class="string">'sqrt_one_minus_ac'</span>][t]&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B,)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">while</span> sqrt_ab.dim() &lt; x_0.dim():<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = sqrt_ab.unsqueeze(-<span class="number">1</span>)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = sqrt_om.unsqueeze(-<span class="number">1</span>)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt_ab * x_0 + sqrt_om * noise&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B, C, H, W)</span><br>
-<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Predict noise and compute loss</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise_pred = model(x_t, t)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B, C, H, W)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss = F.mse_loss(noise, noise_pred)<br>
-<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># Gradient step</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;optimizer.zero_grad()<br>
-&nbsp;&nbsp;&nbsp;&nbsp;loss.backward()<br>
-&nbsp;&nbsp;&nbsp;&nbsp;optimizer.step()<br>
-<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> loss.item()
+<pre><span class="keyword">import</span> torch
+<span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F
+<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule, optimizer):
+    <span class="string">"""One training step of DDPM (Algorithm 1)."""</span>
+    B = x_0.shape[<span class="number">0</span>]
+    device = x_0.device
+    <span class="comment"># Sample random timesteps</span>
+    t = torch.randint(<span class="number">0</span>, schedule[<span class="string">'T'</span>], (B,), device=device)
+    <span class="comment"># Sample noise ε ~ N(0, I)</span>
+    noise = torch.randn_like(x_0)                     <span class="comment"># (B, C, H, W)</span>
+    <span class="comment"># Forward process: noise x_0 to timestep t</span>
+    sqrt_ab = schedule[<span class="string">'sqrt_alphas_cumprod'</span>][t]   <span class="comment"># (B,)</span>
+    sqrt_om = schedule[<span class="string">'sqrt_one_minus_ac'</span>][t]    <span class="comment"># (B,)</span>
+    <span class="keyword">while</span> sqrt_ab.dim() &lt; x_0.dim():
+        sqrt_ab = sqrt_ab.unsqueeze(-<span class="number">1</span>)
+        sqrt_om = sqrt_om.unsqueeze(-<span class="number">1</span>)
+    x_t = sqrt_ab * x_0 + sqrt_om * noise         <span class="comment"># (B, C, H, W)</span>
+    <span class="comment"># Predict noise and compute loss</span>
+    noise_pred = model(x_t, t)                     <span class="comment"># (B, C, H, W)</span>
+    loss = F.mse_loss(noise, noise_pred)
+    <span class="comment"># Gradient step</span>
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+    <span class="keyword">return</span> loss.item()</pre>
     </div>
 
     <p>We now have the complete mathematical foundation: the forward process (Lecture 2) and the reverse process with its training objective (this lecture). Next, we'll build the neural network architecture&mdash;the U-Net&mdash;that actually does the denoising.</p>

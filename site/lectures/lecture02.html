@@ -79,11 +79,11 @@
     <p>This is a <strong><a href="https://en.wikipedia.org/wiki/Markov_chain" target="_blank">Markov chain</a></strong>: each step depends only on the previous state. And it's completely fixed: there are no learnable parameters in the forward process. The neural network only appears in the reverse process.</p>
 
     <div class="pseudocode">
-<span class="keyword">def</span> <span class="function">single_forward_step</span>(x_prev, beta_t):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># One step of the forward noising chain</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise = <span class="function">sample_gaussian</span>(shape=x_prev.shape)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;x_t = <span class="function">sqrt</span>(<span class="number">1</span> - beta_t) * x_prev + <span class="function">sqrt</span>(beta_t) * noise<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t
+<pre><span class="keyword">def</span> <span class="function">single_forward_step</span>(x_prev, beta_t):
+    <span class="comment"># One step of the forward noising chain</span>
+    noise = <span class="function">sample_gaussian</span>(shape=x_prev.shape)
+    x_t = <span class="function">sqrt</span>(<span class="number">1</span> - beta_t) * x_prev + <span class="function">sqrt</span>(beta_t) * noise
+    <span class="keyword">return</span> x_t</pre>
     </div>
 
     <p>After $T = 1000$ steps, the cumulative effect is devastating: the original image is completely gone. $x_T$ is indistinguishable from pure Gaussian noise $\mathcal{N}(0, I)$. Every trace of the face, the digit, the landscape: erased. That's exactly what we want.</p>
@@ -109,9 +109,9 @@
     <p>These cumulative products are <strong>precomputed once</strong> when you set up the model and stored as tensors. They're the heart of the noise schedule.</p>
 
     <div class="pseudocode">
-betas = <span class="function">linear_schedule</span>(T=<span class="number">1000</span>)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
-alphas = <span class="number">1</span> - betas&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (T,)</span><br>
-alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<span class="comment"># (T,) — this is ᾱ_t</span>
+<pre>betas = <span class="function">linear_schedule</span>(T=<span class="number">1000</span>)          <span class="comment"># (T,)</span>
+alphas = <span class="number">1</span> - betas                     <span class="comment"># (T,)</span>
+alphas_cumprod = <span class="function">cumulative_product</span>(alphas) <span class="comment"># (T,) — this is ᾱ_t</span></pre>
     </div>
 
     <!-- Section 2.3 -->
@@ -147,13 +147,13 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     </div>
 
     <div class="pseudocode">
-<span class="keyword">def</span> <span class="function">q_sample</span>(x_0, t, alphas_cumprod):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Noise x_0 to timestep t in one shot."""</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;noise = <span class="function">sample_gaussian</span>(shape=x_0.shape)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_alpha_bar = <span class="function">sqrt</span>(alphas_cumprod[t])&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># signal coefficient</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_one_minus = <span class="function">sqrt</span>(<span class="number">1</span> - alphas_cumprod[t])&nbsp;<span class="comment"># noise coefficient</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;x_t = sqrt_alpha_bar * x_0 + sqrt_one_minus * noise<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> x_t, noise&nbsp;&nbsp;<span class="comment"># return noise too — it's the training target!</span>
+<pre><span class="keyword">def</span> <span class="function">q_sample</span>(x_0, t, alphas_cumprod):
+    <span class="string">"""Noise x_0 to timestep t in one shot."""</span>
+    noise = <span class="function">sample_gaussian</span>(shape=x_0.shape)      <span class="comment"># ε ~ N(0, I)</span>
+    sqrt_alpha_bar = <span class="function">sqrt</span>(alphas_cumprod[t])     <span class="comment"># signal coefficient</span>
+    sqrt_one_minus = <span class="function">sqrt</span>(<span class="number">1</span> - alphas_cumprod[t]) <span class="comment"># noise coefficient</span>
+    x_t = sqrt_alpha_bar * x_0 + sqrt_one_minus * noise
+    <span class="keyword">return</span> x_t, noise  <span class="comment"># return noise too — it's the training target!</span></pre>
     </div>
 
     <p>One multiplication, one addition, constant time regardless of $t$. This is why diffusion training is efficient despite the 1000-step forward chain.</p>
@@ -445,15 +445,15 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     </div>
 
     <div class="pseudocode">
-<span class="keyword">def</span> <span class="function">linear_schedule</span>(T, beta_start=<span class="number">0.0001</span>, beta_end=<span class="number">0.02</span>):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> <span class="function">linspace</span>(beta_start, beta_end, T)<br>
-<br>
-<span class="keyword">def</span> <span class="function">cosine_schedule</span>(T, s=<span class="number">0.008</span>):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;steps = <span class="function">linspace</span>(<span class="number">0</span>, T, T+<span class="number">1</span>)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;f_t = <span class="function">cos</span>((steps/T + s) / (<span class="number">1</span>+s) * pi/<span class="number">2</span>) ** <span class="number">2</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;alphas_cumprod = f_t / f_t[<span class="number">0</span>]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;betas = <span class="number">1</span> - alphas_cumprod[<span class="number">1</span>:] / alphas_cumprod[:-<span class="number">1</span>]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> <span class="function">clip</span>(betas, max=<span class="number">0.999</span>)
+<pre><span class="keyword">def</span> <span class="function">linear_schedule</span>(T, beta_start=<span class="number">0.0001</span>, beta_end=<span class="number">0.02</span>):
+    <span class="keyword">return</span> <span class="function">linspace</span>(beta_start, beta_end, T)
+
+<span class="keyword">def</span> <span class="function">cosine_schedule</span>(T, s=<span class="number">0.008</span>):
+    steps = <span class="function">linspace</span>(<span class="number">0</span>, T, T+<span class="number">1</span>)
+    f_t = <span class="function">cos</span>((steps/T + s) / (<span class="number">1</span>+s) * pi/<span class="number">2</span>) ** <span class="number">2</span>
+    alphas_cumprod = f_t / f_t[<span class="number">0</span>]
+    betas = <span class="number">1</span> - alphas_cumprod[<span class="number">1</span>:] / alphas_cumprod[:-<span class="number">1</span>]
+    <span class="keyword">return</span> <span class="function">clip</span>(betas, max=<span class="number">0.999</span>)</pre>
     </div>
 
     <!-- Schedule comparison: ᾱ_t and log-SNR side by side -->
@@ -661,31 +661,31 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
 
     <div class="code-block">
       <div class="code-block-label">PyTorch</div>
-<span class="keyword">import</span> torch<br>
-<span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F<br>
-<br>
-<span class="keyword">def</span> <span class="function">linear_schedule</span>(T, beta_start=<span class="number">1e-4</span>, beta_end=<span class="number">0.02</span>):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Linear noise schedule from DDPM."""</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> torch.linspace(beta_start, beta_end, T)<br>
-<br>
-<span class="keyword">def</span> <span class="function">cosine_schedule</span>(T, s=<span class="number">0.008</span>):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Cosine noise schedule from Improved DDPM."""</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;steps = torch.linspace(<span class="number">0</span>, T, T + <span class="number">1</span>)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;f_t = torch.cos((steps / T + s) / (<span class="number">1</span> + s) * torch.pi / <span class="number">2</span>) ** <span class="number">2</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;alphas_cumprod = f_t / f_t[<span class="number">0</span>]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;betas = <span class="number">1</span> - alphas_cumprod[<span class="number">1</span>:] / alphas_cumprod[:-<span class="number">1</span>]<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> torch.clamp(betas, max=<span class="number">0.999</span>)<br>
-<br>
-<span class="keyword">def</span> <span class="function">q_sample</span>(x_0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, noise=<span class="keyword">None</span>):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="string">"""Forward diffusion: noise x_0 to timestep t."""</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">if</span> noise <span class="keyword">is None</span>:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;noise = torch.randn_like(x_0)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># ε ~ N(0, I)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = sqrt_alphas_cumprod[t]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="comment"># (B,) → (B, 1, 1, 1)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = sqrt_one_minus_alphas_cumprod[t]&nbsp;&nbsp;&nbsp;<span class="comment"># (B,) → (B, 1, 1, 1)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">while</span> sqrt_ab.dim() &lt; x_0.dim():<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_ab = sqrt_ab.unsqueeze(-<span class="number">1</span>)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sqrt_om = sqrt_om.unsqueeze(-<span class="number">1</span>)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">return</span> sqrt_ab * x_0 + sqrt_om * noise, noise
+<pre><span class="keyword">import</span> torch
+<span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F
+
+<span class="keyword">def</span> <span class="function">linear_schedule</span>(T, beta_start=<span class="number">1e-4</span>, beta_end=<span class="number">0.02</span>):
+    <span class="string">"""Linear noise schedule from DDPM."""</span>
+    <span class="keyword">return</span> torch.linspace(beta_start, beta_end, T)
+
+<span class="keyword">def</span> <span class="function">cosine_schedule</span>(T, s=<span class="number">0.008</span>):
+    <span class="string">"""Cosine noise schedule from Improved DDPM."""</span>
+    steps = torch.linspace(<span class="number">0</span>, T, T + <span class="number">1</span>)
+    f_t = torch.cos((steps / T + s) / (<span class="number">1</span> + s) * torch.pi / <span class="number">2</span>) ** <span class="number">2</span>
+    alphas_cumprod = f_t / f_t[<span class="number">0</span>]
+    betas = <span class="number">1</span> - alphas_cumprod[<span class="number">1</span>:] / alphas_cumprod[:-<span class="number">1</span>]
+    <span class="keyword">return</span> torch.clamp(betas, max=<span class="number">0.999</span>)
+
+<span class="keyword">def</span> <span class="function">q_sample</span>(x_0, t, sqrt_alphas_cumprod, sqrt_one_minus_alphas_cumprod, noise=<span class="keyword">None</span>):
+    <span class="string">"""Forward diffusion: noise x_0 to timestep t."""</span>
+    <span class="keyword">if</span> noise <span class="keyword">is None</span>:
+        noise = torch.randn_like(x_0)              <span class="comment"># ε ~ N(0, I)</span>
+    sqrt_ab = sqrt_alphas_cumprod[t]             <span class="comment"># (B,) → (B, 1, 1, 1)</span>
+    sqrt_om = sqrt_one_minus_alphas_cumprod[t]   <span class="comment"># (B,) → (B, 1, 1, 1)</span>
+    <span class="keyword">while</span> sqrt_ab.dim() &lt; x_0.dim():
+        sqrt_ab = sqrt_ab.unsqueeze(-<span class="number">1</span>)
+        sqrt_om = sqrt_om.unsqueeze(-<span class="number">1</span>)
+    <span class="keyword">return</span> sqrt_ab * x_0 + sqrt_om * noise, noise</pre>
     </div>
 
     <p>In the next lecture, we'll tackle the reverse process: how to train a neural network to undo the noise we just learned to add.</p>
