@@ -58,7 +58,7 @@
     <p class="lecture-roadmap">We've been predicting noise ($\varepsilon$-prediction) since Lecture 3, but that's not the only option, and it's not always the best one. We'll compare three prediction targets ($\varepsilon$, $x_0$, and $v$), see why each handles different timesteps differently, and then turn to the noise schedule improvements &mdash; cosine schedules, zero terminal SNR, offset noise &mdash; that fixed real production problems in systems like Imagen and Stable Diffusion.</p>
 
     <!-- Section 1: The Prediction Target Problem -->
-    <h2 id="prediction-target-problem">The Prediction Target Problem</h2>
+    <h2 id="prediction-target-problem"><span class="section-number">11.1</span> The Prediction Target Problem</h2>
 
     <p>Throughout this course, we've trained our diffusion model to predict the noise $\varepsilon$ that was added to a clean image. This is the DDPM default, and it works well. But it has a flaw that becomes visible when you look closely at training dynamics across timesteps.</p>
 
@@ -72,7 +72,7 @@
     <p>Can we do better? Let's look at what happens when we change what the model predicts.</p>
 
     <!-- Section 2: Three Parameterizations -->
-    <h2 id="three-parameterizations">Three Prediction Parameterizations</h2>
+    <h2 id="three-parameterizations"><span class="section-number">11.2</span> Three Prediction Parameterizations</h2>
 
     <p>All three approaches below are <strong>mathematically equivalent</strong>; you can convert freely between them given $(x_t, t)$. They differ in <em>numerical stability</em> and <em>gradient behavior</em> across timesteps.</p>
 
@@ -123,7 +123,7 @@
     </div>
 
     <!-- Section 3: Conversion Formulas -->
-    <h2 id="conversion-formulas">Conversion Between Parameterizations</h2>
+    <h2 id="conversion-formulas"><span class="section-number">11.3</span> Conversion Between Parameterizations</h2>
 
     <p>Since all three parameterizations are mathematically equivalent, you can convert between any two given $(x_t, t)$. The key identity you always start from is the forward process:</p>
 
@@ -181,7 +181,7 @@
     </div>
 
     <!-- Section 4: When to Use Which -->
-    <h2 id="when-to-use-which">When to Use Which Parameterization</h2>
+    <h2 id="when-to-use-which"><span class="section-number">11.4</span> When to Use Which Parameterization</h2>
 
     <ul>
       <li><strong>$\varepsilon$-prediction:</strong> the safe default. Use when following DDPM tutorials, starting a new project, or when simplicity matters more than peak performance. This is what we've used throughout the course.</li>
@@ -195,7 +195,7 @@
     </div>
 
     <!-- Section 5: Advanced Noise Schedules -->
-    <h2 id="advanced-schedules">Advanced Noise Schedules</h2>
+    <h2 id="advanced-schedules"><span class="section-number">11.5</span> Advanced Noise Schedules</h2>
 
     <p>In Lecture 2, we introduced linear and cosine noise schedules. These get you most of the way there, but modern production systems use several refinements that fix subtle issues. Let's look at each one.</p>
 
@@ -270,7 +270,7 @@ noise = torch.<span class="function">randn_like</span>(x) + <span class="number"
     <p>A schedule that's linear in <strong>log-SNR space</strong> rather than in $\beta$ or $\bar\alpha$ space. Since $\log \text{SNR}(t)$ decreases linearly, each timestep represents an equal "difficulty" step for the model. This produces a more uniform training signal&mdash;no timesteps are much harder or easier than others.</p>
 
     <!-- Section 6: Practical Guidance -->
-    <h2 id="practical-guidance">Putting It All Together</h2>
+    <h2 id="practical-guidance"><span class="section-number">11.6</span> Putting It All Together</h2>
 
     <p>A decision table for choosing prediction targets and schedules based on your use case:</p>
 
@@ -303,7 +303,7 @@ noise = torch.<span class="function">randn_like</span>(x) + <span class="number"
     </div>
 
     <!-- Section 7: Training with v-prediction -->
-    <h2 id="v-prediction-training">Training with v-Prediction</h2>
+    <h2 id="v-prediction-training"><span class="section-number">11.7</span> Training with v-Prediction</h2>
 
     <p>Switching from $\varepsilon$-prediction to $v$-prediction requires very few code changes. Here's the diff:</p>
 
@@ -325,7 +325,7 @@ x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
     <p>Three lines change. The model architecture is identical; it still takes $(x_t, t)$ and outputs a tensor of the same shape. Only the target and the loss computation change. The sampling loop needs corresponding updates to convert the predicted $v$ back to $\varepsilon$ or $x_0$ at each step, using the formulas from the conversion table above.</p>
 
     <!-- Section 8: Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">11.8</span> Looking Ahead</h2>
 
     <p>We've now covered the complete toolkit of modern diffusion model design: U-Net architecture, noise schedules, training, sampling, conditioning, guidance, latent diffusion, prediction targets, and schedule refinements. This completes the DDPM/DDIM/LDM stack.</p>
 

@@ -58,7 +58,7 @@
     <p class="lecture-roadmap">What if we could generate images from noise with dramatically less scaffolding? In this lecture, we trace the arc from DDPM to a cleaner modern framework called <strong>flow matching</strong>. We start by cataloguing all the machinery DDPM requires, then see how <strong>v-prediction</strong> &mdash; a key intermediate improvement &mdash; pointed toward the right idea but couldn't escape the framework's complexity. Flow matching completes that arc: it builds the entire generative process around straight-line transport and learned velocity fields, dropping the noise schedules, cumulative products, and ELBO derivation that turned out to be scaffolding, not structure.</p>
 
     <!-- Section 13.1 -->
-    <h2 id="ddpm-baggage">DDPM's Baggage &mdash; What We're Trying to Escape</h2>
+    <h2 id="ddpm-baggage"><span class="section-number">13.1</span> DDPM's Baggage &mdash; What We're Trying to Escape</h2>
 
     <p>Let's take a step back and appreciate just how much machinery DDPM requires. We've built all of it through this course, piece by piece, and each part made sense on its own. But look at the full stack:</p>
 
@@ -75,7 +75,7 @@
     <p>But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
 
     <!-- Section 13.2 — THE BRIDGE -->
-    <h2 id="velocity-fields-bridge">The Bridge: v-Prediction to Flow Matching</h2>
+    <h2 id="velocity-fields-bridge"><span class="section-number">13.2</span> The Bridge: v-Prediction to Flow Matching</h2>
 
     <p>The path from DDPM to flow matching ran through an intermediate improvement called <strong>v-prediction</strong> (<a href="https://arxiv.org/abs/2202.00512" target="_blank">Salimans &amp; Ho, 2022</a>). Understanding that middle step makes flow matching feel inevitable rather than arbitrary.</p>
 
@@ -146,7 +146,7 @@
     <p>The question is: <strong>what paths should we use?</strong></p>
 
     <!-- Section 13.3 -->
-    <h2 id="straight-line-interpolation">Straight-Line Interpolation</h2>
+    <h2 id="straight-line-interpolation"><span class="section-number">13.3</span> Straight-Line Interpolation</h2>
 
     <p>Flow matching (<a href="https://arxiv.org/abs/2210.02747" target="_blank">Lipman et al., 2023</a>) makes the simplest possible choice: <strong>straight lines</strong>.</p>
 
@@ -174,7 +174,7 @@
     </div>
 
     <!-- Section 13.4 -->
-    <h2 id="training-objective">The Flow Matching Training Objective</h2>
+    <h2 id="training-objective"><span class="section-number">13.4</span> The Flow Matching Training Objective</h2>
 
     <p>Flow matching's simplicity shows in the training algorithm. The entire training algorithm is six lines:</p>
 
@@ -223,7 +223,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
     <p>DDPM's interpolation coefficients ($\sqrt{\bar{\alpha}_t}$ and $\sqrt{1 - \bar{\alpha}_t}$) are nonlinear functions of the noise schedule, precomputed and stored in dictionaries. Flow matching's coefficients are $(1 - t)$ and $t$, literally just the time variable.</p>
 
     <!-- Section 13.5 -->
-    <h2 id="sampling">Sampling via ODE Integration</h2>
+    <h2 id="sampling"><span class="section-number">13.5</span> Sampling via ODE Integration</h2>
 
     <p>To generate images, we start from pure noise and follow the learned velocity field backward in time. This is an ordinary differential equation (ODE), and we solve it with numerical integration.</p>
 
@@ -259,7 +259,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
     <p>In practice, 20&ndash;50 Euler steps produce good results for flow matching. Compare this to DDPM's 1000 steps &mdash; or even DDIM's 50&ndash;100.</p>
 
     <!-- Section 13.6 -->
-    <h2 id="why-it-works">Why Flow Matching Works Better</h2>
+    <h2 id="why-it-works"><span class="section-number">13.6</span> Why Flow Matching Works Better</h2>
 
     <p>Flow matching has genuine advantages over DDPM beyond implementation simplicity:</p>
 
@@ -280,7 +280,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
     <p>Because the learned flow approximately follows straight lines, ODE solvers can take larger steps without losing accuracy. Curved paths (like DDPM's) require small steps to stay on track. Straight paths are easier to follow &mdash; literally.</p>
 
     <!-- Section 13.7 -->
-    <h2 id="rectified-flows">Rectified Flows</h2>
+    <h2 id="rectified-flows"><span class="section-number">13.7</span> Rectified Flows</h2>
 
     <p>There's a subtlety we've been glossing over. Even though each individual training pair $(x_0, x_1)$ defines a straight path, the <em>aggregate</em> learned flow isn't perfectly straight. Why? Because different data-noise pairs share regions of space, and their flows interact. Imagine two straight arrows crossing through the same point &mdash; the average velocity at that point is a compromise between the two directions, creating curvature.</p>
 
@@ -312,7 +312,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
     <p>This is used in Stable Diffusion 3 and InstaFlow for fast, high-quality generation.</p>
 
     <!-- Section 13.8 -->
-    <h2 id="connection-to-diffusion">Connection to Diffusion</h2>
+    <h2 id="connection-to-diffusion"><span class="section-number">13.8</span> Connection to Diffusion</h2>
 
     <p>Flow matching is a <strong>continuous generalization</strong> of diffusion. Let's make the connection explicit.</p>
 
@@ -384,7 +384,7 @@ x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># con
     </div>
 
     <!-- Section 13.9 -->
-    <h2 id="practical-impact">Practical Impact</h2>
+    <h2 id="practical-impact"><span class="section-number">13.9</span> Practical Impact</h2>
 
     <p>Flow matching with rectified flows is now the default framework for frontier generative models:</p>
 
@@ -398,7 +398,7 @@ x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># con
     <p>The trend is clear: flow matching is to DDPM what transformers were to RNNs &mdash; a simpler framework that does the same job with less overhead, and scales better to boot.</p>
 
     <!-- Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">13.10</span> Looking Ahead</h2>
 
     <p>Over the last thirteen lectures, we've built diffusion models from the ground up. We started with forward noising and learned to reverse it. We built U-Nets and replaced them with transformers. We experimented with noise schedules and then threw them away entirely. Each step was a simplification &mdash; stripping away complexity that turned out to be incidental to the core idea of learning to transport noise into data.</p>
 

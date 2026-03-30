@@ -58,7 +58,7 @@
     <p class="lecture-roadmap">Our diffusion model works on 28&times;28 digits, but real-world generation happens at 512&times;512 and beyond. Pixel-space diffusion can't scale there because attention costs explode quadratically with resolution. The solution: compress images into a small latent space with a VAE, then run diffusion in that latent space. This is the architecture behind Stable Diffusion, and it's what made high-resolution generation practical.</p>
 
     <!-- Section 1: The Resolution Bottleneck -->
-    <h2 id="resolution-bottleneck">The Resolution Bottleneck</h2>
+    <h2 id="resolution-bottleneck"><span class="section-number">10.1</span> The Resolution Bottleneck</h2>
 
     <p>Everything we've built so far works well on 28&times;28 MNIST digits. But real-world image generation happens at 512&times;512 or higher. Let's see why that's a problem.</p>
 
@@ -94,7 +94,7 @@
     </div>
 
     <!-- Section 2: VAE Primer -->
-    <h2 id="vae-primer">VAE Primer</h2>
+    <h2 id="vae-primer"><span class="section-number">10.2</span> VAE Primer</h2>
 
     <p>If you took CS231N, you've seen variational autoencoders before. We need a compact treatment here because the VAE is a critical component of latent diffusion, not the main event, but you need to understand what it does and why it works.</p>
 
@@ -154,7 +154,7 @@
     <p>This last property is exactly why the VAE latent space is a good place to run diffusion. The diffusion model's job at the end of sampling is to produce a clean latent code $z_0$, and the VAE decoder can turn any reasonable latent code into a good image.</p>
 
     <!-- Section 3: Latent Diffusion -->
-    <h2 id="latent-diffusion">Latent Diffusion &mdash; The Key Insight</h2>
+    <h2 id="latent-diffusion"><span class="section-number">10.3</span> Latent Diffusion &mdash; The Key Insight</h2>
 
     <p>The key idea (<a href="https://arxiv.org/abs/2112.10752" target="_blank">Rombach et al., 2022</a>): instead of running diffusion in pixel space, <strong>run it in the VAE's latent space</strong>. The recipe has three steps:</p>
 
@@ -208,7 +208,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
     <p>Notice how little changes from our MNIST pipeline. The forward process, training loop, and sampling algorithm are <em>identical</em>; we've just swapped the data from pixels to latents.</p>
 
     <!-- Section 4: Stable Diffusion Architecture -->
-    <h2 id="stable-diffusion">The Stable Diffusion Architecture</h2>
+    <h2 id="stable-diffusion"><span class="section-number">10.4</span> The Stable Diffusion Architecture</h2>
 
     <p>Stable Diffusion (<a href="https://arxiv.org/abs/2112.10752" target="_blank">Rombach et al., 2022</a>) is latent diffusion plus text conditioning. The architecture has three main components, each trained separately:</p>
 
@@ -261,7 +261,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
     <p>Every component we've studied in this course shows up: the U-Net (Lecture 4), noise schedules (Lecture 5), the training loop (Lecture 6), DDIM sampling (Lecture 7), and classifier-free guidance (Lecture 9). Latent diffusion ties them all together into a system that actually works at scale.</p>
 
     <!-- Section 5: SD Evolution -->
-    <h2 id="sd-evolution">The Evolution of Stable Diffusion</h2>
+    <h2 id="sd-evolution"><span class="section-number">10.5</span> The Evolution of Stable Diffusion</h2>
 
     <p>Stable Diffusion has evolved rapidly since its release, with each version improving text encoders, model capacity, and the underlying framework:</p>
 
@@ -278,7 +278,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
     </div>
 
     <!-- Section 6: Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">10.6</span> Looking Ahead</h2>
 
     <p>Latent diffusion solves the resolution problem, but we've been using $\varepsilon$-prediction throughout this course without questioning it. Is predicting the noise always the best choice? And are there better noise schedules than the linear and cosine schedules we've seen?</p>
 

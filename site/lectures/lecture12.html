@@ -58,7 +58,7 @@
     <p class="lecture-roadmap">The U-Net has been diffusion's workhorse, but it doesn't scale cleanly. You can't just make it bigger and reliably get better results. Transformers can. We'll replace the U-Net with a simpler architecture: patchify the image into tokens, process them with standard transformer blocks conditioned via adaLN-Zero, and unpatchify back. The result scales predictably with compute, and it's what powers Stable Diffusion 3 and DALL-E 3.</p>
 
     <!-- Section 12.1 -->
-    <h2 id="transformers-for-everything">The Trend: Transformers for Everything</h2>
+    <h2 id="transformers-for-everything"><span class="section-number">12.1</span> The Trend: Transformers for Everything</h2>
 
     <p>We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020, and it works well.</p>
 
@@ -75,7 +75,7 @@
     <p>So the question becomes natural: can we replace the U-Net with a transformer and get the same (or better) results, while inheriting the transformer's scaling properties?</p>
 
     <!-- Section 12.2 -->
-    <h2 id="dit-architecture">The DiT Architecture</h2>
+    <h2 id="dit-architecture"><span class="section-number">12.2</span> The DiT Architecture</h2>
 
     <p>The answer is <strong>DiT</strong> (<a href="https://arxiv.org/abs/2212.09748" target="_blank">Peebles &amp; Xie, 2023</a>), The core idea is straightforward: Instead of the U-Net's complex encoder-decoder, DiT has three stages: <strong>patchify</strong> the image into a sequence of tokens, process them with <strong>standard transformer blocks</strong>, and <strong>unpatchify</strong> back into an image.</p>
 
@@ -144,7 +144,7 @@
     </div>
 
     <!-- Section 12.3 -->
-    <h2 id="adaln-zero">Conditioning via adaLN-Zero</h2>
+    <h2 id="adaln-zero"><span class="section-number">12.3</span> Conditioning via adaLN-Zero</h2>
 
     <p>The challenge is conditioning. A diffusion model needs to know <em>what timestep</em> it's denoising at, since the behavior at $t = 10$ (light noise) is completely different from $t = 990$ (nearly pure noise). In our U-Net, we injected timestep information through adaptive group normalization. DiT needs something equivalent for transformer blocks.</p>
 
@@ -201,7 +201,7 @@
     <p>Notice the symmetry: each block has <strong>six</strong> condition-dependent parameters &mdash; scale, shift, and gate for both the attention sublayer and the FFN sublayer. All six are predicted from a single MLP applied to the conditioning vector $c$.</p>
 
     <!-- Section 12.4 -->
-    <h2 id="scaling">Why DiT Scales Better</h2>
+    <h2 id="scaling"><span class="section-number">12.4</span> Why DiT Scales Better</h2>
 
     <p>The whole point of moving to transformers was better scaling, and DiT delivers. Let's look at why.</p>
 
@@ -234,7 +234,7 @@
     <p>The pattern is clear: each step up in model size gives a predictable drop in FID. This is the transformer scaling recipe at work: more parameters, more compute, better results, no architecture surgery needed.</p>
 
     <!-- Section 12.5 -->
-    <h2 id="unet-vs-dit">U-Net vs. DiT &mdash; When to Use Each</h2>
+    <h2 id="unet-vs-dit"><span class="section-number">12.5</span> U-Net vs. DiT &mdash; When to Use Each</h2>
 
     <p>DiT doesn't make the U-Net obsolete. Each has its place, and the right choice depends on your constraints.</p>
 
@@ -283,7 +283,7 @@
     <p>For our MNIST experiments in this course, the U-Net is the right tool; it's smaller, faster to train, and we don't need scaling laws. But if you were building a production image generator? You'd reach for DiT.</p>
 
     <!-- Section 12.6 -->
-    <h2 id="dit-in-practice">DiT in the Wild</h2>
+    <h2 id="dit-in-practice"><span class="section-number">12.6</span> DiT in the Wild</h2>
 
     <p>DiT powers the most capable generative models shipping today:</p>
 
@@ -301,7 +301,7 @@
     </div>
 
     <!-- Section 12.7: PyTorch -->
-    <h2 id="pytorch-reference">PyTorch Reference</h2>
+    <h2 id="pytorch-reference"><span class="section-number">12.7</span> PyTorch Reference</h2>
 
     <p>Here's what the key components look like in actual PyTorch. First, the patchify and unpatchify operations:</p>
 
@@ -356,7 +356,7 @@
     </div>
 
     <!-- Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">12.8</span> Looking Ahead</h2>
 
     <p>DiT shows that the denoiser architecture is a replaceable module &mdash; you can swap the U-Net for a transformer and everything else stays the same. But the "everything else" still includes noise schedules, cumulative alpha products, ELBO-derived losses, and 50&ndash;1000 sampling steps.</p>
 

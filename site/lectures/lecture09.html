@@ -59,7 +59,7 @@
     <p class="lecture-roadmap">Classifier guidance works, but it needs a separate classifier trained on noisy images, which is expensive and inflexible. What if one model could guide itself? The answer is classifier-free guidance: randomly drop labels during training so the model learns both conditional and unconditional prediction, then extrapolate between them at sampling time. This single trick &mdash; just label dropout &mdash; is behind every modern text-to-image system.</p>
 
     <!-- Section 9.1 -->
-    <h2 id="the-training-trick">The Training Trick: Random Label Dropout</h2>
+    <h2 id="the-training-trick"><span class="section-number">9.1</span> The Training Trick: Random Label Dropout</h2>
 
     <p>Classifier guidance (Lecture 8) works, but it requires training a separate classifier on noisy images at every noise level. Want to condition on text? Train another classifier. Want to adjust guidance strength? Still need that extra model. The approach is expensive and inflexible.</p>
 
@@ -97,7 +97,7 @@
     </div>
 
     <!-- Section 9.2 -->
-    <h2 id="the-guidance-formula">The Guidance Formula</h2>
+    <h2 id="the-guidance-formula"><span class="section-number">9.2</span> The Guidance Formula</h2>
 
     <p>At inference time, for each denoising step, we run the model <em>twice</em>: once with the class label, once with the null token. Then we extrapolate in the direction of the conditioning signal:</p>
 
@@ -157,7 +157,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <p>This doubles the batch size for one forward pass instead of requiring two separate passes. On GPUs, this is much more efficient than two sequential calls.</p>
 
     <!-- Section 9.3 -->
-    <h2 id="why-cfg-works">Why CFG Works: The Implicit Distribution</h2>
+    <h2 id="why-cfg-works"><span class="section-number">9.3</span> Why CFG Works: The Implicit Distribution</h2>
 
     <p>CFG has a clean mathematical basis beyond its heuristic appeal. The derivation starts from Bayes' rule.</p>
 
@@ -209,7 +209,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <p>This tradeoff is fundamental. Nearly all state-of-the-art results use $s > 1$ because users generally prefer sharp, coherent outputs over diversity. Finding the right $s$ is often a matter of taste and application.</p>
 
     <!-- Section 9.4 -->
-    <h2 id="text-conditioning">Text Conditioning via Cross-Attention</h2>
+    <h2 id="text-conditioning"><span class="section-number">9.4</span> Text Conditioning via Cross-Attention</h2>
 
     <p>Everything we've covered so far uses class labels, a single integer per image. But the real power of CFG emerges when the conditioning signal is a <strong>text prompt</strong>. This is how Stable Diffusion, DALL-E, and Imagen work.</p>
 
@@ -235,7 +235,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <p>We won't implement text conditioning in this course (it requires pretrained text encoders), but understanding the architecture is important. The <em>guidance mechanism</em> is identical; CFG doesn't care whether the conditioning is a class integer or a text embedding. You still train with random dropout and combine conditional + unconditional predictions at inference.</p>
 
     <!-- Section 9.5 -->
-    <h2 id="negative-prompts">Negative Prompts</h2>
+    <h2 id="negative-prompts"><span class="section-number">9.5</span> Negative Prompts</h2>
 
     <p>If you've used Stable Diffusion, you've probably entered a "negative prompt," text describing what you <em>don't</em> want. This feature falls directly out of the CFG framework with one small modification.</p>
 
@@ -257,7 +257,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <p>Mechanically, this requires a third forward pass (or a 3&times; batched pass) per step. In practice, most implementations batch all three predictions together for efficiency.</p>
 
     <!-- Section 9.6 -->
-    <h2 id="complete-pipeline">The Complete CFG Sampling Pipeline</h2>
+    <h2 id="complete-pipeline"><span class="section-number">9.6</span> The Complete CFG Sampling Pipeline</h2>
 
     <p>Let's put it all together. Here's the full classifier-free guidance sampling algorithm &mdash; this is what runs inside every modern conditional diffusion system.</p>
 
@@ -292,7 +292,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     </div>
 
     <!-- Section 9.7: PyTorch -->
-    <h2 id="pytorch-reference">PyTorch Reference</h2>
+    <h2 id="pytorch-reference"><span class="section-number">9.7</span> PyTorch Reference</h2>
 
     <p>Training with label dropout &mdash; the only change from Lecture 8's conditional training:</p>
 
