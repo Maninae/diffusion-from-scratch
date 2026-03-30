@@ -350,7 +350,13 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <h3 id="sigmoid-schedule">Sigmoid Schedule</h3>
 
-    <p>The sigmoid schedule ramps $\beta_t$ through a sigmoid curve&mdash;gentle at the extremes, steep in the middle. It's a compromise between linear and cosine, and performs well in practice.</p>
+    <p>The sigmoid schedule maps each timestep through a sigmoid function&mdash;typically over the range $[-6, 6]$&mdash;to interpolate between $\beta_{\text{start}}$ and $\beta_{\text{end}}$. Instead of a straight line or a trigonometric curve, you get an S-shaped ramp: $\beta_t$ changes slowly at the beginning and end, then sweeps quickly through the middle.</p>
+
+    <p>Why does the S-shape help? The gentle ramp at both extremes means the schedule doesn't waste capacity where it matters least. At early timesteps, $\beta_t$ stays small&mdash;the model isn't rushed through the near-clean regime. At late timesteps, $\beta_t$ doesn't spike aggressively into the nearly-destroyed regime either. The steep middle section moves quickly through the range where predictions are easiest, concentrating more of the schedule's budget on the transitions that actually challenge the model.</p>
+
+    <p>In terms of the $\bar{\alpha}_t$ curve, the sigmoid schedule sits between linear and cosine. It decays more smoothly than linear&mdash;no sudden early collapse&mdash;but it doesn't preserve signal quite as long as cosine does. Think of it as a practical middle ground: less aggressive than linear, less conservative than cosine.</p>
+
+    <p>The sigmoid schedule has become a popular default in recent diffusion implementations. It's robust across different datasets and resolutions, and requires minimal tuning beyond choosing the sigmoid range.</p>
 
     <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
       <canvas id="sigmoidAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
