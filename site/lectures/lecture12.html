@@ -174,7 +174,7 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      Zero-initialization is not just a trick &mdash; it's a principled approach to training deep residual networks. By starting each block as an identity, you avoid the "signal explosion" problem where randomly initialized deep networks produce wildly varying outputs. The network starts simple and adds complexity only as needed during training.
+      Zero-initialization is a principled approach to training deep residual networks, not an ad hoc trick. By starting each block as an identity, you avoid the "signal explosion" problem where randomly initialized deep networks produce wildly varying outputs. The network starts simple and adds complexity only as needed during training.
     </div>
 
     <h3 id="dit-block-pseudocode">DiT Block Pseudocode</h3>
@@ -285,7 +285,7 @@
     <!-- Section 12.6 -->
     <h2 id="dit-in-practice">DiT in the Wild</h2>
 
-    <p>DiT isn't just a research curiosity. It's the architecture behind the most capable generative models shipping today:</p>
+    <p>DiT powers the most capable generative models shipping today:</p>
 
     <ul>
       <li><strong>Sora (OpenAI)</strong> &mdash; uses DiT for video generation by treating video as <em>spatiotemporal patches</em>. A 10-second video becomes a long sequence of space-time tokens, processed by the same transformer machinery.</li>
