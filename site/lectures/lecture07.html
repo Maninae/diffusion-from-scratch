@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 7</div>
     <h2>Sampling &mdash; DDPM, DDIM &amp; Beyond</h2>
-    <p class="lecture-desc">Starting from pure noise and iteratively denoising to generate images &mdash; the stochastic DDPM reverse process, deterministic DDIM, and why fewer steps can work just as well.</p>
+    <p class="lecture-desc">Starting from pure noise and iteratively denoising to generate images: the stochastic DDPM reverse process, deterministic DDIM, and why fewer steps can work just as well.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">Algorithm 2</span>
       <span class="lecture-tag">DDPM Sampling</span>
@@ -56,7 +56,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">Training taught the model to predict noise. Now we run the process in reverse to generate images from scratch. We'll implement DDPM's full 1000-step stochastic sampler, then see how DDIM reformulates the same model as a deterministic ODE &mdash; cutting the step count dramatically while unlocking smooth interpolation and the probability flow perspective that connects diffusion to continuous dynamics.</p>
+    <p class="lecture-roadmap">Training taught the model to predict noise. Now we run the process in reverse to generate images from scratch. We'll implement DDPM's full 1000-step stochastic sampler, then see how DDIM reformulates the same model as a deterministic ODE, cutting the step count dramatically while unlocking smooth interpolation and the probability flow perspective that connects diffusion to continuous dynamics.</p>
 
     <!-- Section 0: Dependencies & Setup -->
     <h2 id="setup">Loading the Trained Model</h2>
@@ -152,7 +152,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <h3 id="error-correction">Stochastic Sampling as Error Correction</h3>
 
-    <p>The noise injection serves as a form of <strong>error correction</strong>. The model's noise prediction at each step isn't perfect &mdash; it's an approximation.</p>
+    <p>The noise injection serves as a form of <strong>error correction</strong>. The model's noise prediction at each step isn't perfect; it's an approximation.</p>
 
     <p>Without the injected noise, these small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. The fresh noise at each step gives the model a chance to "re-randomize" and correct its trajectory.</p>
 
@@ -160,7 +160,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <h3 id="diversity">Diversity</h3>
 
-    <p>The noise also produces <strong>sample diversity</strong>. Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. Run DDPM twice from the same starting noise and you'll get two different digits. This stochasticity is what makes the model a proper generative model &mdash; it doesn't memorize a fixed mapping.</p>
+    <p>The noise also produces <strong>sample diversity</strong>. Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. Run DDPM twice from the same starting noise and you'll get two different digits. This stochasticity is what makes the model a proper generative model; it doesn't memorize a fixed mapping.</p>
 
     <h3 id="deterministic-alternative">The Deterministic Alternative</h3>
 
@@ -169,7 +169,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <!-- Section 3: DDIM -->
     <h2 id="ddim">DDIM &mdash; Deterministic Sampling</h2>
 
-    <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps &mdash; the noise magnitudes would be wrong, and sample quality collapses.</p>
+    <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps; the noise magnitudes would be wrong, and sample quality collapses.</p>
 
     <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, <a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>) solves this by reformulating the reverse process with a tunable noise parameter $\eta$:</p>
 
@@ -200,7 +200,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>DDIM (<a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling &mdash; no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
+      <strong>DDIM (<a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling with no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
     </div>
 
     <h3 id="ddim-pseudocode">Pseudocode</h3>
@@ -240,7 +240,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <!-- Section 4: Accelerated Sampling -->
     <h2 id="fewer-steps">Fewer Steps &mdash; Accelerated Sampling</h2>
 
-    <p>This is the real payoff of DDIM. When $\eta = 0$, the sampling trajectory is a smooth, deterministic curve from $\mathbf{x}_T$ to $\mathbf{x}_0$. Smooth curves can be traversed at any resolution &mdash; you don't need to visit every one of 1,000 points along the way.</p>
+    <p>This is the real payoff of DDIM. When $\eta = 0$, the sampling trajectory is a smooth, deterministic curve from $\mathbf{x}_T$ to $\mathbf{x}_0$. Smooth curves can be traversed at any resolution; you don't need to visit every one of 1,000 points along the way.</p>
 
     <h3 id="timestep-subselection">Timestep Sub-Selection</h3>
 
@@ -265,7 +265,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <p>Going from 1,000 to 50 steps is a <strong>20&times; speedup</strong> with nearly the same output quality.</p>
 
-    <p>This is why DDIM was a breakthrough &mdash; it made diffusion models practical for interactive use.</p>
+    <p>This is why DDIM was a breakthrough. It made diffusion models practical for interactive use.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -275,7 +275,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <!-- Section 5: Dynamic Thresholding -->
     <h2 id="dynamic-thresholding">Dynamic Thresholding</h2>
 
-    <p>At each DDIM step, we compute a prediction of $\hat{\mathbf{x}}_0$. Ideally this prediction stays in the $[-1, 1]$ range (since our training data was normalized there), but in practice it can overshoot &mdash; especially at high guidance scales (which we'll encounter in Lecture 9).</p>
+    <p>At each DDIM step, we compute a prediction of $\hat{\mathbf{x}}_0$. Ideally this prediction stays in the $[-1, 1]$ range (since our training data was normalized there), but in practice it can overshoot, especially at high guidance scales (which we'll encounter in Lecture 9).</p>
 
     <h3 id="static-clipping">Static Clipping</h3>
 
@@ -290,7 +290,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <!-- Section 6: Full Sampling Pipeline -->
     <h2 id="full-pipeline">The Full Sampling Pipeline</h2>
 
-    <p>Let's put the complete end-to-end pipeline together &mdash; from random noise to displayable images:</p>
+    <p>Let's put the complete end-to-end pipeline together, from random noise to displayable images:</p>
 
     <ol>
       <li><strong>Generate starting noise:</strong> $\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ with shape $(B, C, H, W)$</li>
@@ -342,7 +342,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     $$\nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \approx -\frac{\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)}{\sqrt{1-\bar{\alpha}_t}}$$
 
-    <p>In other words, predicting noise $\boldsymbol{\epsilon}$ is equivalent to estimating the score function. This connection is profound &mdash; it unifies diffusion models with score-based generative models (<a href="https://arxiv.org/abs/1907.05600" target="_blank">Song &amp; Ermon, 2019</a>) and explains why DDIM works.</p>
+    <p>In other words, predicting noise $\boldsymbol{\epsilon}$ is equivalent to estimating the score function. This connection is profound: it unifies diffusion models with score-based generative models (<a href="https://arxiv.org/abs/1907.05600" target="_blank">Song &amp; Ermon, 2019</a>) and explains why DDIM works.</p>
 
     <h3 id="ddim-as-euler">DDIM as Euler Discretization</h3>
 
@@ -386,9 +386,9 @@ show_denoising_trajectory(model, schedule, shape=(<span class="number">1</span>,
     <!-- Section 9: Looking Ahead -->
     <h2 id="looking-ahead">Looking Ahead</h2>
 
-    <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> digits &mdash; we have no control over what it produces. You might get a 7, a 3, or a 0. There's no way to say "generate a 5."</p>
+    <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> digits, and we have no control over what it produces. You might get a 7, a 3, or a 0. There's no way to say "generate a 5."</p>
 
-    <p>The next lecture introduces <strong>conditioning</strong> &mdash; feeding class labels, text, or other signals into the model so it generates specific outputs on demand. This is the leap from an interesting mathematical framework to a practical tool: text-to-image generation, class-conditional synthesis, and everything that makes diffusion models useful in the real world.</p>
+    <p>The next lecture introduces <strong>conditioning</strong>: feeding class labels, text, or other signals into the model so it generates specific outputs on demand. This is the leap from an interesting mathematical framework to a practical tool: text-to-image generation, class-conditional synthesis, and everything that makes diffusion models useful in the real world.</p>
 
   </article>
 

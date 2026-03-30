@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 5</div>
     <h2>Time Conditioning &amp; Spatial Attention</h2>
-    <p class="lecture-desc">Sinusoidal timestep embeddings, time injection into ResBlocks, and self-attention that gives the network a global receptive field &mdash; completing the U-Net architecture.</p>
+    <p class="lecture-desc">Sinusoidal timestep embeddings, time injection into ResBlocks, and self-attention that gives the network a global receptive field, completing the U-Net architecture.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">Time Embedding</span>
       <span class="lecture-tag">Sinusoidal Encoding</span>
@@ -65,27 +65,27 @@
     <p>Consider three different scenarios:</p>
 
     <ul>
-      <li><strong>$t = 10$:</strong> The image is nearly clean. Only a faint haze of noise has been added. The network should make tiny, careful corrections &mdash; most of the image is already signal.</li>
+      <li><strong>$t = 10$:</strong> The image is nearly clean. Only a faint haze of noise has been added. The network should make tiny, careful corrections. Most of the image is already signal.</li>
       <li><strong>$t = 500$:</strong> Half signal, half noise. The underlying digit is visible but degraded. The network must separate genuine structure from noise at every pixel.</li>
       <li><strong>$t = 990$:</strong> Almost pure Gaussian static. The original image is essentially destroyed. The network must <em>hallucinate</em> plausible structure from nearly zero signal.</li>
     </ul>
 
-    <p>These are fundamentally different tasks. A network that doesn't know the current timestep would produce the same prediction regardless of noise level &mdash; and that prediction would be wrong for almost every $t$.</p>
+    <p>These are fundamentally different tasks. A network that doesn't know the current timestep would produce the same prediction regardless of noise level, and that prediction would be wrong for almost every $t$.</p>
 
     <p>We need to inject a representation of the timestep into every layer of the network.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      Time conditioning is what turns a single network into a <em>family</em> of denoisers &mdash; one for each noise level. The same weights handle all 1000 timesteps, but the time embedding modulates the network's behavior at each one.
+      Time conditioning is what turns a single network into a <em>family</em> of denoisers, one for each noise level. The same weights handle all 1000 timesteps, but the time embedding modulates the network's behavior at each one.
     </div>
 
 
     <!-- Section 2: Sinusoidal Embeddings -->
     <h2 id="sinusoidal-embeddings">Sinusoidal Timestep Embeddings</h2>
 
-    <p>We could pass the timestep as a raw scalar &mdash; concatenate $t$ to the input or feed it as an extra feature. But a single number doesn't give the network enough structure to modulate its behavior across hundreds of distinct noise levels. We need a <strong>high-dimensional, structured representation</strong> of each timestep.</p>
+    <p>We could pass the timestep as a raw scalar, concatenate $t$ to the input or feed it as an extra feature. But a single number doesn't give the network enough structure to modulate its behavior across hundreds of distinct noise levels. We need a <strong>high-dimensional, structured representation</strong> of each timestep.</p>
 
-    <p>The solution is sinusoidal positional encoding, borrowed from transformers (<a href="https://arxiv.org/abs/1706.03762" target="_blank">Vaswani et al., 2017</a>)&mdash;the same formula that encodes token positions in a sequence can encode noise levels for a U-Net.</p>
+    <p>The solution is sinusoidal positional encoding, borrowed from transformers (<a href="https://arxiv.org/abs/1706.03762" target="_blank">Vaswani et al., 2017</a>). The same formula that encodes token positions in a sequence can encode noise levels for a U-Net.</p>
 
     <h3 id="embedding-formula">The Formula</h3>
 
@@ -100,11 +100,11 @@
       <li><strong>High dimensions</strong> ($i$ large): low frequency &mdash; oscillates slowly, capturing the broad "early vs. late" distinction.</li>
     </ul>
 
-    <p>The result is a unique "fingerprint" for every timestep &mdash; a vector in $\mathbb{R}^d$ where nearby timesteps have similar (but distinct) embeddings, and distant timesteps have very different embeddings.</p>
+    <p>The result is a unique "fingerprint" for every timestep, a vector in $\mathbb{R}^d$ where nearby timesteps have similar (but distinct) embeddings, and distant timesteps have very different embeddings.</p>
 
     <div class="callout example">
       <div class="callout-label">Example</div>
-      With $d = 128$, the sinusoidal embedding maps each integer $t$ to a 128-dimensional vector. The embedding for $t = 500$ is close to the embedding for $t = 501$ (the denoising task is similar), but far from the embedding for $t = 50$ (the denoising task is very different). This smoothness is exactly what we want &mdash; the network's behavior should change gradually as $t$ varies.
+      With $d = 128$, the sinusoidal embedding maps each integer $t$ to a 128-dimensional vector. The embedding for $t = 500$ is close to the embedding for $t = 501$ (the denoising task is similar), but far from the embedding for $t = 50$ (the denoising task is very different). This smoothness is exactly what we want; the network's behavior should change gradually as $t$ varies.
     </div>
 
     <div class="pseudocode">
@@ -117,13 +117,13 @@
     <span class="keyword">return</span> embedding</pre>
     </div>
 
-    <p>Input: a batch of integer timesteps, shape $(B,)$. Output: a batch of embedding vectors, shape $(B, d)$. No spatial dimensions &mdash; this is a single vector per sample.</p>
+    <p>Input: a batch of integer timesteps, shape $(B,)$. Output: a batch of embedding vectors, shape $(B, d)$. No spatial dimensions; this is a single vector per sample.</p>
 
 
     <!-- Section 3: MLP Projection -->
     <h2 id="mlp-projection">The Time MLP</h2>
 
-    <p>The raw sinusoidal embedding is a fixed, deterministic function &mdash; no learnable parameters. To give the network flexibility in how it uses the timestep information, we pass the embedding through a small MLP:</p>
+    <p>The raw sinusoidal embedding is a fixed, deterministic function with no learnable parameters. To give the network flexibility in how it uses the timestep information, we pass the embedding through a small MLP:</p>
 
     $$t \;\xrightarrow{\text{sinusoidal}}\; \mathbb{R}^d \;\xrightarrow{\text{Linear}}\; \mathbb{R}^{4d} \;\xrightarrow{\text{SiLU}}\; \mathbb{R}^{4d} \;\xrightarrow{\text{Linear}}\; \mathbb{R}^{4d}$$
 
@@ -214,7 +214,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
     <!-- Section 6: Where Attention Goes -->
     <h2 id="attention-placement">Where Attention Goes in the U-Net</h2>
 
-    <p>Convolutions are inherently local &mdash; a 3&times;3 kernel sees only its immediate neighborhood. For denoising, we often need <strong>global context</strong>: "the top-left of this digit should be consistent with the bottom-right." Self-attention provides this global receptive field, but it comes at a steep computational cost.</p>
+    <p>Convolutions are inherently local: a 3&times;3 kernel sees only its immediate neighborhood. For denoising, we often need <strong>global context</strong>: "the top-left of this digit should be consistent with the bottom-right." Self-attention provides this global receptive field, but it comes at a steep computational cost.</p>
 
     <h3 id="attention-cost">The Quadratic Cost Problem</h3>
 
@@ -237,14 +237,14 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
     <div class="callout note">
       <div class="callout-label">Note</div>
-      The quadratic cost of attention is one reason why high-resolution diffusion models use latent diffusion (Lecture 10) &mdash; by operating in a compressed latent space ($32 \times 32$ or $64 \times 64$), attention becomes computationally feasible even for 512&times;512 images.
+      The quadratic cost of attention is one reason why high-resolution diffusion models use latent diffusion (Lecture 10). By operating in a compressed latent space ($32 \times 32$ or $64 \times 64$), attention becomes computationally feasible even for 512&times;512 images.
     </div>
 
 
     <!-- Section 7: Spatial Self-Attention -->
     <h2 id="spatial-attention">Spatial Self-Attention</h2>
 
-    <p>Images aren't sequences &mdash; but we can reshape them into one. The core trick of spatial self-attention: treat each spatial position $(h, w)$ as a "token" and apply standard multi-head self-attention.</p>
+    <p>Images aren't sequences, but we can reshape them into one. The core trick of spatial self-attention: treat each spatial position $(h, w)$ as a "token" and apply standard multi-head self-attention.</p>
 
     <h3 id="attention-steps">Step by Step</h3>
 
@@ -281,7 +281,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
         <span class="keyword">return</span> x + attn_out                              <span class="comment"># residual connection</span></pre>
     </div>
 
-    <p>Note the residual connection: the attention output is <em>added</em> to the original input. This means attention acts as a refinement &mdash; the feature map already has useful information from the convolutions, and attention adds global context on top.</p>
+    <p>Note the residual connection: the attention output is <em>added</em> to the original input. This means attention acts as a refinement. The feature map already has useful information from the convolutions, and attention adds global context on top.</p>
 
 
     <!-- Section 8: Cross-Attention Preview -->
@@ -296,7 +296,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
       <li><strong>Cross-attention:</strong> $Q$ from image, $K, V$ from text &mdash; "what does the text tell us about this region of the image?"</li>
     </ul>
 
-    <p>We'll cover cross-attention in detail in Lecture 9. For now, the mechanism is identical &mdash; the only difference is where $K$ and $V$ come from.</p>
+    <p>We'll cover cross-attention in detail in Lecture 9. For now, the mechanism is identical; the only difference is where $K$ and $V$ come from.</p>
 
 
     <!-- Section 9: Complete Architecture -->
@@ -320,9 +320,9 @@ h = conv2(silu(h))                                     <span style="color: var(-
     <p>Not all parts of the U-Net are created equal in terms of parameter count:</p>
 
     <ul>
-      <li><strong>Lower-resolution blocks</strong> (128 and 256 channels) contain the bulk of parameters &mdash; convolutions with more channels have quadratically more weights.</li>
+      <li><strong>Lower-resolution blocks</strong> (128 and 256 channels) contain the bulk of parameters, since convolutions with more channels have quadratically more weights.</li>
       <li><strong>Attention layers</strong> add significant parameters at each resolution where they're applied.</li>
-      <li><strong>The time MLP</strong> is relatively small &mdash; typically a few thousand parameters.</li>
+      <li><strong>The time MLP</strong> is relatively small, typically a few thousand parameters.</li>
       <li><strong>Higher-resolution blocks</strong> (64 channels) are cheap per-block but process the largest feature maps, so they dominate compute time.</li>
     </ul>
 
@@ -364,7 +364,7 @@ print(f"Input:  {tuple(x_t.shape)}")        <span style="color: var(--text-muted
 print(f"Output: {tuple(noise_pred.shape)}")  <span style="color: var(--text-muted)"># (4, 1, 28, 28) &mdash; same!</span></pre>
     </div>
 
-    <p>The network is ready. It takes a noisy image and a timestep, and outputs a noise prediction of the same shape. In Lecture 6, we'll use this architecture to actually <em>train</em> a diffusion model &mdash; implementing the DDPM training algorithm from scratch and watching it learn to denoise MNIST digits.</p>
+    <p>The network is ready. It takes a noisy image and a timestep, and outputs a noise prediction of the same shape. In Lecture 6, we'll use this architecture to actually <em>train</em> a diffusion model, implementing the DDPM training algorithm from scratch and watching it learn to denoise MNIST digits.</p>
 
 
     <!-- Section 11: Looking Ahead -->

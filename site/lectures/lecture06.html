@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 6</div>
     <h2>Training a Diffusion Model</h2>
-    <p class="lecture-desc">From Algorithm 1 on paper to a working training pipeline &mdash; data normalization, optimizer recipes, EMA, gradient clipping, and everything else that separates a model that generates digits from one that generates noise.</p>
+    <p class="lecture-desc">From Algorithm 1 on paper to a working training pipeline: data normalization, optimizer recipes, EMA, gradient clipping, and everything else that separates a model that generates digits from one that generates noise.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">Training Loop</span>
       <span class="lecture-tag">EMA</span>
@@ -61,11 +61,11 @@
     <!-- Section 1: From Math to Working Code -->
     <h2 id="from-math-to-code">From Math to Working Code</h2>
 
-    <p>We have the math from Lecture 3 &mdash; a loss function, a forward noising process, and a six-line training algorithm. We have the architecture from Lectures 4&ndash;5 &mdash; a U-Net with time conditioning and attention. In principle, we could just wire them together and start training. In practice, doing that naively will produce a model that trains painfully slowly, generates blurry mush, or quietly diverges at step 5,000.</p>
+    <p>We have the math from Lecture 3: a loss function, a forward noising process, and a six-line training algorithm. We have the architecture from Lectures 4&ndash;5: a U-Net with time conditioning and attention. In principle, we could just wire them together and start training. In practice, doing that naively will produce a model that trains painfully slowly, generates blurry mush, or quietly diverges at step 5,000.</p>
 
     <p>This lecture is about the <strong>practical engineering</strong> that turns Algorithm 1 into a pipeline that actually works.</p>
 
-    <p>None of these techniques are optional extras &mdash; they're the difference between generating recognizable digits in 5K steps and generating noise at 50K steps.</p>
+    <p>None of these techniques are optional extras. They're the difference between generating recognizable digits in 5K steps and generating noise at 50K steps.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -77,7 +77,7 @@
 
     <h3 id="normalize-to-minus-one">Normalize to [&minus;1, 1], Not [0, 1]</h3>
 
-    <p>This is the single most common mistake in diffusion model implementations. Your model predicts noise $\epsilon \sim \mathcal{N}(0, I)$ &mdash; values that are mean-zero and symmetric around the origin.</p>
+    <p>This is the single most common mistake in diffusion model implementations. Your model predicts noise $\epsilon \sim \mathcal{N}(0, I)$, values that are mean-zero and symmetric around the origin.</p>
 
     <p>If your images live in $[0, 1]$, you've introduced an asymmetry: the model has to learn to predict symmetric noise from an asymmetric signal. It works, but it's harder than it needs to be.</p>
 
@@ -96,9 +96,9 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
 
     <h3 id="data-augmentation">Data Augmentation: Less Than You'd Think</h3>
 
-    <p>For MNIST, we use <strong>no data augmentation</strong>. This might surprise you &mdash; augmentation is standard practice in classification. But here's the thing: horizontal flips would destroy digit identity. A flipped 3 or 7 becomes unrecognizable; a flipped 6 becomes a 9.</p>
+    <p>For MNIST, we use <strong>no data augmentation</strong>. This might surprise you, since augmentation is standard practice in classification. But here's the thing: horizontal flips would destroy digit identity. A flipped 3 or 7 becomes unrecognizable; a flipped 6 becomes a 9.</p>
 
-    <p>And diffusion training already provides powerful implicit augmentation &mdash; each image is seen at thousands of different noise levels across training, effectively multiplying the dataset many times over.</p>
+    <p>And diffusion training already provides powerful implicit augmentation: each image is seen at thousands of different noise levels across training, effectively multiplying the dataset many times over.</p>
 
     <div class="callout example">
       <div class="callout-label">Example</div>
@@ -168,7 +168,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <!-- Section 4: Timestep Sampling -->
     <h2 id="timestep-sampling">Timestep Sampling Strategies</h2>
 
-    <p>Algorithm 1 says "sample $t$ uniformly." This is the standard approach and works well, but it's worth understanding why it's suboptimal &mdash; and what alternatives exist.</p>
+    <p>Algorithm 1 says "sample $t$ uniformly." This is the standard approach and works well, but it's worth understanding why it's suboptimal, and what alternatives exist.</p>
 
     <h3 id="uniform-sampling">Uniform Sampling</h3>
 
@@ -179,7 +179,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <p>Not all timesteps are equally informative. Consider what the model sees at different noise levels:</p>
 
     <ul>
-      <li><strong>Low $t$ (little noise):</strong> the image is nearly clean. Predicting the (small amount of) noise is easy &mdash; the model barely needs to do anything. Loss is small, gradients are uninformative.</li>
+      <li><strong>Low $t$ (little noise):</strong> the image is nearly clean. Predicting the (small amount of) noise is easy; the model barely needs to do anything. Loss is small, gradients are uninformative.</li>
       <li><strong>High $t$ (lots of noise):</strong> the image is nearly pure Gaussian noise. The model can't see the underlying image at all, so it's essentially predicting random noise from random noise. Also relatively easy in terms of loss magnitude.</li>
       <li><strong>Mid $t$:</strong> the hardest range. The signal is partially visible but heavily corrupted. The model has to work hard to separate signal from noise. These timesteps produce the most informative gradients.</li>
     </ul>
@@ -195,7 +195,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <!-- Section 5: Gradient Clipping -->
     <h2 id="gradient-clipping">Gradient Clipping</h2>
 
-    <p>Diffusion training loss can spike &mdash; especially in the first few hundred steps when the model is still learning basic structure, or when an unlucky batch happens to contain all high-noise timesteps. Without protection, a single bad batch can produce enormous gradients that blow up your model weights.</p>
+    <p>Diffusion training loss can spike, especially in the first few hundred steps when the model is still learning basic structure, or when an unlucky batch happens to contain all high-noise timesteps. Without protection, a single bad batch can produce enormous gradients that blow up your model weights.</p>
 
     <p>The fix is gradient clipping:</p>
 
@@ -207,7 +207,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      Gradient clipping doesn't change the direction of the optimization step &mdash; it only prevents catastrophically large steps. Think of it as a speed limit: the optimizer can go anywhere, but it can't go there too fast. This is standard practice in essentially all modern diffusion training.
+      Gradient clipping doesn't change the direction of the optimization step; it only prevents catastrophically large steps. Think of it as a speed limit: the optimizer can go anywhere, but it can't go there too fast. This is standard practice in essentially all modern diffusion training.
     </div>
 
     <!-- Section 6: EMA -->
@@ -217,13 +217,13 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <h3 id="why-ema">Why EMA Helps</h3>
 
-    <p>During training, model weights oscillate around the optimum &mdash; overshooting in one direction, then correcting. These oscillations are fine for computing gradients (the optimizer handles them), but they produce noisy, inconsistent samples. EMA averages out the oscillations, yielding a smoother set of weights that generates higher-quality images.</p>
+    <p>During training, model weights oscillate around the optimum, overshooting in one direction, then correcting. These oscillations are fine for computing gradients (the optimizer handles them), but they produce noisy, inconsistent samples. EMA averages out the oscillations, yielding a smoother set of weights that generates higher-quality images.</p>
 
     <p>The update rule is:</p>
 
     $$\theta_{\text{ema}} = \lambda \cdot \theta_{\text{ema}} + (1 - \lambda) \cdot \theta$$
 
-    <p>With $\lambda = 0.9999$ (the standard decay), the EMA model changes <em>very</em> slowly &mdash; each training step nudges it by just 0.01% toward the current weights. This heavy smoothing is what makes EMA so effective.</p>
+    <p>With $\lambda = 0.9999$ (the standard decay), the EMA model changes <em>very</em> slowly. Each training step nudges it by just 0.01% toward the current weights. This heavy smoothing is what makes EMA so effective.</p>
 
     <h3 id="ema-implementation">Implementation</h3>
 
@@ -254,11 +254,11 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <h3 id="warmup">Linear Warmup</h3>
 
-    <p>For the first 1,000 steps, linearly increase the learning rate from 0 to the target value (e.g., $2 \times 10^{-4}$). Why? In the first few steps, the model knows nothing &mdash; its predictions are random noise. Large learning rates at this point cause wild parameter swings. Warmup lets the model establish basic structure before the optimizer starts making aggressive updates.</p>
+    <p>For the first 1,000 steps, linearly increase the learning rate from 0 to the target value (e.g., $2 \times 10^{-4}$). Why? In the first few steps, the model knows nothing, and its predictions are random noise. Large learning rates at this point cause wild parameter swings. Warmup lets the model establish basic structure before the optimizer starts making aggressive updates.</p>
 
     <h3 id="cosine-decay">Cosine Decay</h3>
 
-    <p>After warmup, the learning rate follows a cosine curve from the target value down to 0. This schedule is gentle &mdash; it holds near the peak for a long time, then gradually decreases as training matures. It's the default in most modern training pipelines.</p>
+    <p>After warmup, the learning rate follows a cosine curve from the target value down to 0. This schedule is gentle: it holds near the peak for a long time, then gradually decreases as training matures. It's the default in most modern training pipelines.</p>
 
     <h3 id="practical-recipe">The Practical Recipe</h3>
 
@@ -278,7 +278,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p><strong>Symptom:</strong> Loss stays flat for the first 100&ndash;1,000 steps. <strong>Cause:</strong> Totally normal. The model is building basic representations. Don't panic, don't restart.</p>
 
     <h3 id="color-shift">Color Shift in Samples</h3>
-    <p><strong>Symptom:</strong> Generated images have a gray or washed-out appearance. <strong>Cause:</strong> Normalization mismatch &mdash; data is in $[0, 1]$ but the model expects $[-1, 1]$, or your denormalization is wrong. <strong>Fix:</strong> Double-check the entire normalization pipeline: training data, sampling output, display code.</p>
+    <p><strong>Symptom:</strong> Generated images have a gray or washed-out appearance. <strong>Cause:</strong> Normalization mismatch: data is in $[0, 1]$ but the model expects $[-1, 1]$, or your denormalization is wrong. <strong>Fix:</strong> Double-check the entire normalization pipeline: training data, sampling output, display code.</p>
 
     <h3 id="nan-loss">NaN Loss</h3>
     <p><strong>Symptom:</strong> Loss becomes <code>NaN</code> and never recovers. <strong>Cause:</strong> Usually overflow in sinusoidal time embeddings or divide-by-zero in the noise schedule. <strong>Fix:</strong> Ensure everything is in <code>float32</code>. Check schedule values at the boundaries ($t = 0$ and $t = T$).</p>
@@ -297,11 +297,11 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <h3 id="loss-curve">The Loss Curve</h3>
 
-    <p>The diffusion loss curve is characteristically <strong>noisy and slowly decreasing</strong>. Don't expect a smooth exponential decay like you'd see in classification. Use a moving average (window of 100 steps) to see the trend. The loss is not perfectly correlated with sample quality &mdash; a model at loss 0.05 might generate better images than one at loss 0.04. Visual inspection is the ground truth.</p>
+    <p>The diffusion loss curve is characteristically <strong>noisy and slowly decreasing</strong>. Don't expect a smooth exponential decay like you'd see in classification. Use a moving average (window of 100 steps) to see the trend. The loss is not perfectly correlated with sample quality; a model at loss 0.05 might generate better images than one at loss 0.04. Visual inspection is the ground truth.</p>
 
     <h3 id="fid">FID &mdash; The Standard Metric</h3>
 
-    <p><strong>Frchet Inception Distance (FID)</strong> is the standard quantitative metric for generative quality. It compares the distribution of real images to generated images using features from a pretrained InceptionV3 network. Lower is better &mdash; DDPM on CIFAR-10 achieves FID $\approx 3.17$.</p>
+    <p><strong>Frchet Inception Distance (FID)</strong> is the standard quantitative metric for generative quality. It compares the distribution of real images to generated images using features from a pretrained InceptionV3 network. Lower is better. DDPM on CIFAR-10 achieves FID $\approx 3.17$.</p>
 
     <p>FID is too expensive to compute during training (it requires thousands of generated samples per evaluation). For this course, visual inspection plus the loss curve is sufficient.</p>
 
@@ -392,7 +392,7 @@ dataloader = get_mnist_dataloader(batch_size=<span class="number">64</span>)
     <!-- Section 12: Looking Ahead -->
     <h2 id="looking-ahead">Looking Ahead</h2>
 
-    <p>We now have a trained diffusion model and a saved checkpoint. The model can predict the noise in an image at any timestep &mdash; but we haven't actually <em>generated</em> any images yet. We've only trained the model; we haven't sampled from it.</p>
+    <p>We now have a trained diffusion model and a saved checkpoint. The model can predict the noise in an image at any timestep, but we haven't actually <em>generated</em> any images yet. We've only trained the model; we haven't sampled from it.</p>
 
     <p>In the next lecture, we'll load this checkpoint and implement the reverse process: starting from pure Gaussian noise and iteratively denoising until we have a clean image. We'll implement both DDPM sampling (1,000 steps, stochastic) and DDIM sampling (50 steps, deterministic), and see why DDIM was a breakthrough for practical image generation.</p>
 

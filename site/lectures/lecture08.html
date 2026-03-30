@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 8</div>
     <h2>Conditioning &amp; Classifier Guidance</h2>
-    <p class="lecture-desc">Moving from unconditional to conditional generation &mdash; embedding class labels into the U-Net, then steering generation with a trained classifier's gradients.</p>
+    <p class="lecture-desc">Moving from unconditional to conditional generation: embedding class labels into the U-Net, then steering generation with a trained classifier's gradients.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">Conditional Generation</span>
       <span class="lecture-tag">Class Embedding</span>
@@ -55,12 +55,12 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">So far our model generates random images with no user control. To make it useful, we need conditioning &mdash; the ability to say "generate a 7." We'll embed class labels into the U-Net, then discover a more powerful idea: steering generation at <em>sampling time</em> using gradients from a trained classifier, trading diversity for fidelity with a single guidance scale parameter.</p>
+    <p class="lecture-roadmap">So far our model generates random images with no user control. To make it useful, we need conditioning, the ability to say "generate a 7." We'll embed class labels into the U-Net, then discover a more powerful idea: steering generation at <em>sampling time</em> using gradients from a trained classifier, trading diversity for fidelity with a single guidance scale parameter.</p>
 
     <!-- Section 8.1 -->
     <h2 id="unconditional-to-conditional">From Unconditional to Conditional Generation</h2>
 
-    <p>Up to now, our diffusion model generates images &mdash; but we have no control over <em>what</em> it generates. We get random digits, random objects, random faces. For any practical application, we need to tell the model what to produce: "generate a 7" or "generate a cat."</p>
+    <p>Up to now, our diffusion model generates images, but we have no control over <em>what</em> it generates. We get random digits, random objects, random faces. For any practical application, we need to tell the model what to produce: "generate a 7" or "generate a cat."</p>
 
     <p>The shift is surprisingly simple at the architectural level. Our unconditional model takes two inputs:</p>
 
@@ -74,13 +74,13 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      The architecture change is minimal &mdash; we're adding one more input to the network. The interesting question is <em>how</em> that conditioning signal gets woven into the model's representations, and <em>how</em> we use it during sampling to steer generation.
+      The architecture change is minimal: we're adding one more input to the network. The interesting question is <em>how</em> that conditioning signal gets woven into the model's representations, and <em>how</em> we use it during sampling to steer generation.
     </div>
 
     <!-- Section 8.2 -->
     <h2 id="class-embedding">Class Embedding &amp; Injection</h2>
 
-    <p>A class label is an integer &mdash; it carries no geometric or semantic structure. We need to lift it into a continuous vector that the network can work with. This is the same idea as word embeddings in NLP: map discrete tokens to learned vectors.</p>
+    <p>A class label is an integer; it carries no geometric or semantic structure. We need to lift it into a continuous vector that the network can work with. This is the same idea as word embeddings in NLP: map discrete tokens to learned vectors.</p>
 
     <h3 id="embedding-lookup">The Embedding Lookup</h3>
 
@@ -88,7 +88,7 @@
 
     $$\texttt{class\_emb} = \texttt{nn.Embedding}(\texttt{num\_classes}, \texttt{emb\_dim})$$
 
-    <p>Given a class label $c$, the embedding layer returns a vector of shape $(\texttt{emb\_dim},)$. This vector is randomly initialized and <em>learned during training</em> &mdash; the network discovers what each class "means" in embedding space.</p>
+    <p>Given a class label $c$, the embedding layer returns a vector of shape $(\texttt{emb\_dim},)$. This vector is randomly initialized and <em>learned during training</em>. The network discovers what each class "means" in embedding space.</p>
 
     <h3 id="injection-addition">Injection Method 1: Addition to Time Embedding</h3>
 
@@ -102,7 +102,7 @@
 
     <ul>
       <li><strong>Separate injection:</strong> Process the class embedding through its own MLP, then add it to features at each ResBlock independently from the time embedding. More expressive, but more parameters.</li>
-      <li><strong>Adaptive Group Normalization (AdaGN):</strong> Use the conditioning vector to predict per-channel scale and shift parameters for GroupNorm. This is the most expressive approach &mdash; used in DALL-E 2 and other advanced architectures.</li>
+      <li><strong>Adaptive Group Normalization (AdaGN):</strong> Use the conditioning vector to predict per-channel scale and shift parameters for GroupNorm. This is the most expressive approach, used in DALL-E 2 and other advanced architectures.</li>
     </ul>
 
     <h3 id="null-class-token">The Null Class Token</h3>
@@ -138,7 +138,7 @@
 
     <p>The model learns to make <em>class-specific</em> noise predictions. When told "this is a 7 at noise level $t$," it predicts the noise differently than when told "this is a 3 at noise level $t$."</p>
 
-    <p>The conditioning signal helps the model resolve ambiguity &mdash; at high noise levels, digits can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
+    <p>The conditioning signal helps the model resolve ambiguity. At high noise levels, digits can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
 
     <div class="pseudocode">
 <strong>Conditional Training Step</strong>
@@ -229,7 +229,7 @@
     <!-- Section 8.5 -->
     <h2 id="classifier-guidance-limitations">Why Classifier Guidance Falls Short</h2>
 
-    <p>Classifier guidance works &mdash; it produces sharp, class-specific images. But it has significant practical drawbacks:</p>
+    <p>Classifier guidance works. It produces sharp, class-specific images. But it has significant practical drawbacks:</p>
 
     <ul>
       <li><strong>Extra model required.</strong> You must train a separate classifier on noisy images at <em>all</em> noise levels. This classifier needs to handle everything from nearly-clean images ($t \approx 0$) to pure noise ($t \approx T$). That's an expensive, non-trivial training task.</li>
