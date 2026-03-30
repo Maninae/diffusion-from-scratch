@@ -617,7 +617,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
     <!-- Section 2.6 -->
     <h2 id="snr">Signal-to-Noise Ratio</h2>
 
-    <p>Different timesteps present different challenges to the model. At low $t$, the image is almost clean&mdash;easy to denoise. At high $t$, it's nearly pure noise&mdash;the model has to invent plausible structure. The <strong>signal-to-noise ratio</strong> (SNR) formalizes this.</p>
+    <p>We've now seen three schedules that distribute the transition from image to noise in very different ways&mdash;but how do we compare them on equal footing? We need a single quantity that captures how much signal remains relative to noise at any given timestep. That quantity is the <strong>signal-to-noise ratio</strong> (SNR).</p>
 
     $$\text{SNR}(t) = \frac{\bar{\alpha}_t}{1 - \bar{\alpha}_t}$$
 
