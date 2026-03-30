@@ -113,7 +113,7 @@
     <!-- Section 3.4 -->
     <h2 id="elbo">The ELBO Derivation</h2>
 
-    <p>How do we train the model? We want to maximize the log-likelihood of the data: $\log p_\theta(x_0)$. The ELBO (Evidence Lower BOund) gives us a tractable training objective.</p>
+    <p>The tractable posterior $q(x_{t-1} \mid x_t, x_0)$ gives us a training target: we know what the ideal reverse step looks like when $x_0$ is available. Since we have $x_0$ during training (it's our clean image from the training data), we can use it. The ELBO (Evidence Lower BOund) formalizes this into a tractable training objective.</p>
 
     <details class="collapsible">
       <summary>Expand full ELBO derivation</summary>
@@ -174,8 +174,10 @@
     <div class="callout theorem">
       <div class="callout-label">Core Result</div>
       $$L = \mathbb{E}_{t, x_0, \varepsilon}\!\left[\left\| \varepsilon - \varepsilon_\theta(x_t, t) \right\|^2\right]$$
-      <p>Sample noise. Add it to an image. Ask the model to predict that noise. Minimize MSE. That's it.</p>
+      <p>Sample noise. Add it to an image. Ask the model to predict that noise. Minimize MSE.</p>
     </div>
+
+    <p>Notice something subtle: the $\varepsilon$ in this loss is the <strong>total</strong> noise that takes $x_0$ all the way to $x_t$ in one shot via the closed-form shortcut from Lecture 2. It is not the small marginal noise from a single step $t{-}1 \to t$. Although we've been framing the reverse process as undoing one step at a time, the training target is the cumulative noise&mdash;because recovering $\varepsilon$ is equivalent to recovering $x_0$ itself, and knowing $x_0$ is all the model needs to compute the correct reverse step at any timestep.</p>
 
     <p>Why does predicting noise work better than predicting the mean $\mu$ directly?</p>
 
@@ -184,6 +186,8 @@
     <p>With $\mu$-prediction, the target changes dramatically across timesteps. At low $t$ (clean images), $\tilde{\mu}_t$ is close to $x_0$&mdash;a high-magnitude, highly structured signal. At high $t$ (pure noise), $\tilde{\mu}_t$ is close to zero&mdash;a tiny, unstructured target. The network must learn fundamentally different behaviors depending on the noise level, and the gradient signal at high-noise timesteps is vanishingly small.</p>
 
     <p>With $\varepsilon$-prediction, the target is always a sample from $\mathcal{N}(0, I)$, regardless of timestep. The scale and distribution of the target stay constant&mdash;what changes is how much information $x_t$ gives the network to work with. This makes the learning problem more balanced across all noise levels.</p>
+
+    <p>This noise-prediction loss is almost the final training objective, but the ELBO still prescribes specific weights for each timestep. One more simplification remains.</p>
 
     <!-- Section 3.6 -->
     <h2 id="simplified-loss">The Simplified Loss (L<sub>simple</sub>)</h2>
@@ -221,20 +225,20 @@
       </ol>
     </div>
 
-    <p>Six lines. That's the entire training procedure behind Stable Diffusion 1.5. The same core idea&mdash;with variations in the prediction target (v-prediction, x_0-prediction) and framework (flow matching)&mdash;underlies everything since, including DALL-E 2, Stable Diffusion 3, and Sora.</p>
+    <p>Six lines. That's the entire training procedure behind Stable Diffusion 1.5. The same core idea&mdash;with variations in the prediction target (v-prediction, $x_0$-prediction) and framework (flow matching)&mdash;underlies everything since, including DALL-E 2, Stable Diffusion 3, and Sora.</p>
 
     <p>Let's walk through each line:</p>
 
     <ul>
-      <li><strong>Line 2:</strong> Sample a batch of images from the training set. These are normalized to $[-1, 1]$.</li>
+      <li><strong>Line 2:</strong> Sample a batch of images from the training set.</li>
       <li><strong>Line 3:</strong> Pick a random timestep for each image. The model must handle all noise levels.</li>
       <li><strong>Line 4:</strong> Sample fresh Gaussian noise. This is both the corruption we'll apply and the target we'll predict.</li>
       <li><strong>Line 5:</strong> Apply the closed-form forward process (from Lecture 2) to get $x_t$ in one shot.</li>
       <li><strong>Line 6:</strong> Feed $x_t$ and $t$ into the neural network. Compare its output to the true noise $\varepsilon$. MSE loss.</li>
-      <li><strong>Line 7:</strong> Standard gradient descent. Adam optimizer, learning rate ~$10^{-4}$, done.</li>
+      <li><strong>Line 7:</strong> Standard gradient descent.</li>
     </ul>
 
-    <p>The simplicity is remarkable&mdash;and it all follows from the math. The ELBO decomposition, the Gaussian posterior, the $\varepsilon$-reparameterization, and the uniform weighting simplification all conspire to produce this clean training loop.</p>
+    <p>The simplicity is remarkable, and it all follows from the math. The ELBO decomposition, the Gaussian posterior, the $\varepsilon$-reparameterization, and the uniform weighting simplification all conspire to produce this clean training loop.</p>
 
     <div class="pseudocode">
 <span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule):<br>
@@ -251,7 +255,7 @@
     <!-- Section 3.8 -->
     <h2 id="parameterizations">Alternative Parameterizations (Preview)</h2>
 
-    <p>$\varepsilon$-prediction isn't the only way to parameterize the model. Three options are common in practice, and they're all <strong>mathematically equivalent</strong>&mdash;you can convert between them given $(x_t, t)$.</p>
+    <p>Although we've focused on the prevailing $\varepsilon$-prediction parameterization, it's not the only option. Three parameterizations are common in practice, and they're all <strong>mathematically equivalent</strong>&mdash;you can convert between them given $(x_t, t)$.</p>
 
     <h3 id="eps-pred">&epsilon;-prediction</h3>
     <p>Predict the noise $\varepsilon$ that was added. This is the DDPM standard and our focus in this lecture. It works well across most settings and is conceptually clean: the model is a denoiser.</p>
