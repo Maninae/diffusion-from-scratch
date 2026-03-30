@@ -57,6 +57,15 @@
 
     <p class="lecture-roadmap">What if we could generate images from noise with dramatically less scaffolding? In this lecture, we trace the arc from DDPM to a cleaner modern framework called <strong>flow matching</strong>. We start by cataloguing all the machinery DDPM requires, then see how <strong>v-prediction</strong> &mdash; a key intermediate improvement &mdash; pointed toward the right idea but couldn't escape the framework's complexity. Flow matching completes that arc: it builds the entire generative process around straight-line transport and learned velocity fields, dropping the noise schedules, cumulative products, and ELBO derivation that turned out to be scaffolding, not structure.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to understand flow matching: a simpler framework than DDPM that drops noise schedules entirely in favor of straight-line interpolation and velocity fields</li>
+        <li>You want to see how v-prediction was the conceptual bridge from DDPM to flow matching</li>
+        <li>You want to know what powers Stable Diffusion 3 and other recent systems that moved beyond the DDPM framework</li>
+      </ul>
+    </div>
     <!-- Section 13.1 -->
     <h2 id="ddpm-baggage"><span class="section-number">13.1</span> DDPM's Baggage &mdash; What We're Trying to Escape</h2>
 

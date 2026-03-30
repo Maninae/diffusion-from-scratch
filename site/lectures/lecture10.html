@@ -57,6 +57,15 @@
 
     <p class="lecture-roadmap">The diffusion model we built works on 28&times;28 digits, but real-world generation happens at 512&times;512 and beyond. Pixel-space diffusion can't scale there because attention costs explode quadratically with resolution. The solution: compress images into a small latent space with a VAE, then run diffusion in that latent space. This is the architecture behind Stable Diffusion, and it's what made high-resolution generation practical.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to understand why pixel-space diffusion does not scale to high resolutions, and how latent diffusion solves this</li>
+        <li>You want to know how the VAE encoder and decoder work in the Stable Diffusion pipeline</li>
+        <li>You have some familiarity with autoencoders, or took CS231N or equivalent</li>
+      </ul>
+    </div>
     <!-- Section 1: The Resolution Bottleneck -->
     <h2 id="resolution-bottleneck"><span class="section-number">10.1</span> The Resolution Bottleneck</h2>
 

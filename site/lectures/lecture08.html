@@ -57,6 +57,15 @@
 
     <p class="lecture-roadmap">So far our model generates random images with no user control. To make it useful, we need conditioning, the ability to say "generate a 7." We'll embed class labels into the U-Net, then discover a more powerful idea: steering generation at <em>sampling time</em> using gradients from a trained classifier, trading diversity for fidelity with a single guidance scale parameter.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to move from unconditional to conditional generation: telling the model "generate a 7" instead of getting random digits</li>
+        <li>You want to understand how class labels get embedded and injected into the U-Net architecture</li>
+        <li>You want the historical context on classifier guidance before learning the modern approach (classifier-free guidance) in Lecture 9</li>
+      </ul>
+    </div>
     <!-- Section 8.1 -->
     <h2 id="unconditional-to-conditional"><span class="section-number">8.1</span> From Unconditional to Conditional Generation</h2>
 

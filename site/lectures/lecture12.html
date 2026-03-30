@@ -57,6 +57,15 @@
 
     <p class="lecture-roadmap">The U-Net has been diffusion's workhorse, but it doesn't scale cleanly. You can't just make it bigger and reliably get better results. Transformers can. We'll replace the U-Net with a simpler architecture: patchify the image into tokens, process them with standard transformer blocks conditioned via adaLN-Zero, and unpatchify back. The result scales predictably with compute, and it's what powers Stable Diffusion 3 and DALL-E 3.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to understand how transformers replace U-Nets in modern diffusion models: patchification, standard transformer blocks, and unpatchification</li>
+        <li>You want to learn about adaLN-Zero, the conditioning mechanism that makes DiT work</li>
+        <li>You are familiar with transformer self-attention from Lecture 5 or prior coursework</li>
+      </ul>
+    </div>
     <!-- Section 12.1 -->
     <h2 id="transformers-for-everything"><span class="section-number">12.1</span> The Trend: Transformers for Everything</h2>
 

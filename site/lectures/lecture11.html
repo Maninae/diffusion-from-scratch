@@ -57,6 +57,15 @@
 
     <p class="lecture-roadmap">We've been predicting noise ($\varepsilon$-prediction) since Lecture 3, but that's not the only option, and it's not always the best one. We'll compare three prediction targets ($\varepsilon$, $x_0$, and $v$), see why each handles different timesteps differently, and then turn to the noise schedule improvements &mdash; cosine schedules, zero terminal SNR, offset noise &mdash; that fixed real production problems in systems like Imagen and Stable Diffusion.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to compare prediction targets: &epsilon;-prediction vs. x&#8320;-prediction vs. v-prediction, and when each one is the right choice</li>
+        <li>You want to understand advanced schedule refinements: offset noise, zero terminal SNR, and continuous-time formulations</li>
+        <li>You are comfortable with the basic diffusion pipeline from Lectures 2&ndash;7 and want to see what production systems do differently</li>
+      </ul>
+    </div>
     <!-- Section 1: The Prediction Target Problem -->
     <h2 id="prediction-target-problem"><span class="section-number">11.1</span> The Prediction Target Problem</h2>
 

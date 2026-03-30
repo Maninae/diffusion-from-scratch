@@ -58,6 +58,15 @@
 
     <p class="lecture-roadmap">Classifier guidance works, but it needs a separate classifier trained on noisy images, which is expensive and inflexible. What if one model could guide itself? The answer is classifier-free guidance: randomly drop labels during training so the model learns both conditional and unconditional prediction, then extrapolate between them at sampling time. This single trick &mdash; just label dropout &mdash; is behind every modern text-to-image system.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to understand classifier-free guidance, the single most impactful technique in modern conditional generation</li>
+        <li>You want to see how random label dropout during training lets one model do both conditional and unconditional prediction</li>
+        <li>You want to know how the guidance scale parameter controls the sharpness-diversity tradeoff at inference time</li>
+      </ul>
+    </div>
     <!-- Section 9.1 -->
     <h2 id="the-training-trick"><span class="section-number">9.1</span> The Training Trick: Random Label Dropout</h2>
 
