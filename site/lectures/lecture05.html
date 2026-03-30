@@ -554,7 +554,6 @@ h = conv2(silu(h))                                     <span style="color: var(-
     <ul>
       <li><strong>Original DDPM:</strong> attention only at $16 \times 16$ resolution</li>
       <li><strong>Improved DDPM / ADM:</strong> attention at $32 \times 32$, $16 \times 16$, and $8 \times 8$</li>
-      <li><strong>Our MNIST model:</strong> attention at $7 \times 7$ (bottleneck) &mdash; cheap and effective</li>
     </ul>
 
     <div class="callout note">
@@ -588,7 +587,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
     <div class="callout example">
       <div class="callout-label">Example</div>
-      At our $7 \times 7$ bottleneck with 256 channels and 4 attention heads: each token has $256 / 4 = 64$ features per head. The attention matrix is $49 \times 49$ per head. Token at position $(3, 5)$ can directly attend to token at position $(0, 0)$ &mdash; a global receptive field in a single layer, something that would require stacking many 3&times;3 convolutions to achieve.
+      At a $7 \times 7$ bottleneck with 256 channels and 4 attention heads: each token has $256 / 4 = 64$ features per head. The attention matrix is $49 \times 49$ per head. Token at position $(3, 5)$ can directly attend to token at position $(0, 0)$ &mdash; a global receptive field in a single layer, something that would require stacking many 3&times;3 convolutions to achieve.
     </div>
 
     <div class="pseudocode">
@@ -660,30 +659,31 @@ h = conv2(silu(h))                                     <span style="color: var(-
     <p>We can now verify that our complete U-Net produces output with the correct shape:</p>
 
     <div class="code-block">
-<pre>from utils.unet import UNet
-import torch
+      <div class="code-block-label">PyTorch</div>
+<pre><span class="keyword">from</span> utils.unet <span class="keyword">import</span> UNet
+<span class="keyword">import</span> torch
 
-model = UNet(
-    in_channels=1,
-    base_channels=64,
-    channel_mults=(1, 2, 4),
-    num_res_blocks=2,
-    time_emb_dim=256,
-    attention_resolutions=(7,),     <span style="color: var(--text-muted)"># attention at 7&times;7 only</span>
+model = <span class="function">UNet</span>(
+    in_channels=<span class="number">1</span>,
+    base_channels=<span class="number">64</span>,
+    channel_mults=(<span class="number">1</span>, <span class="number">2</span>, <span class="number">4</span>),
+    num_res_blocks=<span class="number">2</span>,
+    time_emb_dim=<span class="number">256</span>,
+    attention_resolutions=(<span class="number">7</span>,),     <span class="comment"># attention at 7&times;7 only</span>
 )
 
-<span style="color: var(--text-muted)"># Count parameters</span>
-n_params = sum(p.numel() for p in model.parameters())
-print(f"Parameters: {n_params:,}")   <span style="color: var(--text-muted)"># ~7M for this config</span>
+<span class="comment"># Count parameters</span>
+n_params = <span class="function">sum</span>(p.<span class="function">numel</span>() <span class="keyword">for</span> p <span class="keyword">in</span> model.<span class="function">parameters</span>())
+<span class="function">print</span>(f<span class="string">"Parameters: {n_params:,}"</span>)   <span class="comment"># ~7M for this config</span>
 
-<span style="color: var(--text-muted)"># Verify input/output shapes match</span>
-x_t = torch.randn(4, 1, 28, 28)
-t = torch.randint(0, 1000, (4,))
-noise_pred = model(x_t, t)
+<span class="comment"># Verify input/output shapes match</span>
+x_t = torch.<span class="function">randn</span>(<span class="number">4</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>)
+t = torch.<span class="function">randint</span>(<span class="number">0</span>, <span class="number">1000</span>, (<span class="number">4</span>,))
+noise_pred = <span class="function">model</span>(x_t, t)
 
-assert noise_pred.shape == x_t.shape
-print(f"Input:  {tuple(x_t.shape)}")        <span style="color: var(--text-muted)"># (4, 1, 28, 28)</span>
-print(f"Output: {tuple(noise_pred.shape)}")  <span style="color: var(--text-muted)"># (4, 1, 28, 28) &mdash; same!</span></pre>
+<span class="keyword">assert</span> noise_pred.shape == x_t.shape
+<span class="function">print</span>(f<span class="string">"Input:  {tuple(x_t.shape)}"</span>)        <span class="comment"># (4, 1, 28, 28)</span>
+<span class="function">print</span>(f<span class="string">"Output: {tuple(noise_pred.shape)}"</span>)  <span class="comment"># (4, 1, 28, 28) — same!</span></pre>
     </div>
 
     <p>The network is ready. It takes a noisy image and a timestep, and outputs a noise prediction of the same shape. In Lecture 6, we'll use this architecture to actually <em>train</em> a diffusion model, implementing the DDPM training algorithm from scratch and watching it learn to denoise MNIST digits.</p>
