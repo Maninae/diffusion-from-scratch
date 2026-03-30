@@ -34,7 +34,6 @@
     <div class="lecture-tags">
       <span class="lecture-tag">Forward Process</span>
       <span class="lecture-tag">Noise Schedules</span>
-      <span class="lecture-tag">Reparameterization</span>
       <span class="lecture-tag">SNR</span>
     </div>
   </div>
@@ -107,7 +106,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <p>Training a diffusion model means generating millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, this would be impossibly slow&mdash;500 sequential noise operations just to produce a single noised image for one gradient step.</p>
 
-    <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and <a href="https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables" target="_blank" rel="noopener">Gaussians compose</a> beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any $x_t$:</p>
+    <p>Fortunately, because each step adds <strong>Gaussian noise</strong>, and <a href="https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables" target="_blank" rel="noopener">Gaussians compose</a> beautifully, we can derive a closed-form expression that jumps directly from $x_0$ to any noised $x_t$:</p>
 
     $$q(x_t \mid x_0) = \mathcal{N}\!\left(x_t;\; \sqrt{\bar{\alpha}_t}\, x_0,\; (1 - \bar{\alpha}_t)\, I\right)$$
 
@@ -146,23 +145,9 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <p>One multiplication, one addition&mdash;constant time regardless of $t$. This is why diffusion training is efficient despite the 1000-step forward chain.</p>
 
-    <!-- Section 2.4 -->
-    <h2 id="reparameterization">The Reparameterization Trick</h2>
-
-    <p>Look at the closed-form equation again: $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. We need gradients to flow through $x_t$ during training (for backpropagation). But $x_t$ involves a <strong>random sample</strong> $\varepsilon$&mdash;and you <a href="https://gregorygundersen.com/blog/2018/04/29/reparameterization/" target="_blank" rel="noopener">can't backpropagate through randomness</a>.</p>
-
-    <p>The <strong>reparameterization trick</strong> solves this elegantly. Instead of sampling $x_t$ directly from $\mathcal{N}(\mu, \sigma^2)$, we:</p>
-
-    <ol>
-      <li>Sample $\varepsilon \sim \mathcal{N}(0, I)$ &mdash; this randomness is <strong>external</strong> to the computation graph.</li>
-      <li>Compute $x_t = \mu + \sigma \cdot \varepsilon$ &mdash; this is a <strong>deterministic, differentiable</strong> function of $\mu$ and $\sigma$.</li>
-    </ol>
-
-    <p>The random number $\varepsilon$ is generated before the computation starts and treated as a constant input. The network's parameters only affect $\mu$ and $\sigma$, so gradients flow cleanly.</p>
-
-    <div class="callout insight">
-      <div class="callout-label">Key Insight</div>
-      <p>This is the same trick used in VAEs (Kingma &amp; Welling, 2014) to make the sampling step differentiable. In diffusion, the reparameterization has an even deeper role: the noise $\varepsilon$ that we sample isn't just a computational trick&mdash;it becomes the <strong>training target</strong>. The model's job is to predict exactly this $\varepsilon$.</p>
+    <div class="callout note">
+      <div class="callout-label">Looking Ahead</div>
+      <p>Notice that the closed-form writes $x_t$ as a deterministic function of $x_0$ and a separate noise sample $\varepsilon$. Keeping the randomness external to the computation&mdash;rather than baked into a single sampling operation&mdash;is called the <a href="https://gregorygundersen.com/blog/2018/04/29/reparameterization/" target="_blank" rel="noopener"><strong>reparameterization trick</strong></a>, the same idea that makes VAEs trainable. It will turn out to be critical for diffusion training too: this separation is what allows gradients to flow through $x_t$ during backpropagation. We'll see exactly how in Lecture 3.</p>
     </div>
 
     <!-- Section 2.5 -->
