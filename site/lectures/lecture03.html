@@ -155,7 +155,7 @@
     <!-- Section 3.5 -->
     <h2 id="epsilon-prediction">The &epsilon;-Prediction Reparameterization</h2>
 
-    <p>We could train the model to predict $\tilde{\mu}_t$ directly. But <a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al. (2020)</a> found a much better parameterization.</p>
+    <p>We could train the model to predict $\tilde{\mu}_t$ directly. But <a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al. (2020)</a> found a much better parameterization: instead of predicting the mean, predict the <strong>noise</strong> $\varepsilon$ that was added.</p>
 
     <p>Recall from Lecture 2 that $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$. We can rearrange this to express $x_0$ in terms of $x_t$ and $\varepsilon$:</p>
 
