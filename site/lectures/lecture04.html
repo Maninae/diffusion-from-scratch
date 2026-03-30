@@ -437,6 +437,30 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <p>where GN is GroupNorm and $t_\text{proj}$ is the projected time embedding broadcast over spatial dimensions.</p>
 
+    <p>This two-conv ResBlock is the simplest member of a family of residual block designs. DDPM uses it because the U-Net is modest-sized and simplicity wins. But as architectures scale up or target constrained hardware, the block design becomes a critical lever for trading off compute, memory, and expressiveness. The three main alternatives are worth knowing.</p>
+
+    <h3 id="bottleneck-blocks">Bottleneck Blocks</h3>
+
+    <p>The original <a href="https://en.wikipedia.org/wiki/Residual_neural_network" target="_blank">ResNet</a> paper introduced two block designs. ResNet-18 and ResNet-34 use two 3&times;3 convolutions, just like our U-Net. ResNet-50 and deeper variants use a <strong>bottleneck</strong> pattern instead: 1&times;1 conv (compress channels) &rarr; 3&times;3 conv (spatial processing) &rarr; 1&times;1 conv (expand channels back).</p>
+
+    <p>The motivation is computational. A 3&times;3 conv with 256 input and 256 output channels requires $256 \times 256 \times 9 = 589{,}824$ multiply-adds per spatial position. By compressing to 64 channels first, the expensive 3&times;3 conv operates on only 64 channels, cutting the cost by roughly 4&times; while preserving the same input/output dimensionality. This is what enabled ResNet to scale to 152 layers without the compute budget exploding.</p>
+
+    <p>DDPM's U-Net doesn't use bottleneck blocks. At 28&times;28 resolution with 64&ndash;256 channels, the two-conv block is already cheap enough, and the bottleneck's channel compression would reduce the block's representational capacity for marginal compute savings.</p>
+
+    <h3 id="inverted-bottleneck">Inverted Bottleneck Blocks</h3>
+
+    <p>The bottleneck block compresses, processes, then expands. <a href="https://en.wikipedia.org/wiki/MobileNet" target="_blank">MobileNetV2</a> flipped this order: <strong>expand</strong> channels with a 1&times;1 conv, apply a <strong>depthwise</strong> 3&times;3 conv (one filter per channel, no cross-channel mixing), then <strong>compress</strong> back with a 1&times;1 conv. This is the inverted bottleneck.</p>
+
+    <p>The design puts most of the computation into the depthwise conv, which is far cheaper than a standard conv because it processes each channel independently. The 1&times;1 convs handle cross-channel mixing at minimal cost. The result is comparable accuracy to standard blocks at a fraction of the FLOPs, which is why this pattern dominates efficient architectures like EfficientNet and ConvNeXt.</p>
+
+    <h3 id="pointwise-depthwise">Pointwise and Depthwise Convolutions</h3>
+
+    <p>Two building blocks appear repeatedly in the patterns above. A <strong>pointwise convolution</strong> (1&times;1 conv) mixes information across channels at each spatial position without looking at neighboring pixels. It's a per-pixel linear transformation, cheap and useful for changing channel counts or combining features.</p>
+
+    <p>A <strong>depthwise convolution</strong> applies a separate spatial filter to each channel independently. It captures local spatial patterns (edges, textures) without any cross-channel interaction. Together, a depthwise conv followed by a pointwise conv forms a <a href="https://en.wikipedia.org/wiki/Depthwise_separable_convolution" target="_blank">depthwise separable convolution</a>, which factorizes a standard convolution into two cheaper operations. For a $k \times k$ conv with $C$ input and $C$ output channels, the separable version reduces multiply-adds by roughly a factor of $C / k^2$.</p>
+
+    <p>For our MNIST U-Net, none of this matters. The model is small, trains in minutes, and standard 3&times;3 convolutions are the right choice. These alternatives become important when you scale to high-resolution generation (256&times;256 and beyond), where the channel counts reach 512&ndash;1024 and every redundant multiply-add adds up. If you later encounter architectures like Efficient U-Net or ConvNeXt-based diffusion models, you'll recognize these blocks as the building blocks they're assembled from.</p>
+
 
     <!-- Section 9: Key Equations Summary -->
     <h2 id="equations"><span class="section-number">4.9</span> Key Operations &mdash; Summary</h2>
