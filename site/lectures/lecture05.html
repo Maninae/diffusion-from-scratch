@@ -109,12 +109,12 @@
 
     <div class="pseudocode">
       <div class="pseudocode-title">Sinusoidal Timestep Embedding</div>
-<pre>def sinusoidal_embedding(t, dim):
-    half_dim = dim // 2
-    frequencies = 1 / (10000 ** (range(half_dim) / half_dim))
-    angles = t[:, None] * frequencies[None, :]   # (B, half_dim)
-    embedding = concat(sin(angles), cos(angles), dim=-1)  # (B, dim)
-    return embedding</pre>
+<pre><span class="keyword">def</span> <span class="function">sinusoidal_embedding</span>(t, dim):
+    half_dim = dim // <span class="number">2</span>
+    frequencies = <span class="number">1</span> / (<span class="number">10000</span> ** (<span class="function">range</span>(half_dim) / half_dim))
+    angles = t[:, <span class="keyword">None</span>] * frequencies[<span class="keyword">None</span>, :]   <span class="comment"># (B, half_dim)</span>
+    embedding = <span class="function">concat</span>(<span class="function">sin</span>(angles), <span class="function">cos</span>(angles), dim=-<span class="number">1</span>)  <span class="comment"># (B, dim)</span>
+    <span class="keyword">return</span> embedding</pre>
     </div>
 
     <p>Input: a batch of integer timesteps, shape $(B,)$. Output: a batch of embedding vectors, shape $(B, d)$. No spatial dimensions &mdash; this is a single vector per sample.</p>
@@ -131,13 +131,13 @@
 
     <div class="pseudocode">
       <div class="pseudocode-title">TimestepMLP</div>
-<pre>class TimestepMLP:
-    def forward(t):
-        emb = sinusoidal_embedding(t, base_dim)    # (B, base_dim)
-        emb = linear_1(emb)                         # (B, 4 * base_dim)
-        emb = silu(emb)
-        emb = linear_2(emb)                         # (B, 4 * base_dim)
-        return emb</pre>
+<pre><span class="keyword">class</span> TimestepMLP:
+    <span class="keyword">def</span> <span class="function">forward</span>(t):
+        emb = <span class="function">sinusoidal_embedding</span>(t, base_dim)    <span class="comment"># (B, base_dim)</span>
+        emb = <span class="function">linear_1</span>(emb)                         <span class="comment"># (B, 4 * base_dim)</span>
+        emb = <span class="function">silu</span>(emb)
+        emb = <span class="function">linear_2</span>(emb)                         <span class="comment"># (B, 4 * base_dim)</span>
+        <span class="keyword">return</span> emb</pre>
     </div>
 
     <p>This MLP is computed <strong>once per forward pass</strong>, and the resulting time embedding is shared across all ResBlocks in the network.</p>
@@ -200,12 +200,12 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
     <div class="pseudocode">
       <div class="pseudocode-title">ResBlock with Time Embedding</div>
-<pre>class ResBlock:
-    def forward(x, time_emb):
-        h = conv1(silu(group_norm1(x)))             # (B, C_out, H, W)
-        h = h + time_proj(silu(time_emb))[:,:,None,None]  # inject time
-        h = conv2(dropout(silu(group_norm2(h))))     # (B, C_out, H, W)
-        return h + shortcut(x)                       # residual connection</pre>
+<pre><span class="keyword">class</span> ResBlock:
+    <span class="keyword">def</span> <span class="function">forward</span>(x, time_emb):
+        h = <span class="function">conv1</span>(<span class="function">silu</span>(<span class="function">group_norm1</span>(x)))             <span class="comment"># (B, C_out, H, W)</span>
+        h = h + <span class="function">time_proj</span>(<span class="function">silu</span>(time_emb))[:,:,<span class="keyword">None</span>,<span class="keyword">None</span>]  <span class="comment"># inject time</span>
+        h = <span class="function">conv2</span>(<span class="function">dropout</span>(<span class="function">silu</span>(<span class="function">group_norm2</span>(h))))     <span class="comment"># (B, C_out, H, W)</span>
+        <span class="keyword">return</span> h + <span class="function">shortcut</span>(x)                       <span class="comment"># residual connection</span></pre>
     </div>
 
     <p>This is the core building block. The entire U-Net is built by stacking these ResBlocks, two per encoder level and two per decoder level. Every ResBlock receives the same time embedding, so every layer of the network is time-aware.</p>
@@ -271,14 +271,14 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
     <div class="pseudocode">
       <div class="pseudocode-title">Spatial Self-Attention</div>
-<pre>class SpatialSelfAttention:
-    def forward(x):
+<pre><span class="keyword">class</span> SpatialSelfAttention:
+    <span class="keyword">def</span> <span class="function">forward</span>(x):
         B, C, H, W = x.shape
-        h = group_norm(x)                                # normalize first
-        h = h.reshape(B, C, H*W).transpose(1, 2)        # (B, H*W, C)
-        attn_out = multi_head_attention(h, h, h)         # (B, H*W, C)
-        attn_out = attn_out.transpose(1, 2).reshape(B, C, H, W)
-        return x + attn_out                              # residual connection</pre>
+        h = <span class="function">group_norm</span>(x)                                <span class="comment"># normalize first</span>
+        h = h.<span class="function">reshape</span>(B, C, H*W).<span class="function">transpose</span>(<span class="number">1</span>, <span class="number">2</span>)        <span class="comment"># (B, H*W, C)</span>
+        attn_out = <span class="function">multi_head_attention</span>(h, h, h)         <span class="comment"># (B, H*W, C)</span>
+        attn_out = attn_out.<span class="function">transpose</span>(<span class="number">1</span>, <span class="number">2</span>).<span class="function">reshape</span>(B, C, H, W)
+        <span class="keyword">return</span> x + attn_out                              <span class="comment"># residual connection</span></pre>
     </div>
 
     <p>Note the residual connection: the attention output is <em>added</em> to the original input. This means attention acts as a refinement &mdash; the feature map already has useful information from the convolutions, and attention adds global context on top.</p>

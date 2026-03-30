@@ -84,12 +84,12 @@
     <p>The fix is simple: normalize images to $[-1, 1]$. The transform pipeline is:</p>
 
     <div class="pseudocode">
-transform = Compose([
-    ToTensor(),                    <span class="comment"># [0, 255] &rarr; [0, 1]</span>
-    Normalize([0.5], [0.5]),       <span class="comment"># [0, 1] &rarr; [-1, 1]</span>
+transform = <span class="type">Compose</span>([
+    <span class="function">ToTensor</span>(),                    <span class="comment"># [0, 255] &rarr; [0, 1]</span>
+    <span class="function">Normalize</span>([<span class="number">0.5</span>], [<span class="number">0.5</span>]),       <span class="comment"># [0, 1] &rarr; [-1, 1]</span>
 ])
-dataset = MNIST(root='./data', train=True, transform=transform)
-dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+dataset = <span class="function">MNIST</span>(root=<span class="string">'./data'</span>, train=<span class="keyword">True</span>, transform=transform)
+dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span class="number">64</span>, shuffle=<span class="keyword">True</span>)
     </div>
 
     <p>When you want to <em>display</em> images, you reverse it: $x_{\text{display}} = (x + 1) / 2$, mapping back to $[0, 1]$. Our <code>denormalize()</code> utility handles this.</p>
@@ -125,33 +125,33 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
     <p>The complete training step:</p>
 
     <div class="pseudocode">
-<span class="keyword">def</span> train_step(model, x_0, optimizer, schedule, device):
+<span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, optimizer, schedule, device):
     <span class="comment"># 1. Sample random timesteps &mdash; one per image in the batch</span>
-    t = randint(0, T-1, size=batch_size).to(device)
+    t = <span class="function">randint</span>(<span class="number">0</span>, T-<span class="number">1</span>, size=batch_size).<span class="function">to</span>(device)
 
     <span class="comment"># 2. Sample noise</span>
-    noise = randn_like(x_0)                                    <span class="comment"># (B, 1, 28, 28)</span>
+    noise = <span class="function">randn_like</span>(x_0)                                    <span class="comment"># (B, 1, 28, 28)</span>
 
     <span class="comment"># 3. Create noisy images using closed-form q(x_t | x_0)</span>
     sqrt_alpha_bar = schedule.sqrt_alphas_cumprod[t]           <span class="comment"># (B,)</span>
     sqrt_one_minus = schedule.sqrt_one_minus_alphas_cumprod[t] <span class="comment"># (B,)</span>
     <span class="comment"># Reshape for broadcasting: (B,) &rarr; (B, 1, 1, 1)</span>
-    x_t = sqrt_alpha_bar[:, None, None, None] * x_0
-        + sqrt_one_minus[:, None, None, None] * noise          <span class="comment"># (B, 1, 28, 28)</span>
+    x_t = sqrt_alpha_bar[:, <span class="keyword">None</span>, <span class="keyword">None</span>, <span class="keyword">None</span>] * x_0
+        + sqrt_one_minus[:, <span class="keyword">None</span>, <span class="keyword">None</span>, <span class="keyword">None</span>] * noise          <span class="comment"># (B, 1, 28, 28)</span>
 
     <span class="comment"># 4. Predict noise</span>
     noise_pred = model(x_t, t)                                 <span class="comment"># (B, 1, 28, 28)</span>
 
     <span class="comment"># 5. Compute loss</span>
-    loss = mse_loss(noise_pred, noise)
+    loss = <span class="function">mse_loss</span>(noise_pred, noise)
 
     <span class="comment"># 6. Update weights</span>
-    optimizer.zero_grad()
-    loss.backward()
-    clip_grad_norm(model.parameters(), max_norm=1.0)
-    optimizer.step()
+    optimizer.<span class="function">zero_grad</span>()
+    loss.<span class="function">backward</span>()
+    <span class="function">clip_grad_norm</span>(model.<span class="function">parameters</span>(), max_norm=<span class="number">1.0</span>)
+    optimizer.<span class="function">step</span>()
 
-    <span class="keyword">return</span> loss.item()
+    <span class="keyword">return</span> loss.<span class="function">item</span>()
     </div>
 
     <p>A critical implementation detail: the schedule tensors (<code>sqrt_alphas_cumprod</code>, etc.) must live on the same device as your model. Use <code>prepare_schedule()</code> from <code>utils/schedule.py</code> to move everything at once.</p>
@@ -200,7 +200,7 @@ dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
     <p>The fix is gradient clipping:</p>
 
     <div class="pseudocode">
-torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="function">parameters</span>(), max_norm=<span class="number">1.0</span>)
     </div>
 
     <p>This computes the total $L_2$ norm of all gradients across all parameters. If the norm exceeds 1.0, every gradient is rescaled proportionally so the total norm is exactly 1.0. The direction of the update is preserved; only the magnitude is capped.</p>
@@ -229,15 +229,15 @@ torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
     <div class="pseudocode">
 <span class="keyword">class</span> EMA:
-    <span class="keyword">def</span> __init__(self, model, decay=0.9999):
-        self.shadow = deepcopy(model.parameters())
-        self.decay = decay
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>, model, decay=<span class="number">0.9999</span>):
+        <span class="keyword">self</span>.shadow = <span class="function">deepcopy</span>(model.<span class="function">parameters</span>())
+        <span class="keyword">self</span>.decay = decay
 
-    <span class="keyword">def</span> update(self, model):
-        <span class="keyword">for</span> ema_param, model_param <span class="keyword">in</span> zip(self.shadow, model.parameters()):
-            ema_param.data = self.decay * ema_param + (1 - self.decay) * model_param
+    <span class="keyword">def</span> <span class="function">update</span>(<span class="keyword">self</span>, model):
+        <span class="keyword">for</span> ema_param, model_param <span class="keyword">in</span> <span class="function">zip</span>(<span class="keyword">self</span>.shadow, model.<span class="function">parameters</span>()):
+            ema_param.data = <span class="keyword">self</span>.decay * ema_param + (<span class="number">1</span> - <span class="keyword">self</span>.decay) * model_param
 
-    <span class="keyword">def</span> apply_to(self, model):
+    <span class="keyword">def</span> <span class="function">apply_to</span>(<span class="keyword">self</span>, model):
         <span class="comment"># Temporarily swap in EMA weights for sampling</span>
         ...
     </div>
@@ -323,13 +323,13 @@ torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
     </ul>
 
     <div class="pseudocode">
-<span class="keyword">def</span> save_checkpoint(model, ema, optimizer, schedule, step, path='diffusion_mnist.pt'):
-    torch.save({
-        'model': model.state_dict(),       <span class="comment"># for continued training</span>
-        'ema': ema.shadow_state_dict(),     <span class="comment"># for sampling (Lecture 7)</span>
-        'optimizer': optimizer.state_dict(),
-        'schedule': schedule,
-        'step': step,
+<span class="keyword">def</span> <span class="function">save_checkpoint</span>(model, ema, optimizer, schedule, step, path=<span class="string">'diffusion_mnist.pt'</span>):
+    torch.<span class="function">save</span>({
+        <span class="string">'model'</span>: model.<span class="function">state_dict</span>(),       <span class="comment"># for continued training</span>
+        <span class="string">'ema'</span>: ema.<span class="function">shadow_state_dict</span>(),     <span class="comment"># for sampling (Lecture 7)</span>
+        <span class="string">'optimizer'</span>: optimizer.<span class="function">state_dict</span>(),
+        <span class="string">'schedule'</span>: schedule,
+        <span class="string">'step'</span>: step,
     }, path)
     </div>
 
@@ -345,29 +345,29 @@ torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
 
     <div class="pseudocode">
 <span class="comment"># Setup</span>
-model = UNet(image_channels=1, base_channels=64, ...).to(device)
-schedule = prepare_schedule(cosine_schedule(T=1000), device)
-optimizer = AdamW(model.parameters(), lr=2e-4)
-ema = EMA(model, decay=0.9999)
+model = <span class="function">UNet</span>(image_channels=<span class="number">1</span>, base_channels=<span class="number">64</span>, ...).<span class="function">to</span>(device)
+schedule = <span class="function">prepare_schedule</span>(<span class="function">cosine_schedule</span>(T=<span class="number">1000</span>), device)
+optimizer = <span class="function">AdamW</span>(model.<span class="function">parameters</span>(), lr=<span class="number">2e-4</span>)
+ema = <span class="function">EMA</span>(model, decay=<span class="number">0.9999</span>)
 
 <span class="comment"># Training loop</span>
-<span class="keyword">for</span> step <span class="keyword">in</span> range(num_steps):
-    x_0, _ = next(dataloader)           <span class="comment"># (B, 1, 28, 28) in [-1, 1]</span>
-    x_0 = x_0.to(device)
+<span class="keyword">for</span> step <span class="keyword">in</span> <span class="function">range</span>(num_steps):
+    x_0, _ = <span class="function">next</span>(dataloader)           <span class="comment"># (B, 1, 28, 28) in [-1, 1]</span>
+    x_0 = x_0.<span class="function">to</span>(device)
 
-    loss = train_step(model, x_0, optimizer, schedule, device)
-    ema.update(model)
+    loss = <span class="function">train_step</span>(model, x_0, optimizer, schedule, device)
+    ema.<span class="function">update</span>(model)
 
-    <span class="keyword">if</span> step % 1000 == 0:
+    <span class="keyword">if</span> step % <span class="number">1000</span> == <span class="number">0</span>:
         <span class="comment"># Generate samples with EMA model for monitoring</span>
-        ema.apply_to(model)
-        samples = ddpm_sample(model, shape=(16, 1, 28, 28), schedule, device)
-        show_images(samples)
-        ema.restore(model)
-        print(f"Step {step}, Loss: {loss:.4f}")
+        ema.<span class="function">apply_to</span>(model)
+        samples = <span class="function">ddpm_sample</span>(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule, device)
+        <span class="function">show_images</span>(samples)
+        ema.<span class="function">restore</span>(model)
+        <span class="function">print</span>(f"Step {step}, Loss: {loss:.4f}")
 
-    <span class="keyword">if</span> step % 5000 == 0:
-        save_checkpoint(model, ema, optimizer, schedule, step)
+    <span class="keyword">if</span> step % <span class="number">5000</span> == <span class="number">0</span>:
+        <span class="function">save_checkpoint</span>(model, ema, optimizer, schedule, step)
     </div>
 
     <h3 id="pytorch-reference">PyTorch Reference Implementation</h3>

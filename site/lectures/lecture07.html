@@ -67,9 +67,9 @@
 
     <div class="pseudocode">
 <span class="comment"># Load the checkpoint from Lecture 6</span>
-checkpoint = torch.load('diffusion_mnist.pt', map_location=device)
-model.load_state_dict(checkpoint['ema'])   <span class="comment"># use EMA weights for sampling</span>
-schedule = checkpoint['schedule']
+checkpoint = torch.<span class="function">load</span>(<span class="string">'diffusion_mnist.pt'</span>, map_location=device)
+model.<span class="function">load_state_dict</span>(checkpoint[<span class="string">'ema'</span>])   <span class="comment"># use EMA weights for sampling</span>
+schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <div class="callout insight">
@@ -118,21 +118,21 @@ schedule = checkpoint['schedule']
     <h3 id="ddpm-pseudocode">Pseudocode</h3>
 
     <div class="pseudocode">
-<span class="keyword">def</span> ddpm_sample(model, shape, schedule, T=1000):
-    x = randn(shape).to(device)              <span class="comment"># x_T ~ N(0, I)</span>
+<span class="keyword">def</span> <span class="function">ddpm_sample</span>(model, shape, schedule, T=<span class="number">1000</span>):
+    x = <span class="function">randn</span>(shape).<span class="function">to</span>(device)              <span class="comment"># x_T ~ N(0, I)</span>
 
-    <span class="keyword">for</span> t <span class="keyword">in</span> reversed(range(1, T+1)):
+    <span class="keyword">for</span> t <span class="keyword">in</span> <span class="function">reversed</span>(<span class="function">range</span>(<span class="number">1</span>, T+<span class="number">1</span>)):
         noise_pred = model(x, t)             <span class="comment"># predict noise</span>
 
         <span class="comment"># Compute posterior mean</span>
-        coeff1 = 1 / sqrt(schedule.alphas[t])
-        coeff2 = schedule.betas[t] / sqrt(1 - schedule.alphas_cumprod[t])
+        coeff1 = <span class="number">1</span> / <span class="function">sqrt</span>(schedule.alphas[t])
+        coeff2 = schedule.betas[t] / <span class="function">sqrt</span>(<span class="number">1</span> - schedule.alphas_cumprod[t])
         mean = coeff1 * (x - coeff2 * noise_pred)
 
         <span class="comment"># Add noise (except at final step)</span>
-        <span class="keyword">if</span> t > 1:
-            noise = randn_like(x)
-            sigma = sqrt(schedule.betas[t])
+        <span class="keyword">if</span> t > <span class="number">1</span>:
+            noise = <span class="function">randn_like</span>(x)
+            sigma = <span class="function">sqrt</span>(schedule.betas[t])
             x = mean + sigma * noise
         <span class="keyword">else</span>:
             x = mean
@@ -206,33 +206,33 @@ schedule = checkpoint['schedule']
     <h3 id="ddim-pseudocode">Pseudocode</h3>
 
     <div class="pseudocode">
-<span class="keyword">def</span> ddim_sample(model, shape, schedule, num_steps=50, eta=0.0):
+<span class="keyword">def</span> <span class="function">ddim_sample</span>(model, shape, schedule, num_steps=<span class="number">50</span>, eta=<span class="number">0.0</span>):
     <span class="comment"># Select timestep subsequence</span>
-    timesteps = linspace(0, T-1, num_steps, dtype=int)
+    timesteps = <span class="function">linspace</span>(<span class="number">0</span>, T-<span class="number">1</span>, num_steps, dtype=int)
 
-    x = randn(shape).to(device)              <span class="comment"># x_T ~ N(0, I)</span>
+    x = <span class="function">randn</span>(shape).<span class="function">to</span>(device)              <span class="comment"># x_T ~ N(0, I)</span>
 
-    <span class="keyword">for</span> i <span class="keyword">in</span> reversed(range(len(timesteps))):
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">reversed</span>(<span class="function">range</span>(<span class="function">len</span>(timesteps))):
         t = timesteps[i]
-        t_prev = timesteps[i-1] <span class="keyword">if</span> i > 0 <span class="keyword">else</span> 0
+        t_prev = timesteps[i-<span class="number">1</span>] <span class="keyword">if</span> i > <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span>
 
         noise_pred = model(x, t)
 
         <span class="comment"># Predict x_0</span>
         alpha_bar_t = schedule.alphas_cumprod[t]
         alpha_bar_prev = schedule.alphas_cumprod[t_prev]
-        x0_pred = (x - sqrt(1 - alpha_bar_t) * noise_pred) / sqrt(alpha_bar_t)
+        x0_pred = (x - <span class="function">sqrt</span>(<span class="number">1</span> - alpha_bar_t) * noise_pred) / <span class="function">sqrt</span>(alpha_bar_t)
 
         <span class="comment"># Compute sigma</span>
-        sigma = eta * sqrt((1 - alpha_bar_prev) / (1 - alpha_bar_t)) * \
-                      sqrt(1 - alpha_bar_t / alpha_bar_prev)
+        sigma = eta * <span class="function">sqrt</span>((<span class="number">1</span> - alpha_bar_prev) / (<span class="number">1</span> - alpha_bar_t)) * \
+                      <span class="function">sqrt</span>(<span class="number">1</span> - alpha_bar_t / alpha_bar_prev)
 
         <span class="comment"># Direction pointing to x_t</span>
-        direction = sqrt(1 - alpha_bar_prev - sigma**2) * noise_pred
+        direction = <span class="function">sqrt</span>(<span class="number">1</span> - alpha_bar_prev - sigma**<span class="number">2</span>) * noise_pred
 
         <span class="comment"># DDIM step</span>
-        noise = randn_like(x) <span class="keyword">if</span> t > 0 <span class="keyword">else</span> 0
-        x = sqrt(alpha_bar_prev) * x0_pred + direction + sigma * noise
+        noise = <span class="function">randn_like</span>(x) <span class="keyword">if</span> t > <span class="number">0</span> <span class="keyword">else</span> <span class="number">0</span>
+        x = <span class="function">sqrt</span>(alpha_bar_prev) * x0_pred + direction + sigma * noise
 
     <span class="keyword">return</span> x
     </div>
@@ -302,11 +302,11 @@ schedule = checkpoint['schedule']
 
     <div class="pseudocode">
 <span class="comment"># Generate 16 MNIST digits with DDIM (50 steps)</span>
-<span class="keyword">with</span> torch.no_grad():
-    samples = ddim_sample(model, shape=(16, 1, 28, 28), schedule, num_steps=50)
-    samples = samples.clamp(-1, 1)
-    samples = (samples + 1) / 2       <span class="comment"># denormalize to [0, 1]</span>
-    show_images(samples, nrow=4)
+<span class="keyword">with</span> torch.<span class="function">no_grad</span>():
+    samples = <span class="function">ddim_sample</span>(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule, num_steps=<span class="number">50</span>)
+    samples = samples.<span class="function">clamp</span>(-<span class="number">1</span>, <span class="number">1</span>)
+    samples = (samples + <span class="number">1</span>) / <span class="number">2</span>       <span class="comment"># denormalize to [0, 1]</span>
+    <span class="function">show_images</span>(samples, nrow=<span class="number">4</span>)
     </div>
 
     <h3 id="stochastic-vs-deterministic">Stochastic vs. Deterministic: A Side-by-Side</h3>
