@@ -196,12 +196,12 @@
 
     <div class="pseudocode">
 <span class="keyword">def</span> <span class="function">flow_matching_train_step</span>(model, x_0):
-    x_1 = randn_like(x_0)                          <span class="comment"># sample noise</span>
-    t = rand(batch_size)                             <span class="comment"># t ~ Uniform(0, 1)</span>
-    x_t = (1 - t) * x_0 + t * x_1                  <span class="comment"># straight-line interpolation</span>
+    x_1 = <span class="function">randn_like</span>(x_0)                          <span class="comment"># sample noise</span>
+    t = <span class="function">rand</span>(batch_size)                             <span class="comment"># t ~ Uniform(0, 1)</span>
+    x_t = (<span class="number">1</span> - t) * x_0 + t * x_1                  <span class="comment"># straight-line interpolation</span>
     target_velocity = x_1 - x_0                      <span class="comment"># constant velocity along the path</span>
     velocity_pred = model(x_t, t)                    <span class="comment"># neural network predicts velocity</span>
-    loss = mse_loss(velocity_pred, target_velocity)
+    loss = <span class="function">mse_loss</span>(velocity_pred, target_velocity)
     <span class="keyword">return</span> loss
     </div>
 
@@ -232,12 +232,12 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
     <p>The simplest approach: take fixed-size steps along the velocity field.</p>
 
     <div class="pseudocode">
-<span class="keyword">def</span> <span class="function">flow_matching_sample</span>(model, shape, num_steps=50):
-    x = randn(shape)                                <span class="comment"># x_1 ~ N(0, I)</span>
-    dt = 1.0 / num_steps
+<span class="keyword">def</span> <span class="function">flow_matching_sample</span>(model, shape, num_steps=<span class="number">50</span>):
+    x = <span class="function">randn</span>(shape)                                <span class="comment"># x_1 ~ N(0, I)</span>
+    dt = <span class="number">1.0</span> / num_steps
 
-    <span class="keyword">for</span> i <span class="keyword">in</span> range(num_steps):
-        t = 1.0 - i * dt                            <span class="comment"># t goes from 1 -> 0</span>
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(num_steps):
+        t = <span class="number">1.0</span> - i * dt                            <span class="comment"># t goes from 1 -> 0</span>
         velocity = model(x, t)
         x = x - dt * velocity                       <span class="comment"># Euler step</span>
 

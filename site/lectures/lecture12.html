@@ -126,20 +126,20 @@
 <span class="keyword">class</span> DiT:
     <span class="keyword">def</span> <span class="function">forward</span>(x, t, class_label=<span class="keyword">None</span>):
         <span class="comment"># Conditioning embedding</span>
-        c = time_mlp(sinusoidal(t))           <span class="comment"># (B, d_model)</span>
+        c = <span class="function">time_mlp</span>(<span class="function">sinusoidal</span>(t))           <span class="comment"># (B, d_model)</span>
         <span class="keyword">if</span> class_label <span class="keyword">is not None</span>:
-            c = c + class_emb(class_label)    <span class="comment"># add class info</span>
+            c = c + <span class="function">class_emb</span>(class_label)    <span class="comment"># add class info</span>
 
         <span class="comment"># Patchify</span>
-        tokens = patchify(x)                  <span class="comment"># (B, N, d_model)</span>
+        tokens = <span class="function">patchify</span>(x)                  <span class="comment"># (B, N, d_model)</span>
         tokens = tokens + pos_encoding        <span class="comment"># add position info</span>
 
         <span class="comment"># Transformer blocks</span>
-        <span class="keyword">for</span> block <span class="keyword">in</span> self.blocks:
+        <span class="keyword">for</span> block <span class="keyword">in</span> <span class="keyword">self</span>.blocks:
             tokens = block(tokens, c)         <span class="comment"># adaLN-Zero conditioning</span>
 
         <span class="comment"># Unpatchify</span>
-        noise_pred = unpatchify(tokens)       <span class="comment"># (B, C, H, W)</span>
+        noise_pred = <span class="function">unpatchify</span>(tokens)       <span class="comment"># (B, C, H, W)</span>
         <span class="keyword">return</span> noise_pred
     </div>
 
@@ -183,16 +183,16 @@
 <span class="keyword">class</span> DiTBlock:
     <span class="keyword">def</span> <span class="function">forward</span>(x, c):
         <span class="comment"># Predict all adaLN-Zero params from conditioning</span>
-        &gamma;1, &beta;1, &alpha;1, &gamma;2, &beta;2, &alpha;2 = self.adaln_mlp(c).chunk(6, dim=-1)
+        &gamma;1, &beta;1, &alpha;1, &gamma;2, &beta;2, &alpha;2 = <span class="keyword">self</span>.<span class="function">adaln_mlp</span>(c).<span class="function">chunk</span>(<span class="number">6</span>, dim=-<span class="number">1</span>)
 
         <span class="comment"># Self-attention with adaLN</span>
-        h = layer_norm(x) * (1 + &gamma;1) + &beta;1
-        h = self_attention(h)
+        h = <span class="function">layer_norm</span>(x) * (<span class="number">1</span> + &gamma;1) + &beta;1
+        h = <span class="function">self_attention</span>(h)
         x = x + &alpha;1 * h                <span class="comment"># gated residual</span>
 
         <span class="comment"># FFN with adaLN</span>
-        h = layer_norm(x) * (1 + &gamma;2) + &beta;2
-        h = ffn(h)
+        h = <span class="function">layer_norm</span>(x) * (<span class="number">1</span> + &gamma;2) + &beta;2
+        h = <span class="function">ffn</span>(h)
         x = x + &alpha;2 * h                <span class="comment"># gated residual</span>
 
         <span class="keyword">return</span> x

@@ -167,16 +167,16 @@
 <span class="comment"># Conversion utilities</span>
 <span class="comment"># alpha = sqrt(alpha_bar_t), sigma = sqrt(1 - alpha_bar_t)</span>
 
-<span class="keyword">def</span> eps_to_x0(x_t, eps, alpha, sigma):
+<span class="keyword">def</span> <span class="function">eps_to_x0</span>(x_t, eps, alpha, sigma):
     <span class="keyword">return</span> (x_t - sigma * eps) / alpha
 
-<span class="keyword">def</span> eps_to_v(eps, x0, alpha, sigma):
+<span class="keyword">def</span> <span class="function">eps_to_v</span>(eps, x0, alpha, sigma):
     <span class="keyword">return</span> alpha * eps - sigma * x0
 
-<span class="keyword">def</span> v_to_x0(x_t, v, alpha, sigma):
+<span class="keyword">def</span> <span class="function">v_to_x0</span>(x_t, v, alpha, sigma):
     <span class="keyword">return</span> alpha * x_t - sigma * v
 
-<span class="keyword">def</span> v_to_eps(x_t, v, alpha, sigma):
+<span class="keyword">def</span> <span class="function">v_to_eps</span>(x_t, v, alpha, sigma):
     <span class="keyword">return</span> sigma * x_t + alpha * v
     </div>
 
@@ -219,10 +219,10 @@
 
     <div class="pseudocode">
 <span class="comment"># Standard noise (zero mean per channel)</span>
-noise = torch.randn_like(x)
+noise = torch.<span class="function">randn_like</span>(x)
 
 <span class="comment"># Offset noise: add a per-channel mean shift</span>
-noise = torch.randn_like(x) + 0.1 * torch.randn(B, C, 1, 1)
+noise = torch.<span class="function">randn_like</span>(x) + <span class="number">0.1</span> * torch.<span class="function">randn</span>(B, C, <span class="number">1</span>, <span class="number">1</span>)
 <span class="comment">#                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</span>
 <span class="comment">#                             This shifts the channel mean,</span>
 <span class="comment">#                             allowing dark/bright generation</span>
@@ -309,13 +309,13 @@ noise = torch.randn_like(x) + 0.1 * torch.randn(B, C, 1, 1)
 
     <div class="pseudocode">
 <span class="comment"># ε-prediction training step (what we've been doing)</span>
-noise = torch.randn_like(x_0)
+noise = torch.<span class="function">randn_like</span>(x_0)
 x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
 predicted_noise = model(x_t, t)
-loss = F.mse_loss(predicted_noise, noise)
+loss = F.<span class="function">mse_loss</span>(predicted_noise, noise)
 
 <span class="comment"># v-prediction training step (what changes)</span>
-noise = torch.randn_like(x_0)
+noise = torch.<span class="function">randn_like</span>(x_0)
 x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
 <span class="keyword">v_target = sqrt_alpha_bar[t] * noise - sqrt_one_minus_alpha_bar[t] * x_0</span>  <span class="comment"># NEW</span>
 <span class="keyword">predicted_v = model(x_t, t)</span>                                               <span class="comment"># same model</span>
