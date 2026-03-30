@@ -85,7 +85,7 @@
 
     <p>We could pass the timestep as a raw scalar &mdash; concatenate $t$ to the input or feed it as an extra feature. But a single number doesn't give the network enough structure to modulate its behavior across hundreds of distinct noise levels. We need a <strong>high-dimensional, structured representation</strong> of each timestep.</p>
 
-    <p>The solution comes from an unexpected place: the positional encoding used in transformers (<a href="https://arxiv.org/abs/1706.03762" target="_blank">Vaswani et al., 2017</a>). The same formula that tells a transformer "this token is at position 42 in the sequence" can tell our U-Net "this image has noise level $t = 42$."</p>
+    <p>The solution is sinusoidal positional encoding, borrowed from transformers (<a href="https://arxiv.org/abs/1706.03762" target="_blank">Vaswani et al., 2017</a>)&mdash;the same formula that encodes token positions in a sequence can encode noise levels for a U-Net.</p>
 
     <h3 id="embedding-formula">The Formula</h3>
 

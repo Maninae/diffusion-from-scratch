@@ -161,11 +161,7 @@
     <!-- Section 8.4 -->
     <h2 id="classifier-guidance">Classifier Guidance (Historical Context)</h2>
 
-    <p>Now we have a model that <em>accepts</em> conditioning. But there's another question: can we make the conditioning <em>stronger</em>? Can we amplify how much the model pays attention to the class label during sampling? This is where guidance comes in.</p>
-
-    <p>The first approach, proposed by <a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal &amp; Nichol (2021)</a>, was <strong>classifier guidance</strong>. It's an elegant idea that we'll study for historical context &mdash; it was superseded by the simpler classifier-free guidance in Lecture 9.</p>
-
-    <p>But understanding it helps you appreciate <em>why</em> CFG was such a breakthrough.</p>
+    <p>Can we amplify how much the model pays attention to its conditioning during sampling? <a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal &amp; Nichol (2021)</a> proposed <strong>classifier guidance</strong>&mdash;using gradients from a separately trained classifier to steer the denoising direction toward a target class. It was later superseded by the simpler classifier-free approach in Lecture 9, but understanding the original idea helps you appreciate why CFG was such a breakthrough.</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
@@ -244,7 +240,7 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      Classifier guidance proves that external signals <em>can</em> steer diffusion models during sampling. The problem isn't the idea &mdash; it's the execution. Training a separate model for each conditioning type is inelegant. What if the guidance signal could come from the diffusion model itself? That's exactly what classifier-free guidance achieves, and it's the subject of our next lecture.
+      Classifier guidance proves that external signals can steer diffusion models during sampling. The limitation is practical: training a separate classifier for each conditioning type is expensive and inflexible. What if the guidance signal could come from the diffusion model itself? Classifier-free guidance achieves this by training a single model with random label dropout, so it learns both conditional and unconditional prediction&mdash;then extrapolating between them at inference. That's Lecture 9.
     </div>
 
     <!-- Section 8.6: PyTorch Reference -->

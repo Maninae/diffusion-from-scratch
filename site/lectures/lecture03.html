@@ -177,7 +177,9 @@
       <p>Sample noise. Add it to an image. Ask the model to predict that noise. Minimize MSE. That's it.</p>
     </div>
 
-    <p>Why does predicting noise work better than predicting the mean $\mu$ directly? Consider what the network's target looks like in each case.</p>
+    <p>Why does predicting noise work better than predicting the mean $\mu$ directly?</p>
+
+    <p>Consider what the network's target looks like in each case.</p>
 
     <p>With $\mu$-prediction, the target changes dramatically across timesteps. At low $t$ (clean images), $\tilde{\mu}_t$ is close to $x_0$&mdash;a high-magnitude, highly structured signal. At high $t$ (pure noise), $\tilde{\mu}_t$ is close to zero&mdash;a tiny, unstructured target. The network must learn fundamentally different behaviors depending on the noise level, and the gradient signal at high-noise timesteps is vanishingly small.</p>
 
@@ -204,7 +206,7 @@
     <!-- Section 3.7 -->
     <h2 id="algorithm-1">DDPM Algorithm 1 &mdash; The Training Procedure</h2>
 
-    <p>Everything we've derived collapses into a training procedure of remarkable simplicity.</p>
+    <p>Everything we've derived collapses into a six-line training procedure: sample an image, pick a random timestep, add noise, predict that noise, compute MSE, take a gradient step.</p>
 
     <div class="algorithm">
       <div class="algorithm-title">Algorithm 1: Training (DDPM)</div>
