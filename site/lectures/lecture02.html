@@ -267,9 +267,174 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) �
 
     <p>The cosine curve gives a <strong>much smoother SNR decay</strong>. Information is preserved longer in the early steps, and the model spends more time at medium noise levels&mdash;exactly where the denoising problem is most interesting. The small offset $s$ prevents $\bar{\alpha}_T$ from hitting exactly zero.</p>
 
+    <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
+      <canvas id="cosineAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
+      <script>
+      (function() {
+        var c = document.getElementById('cosineAlphaBarPlot');
+        var ctx = c.getContext('2d');
+        var W = c.width, H = c.height;
+        var T = 1000, s = 0.008;
+        // Compute ᾱ_t for cosine schedule
+        var alphaBar = new Float64Array(T);
+        var f0 = Math.cos((s / (1 + s)) * Math.PI / 2) ** 2;
+        for (var i = 0; i < T; i++) {
+          var t = i + 1;
+          var ft = Math.cos(((t / T + s) / (1 + s)) * Math.PI / 2) ** 2;
+          alphaBar[i] = ft / f0;
+        }
+        // Plot dimensions
+        var pad = { top: 24, right: 20, bottom: 44, left: 52 };
+        var pw = W - pad.left - pad.right;
+        var ph = H - pad.top - pad.bottom;
+        // Background
+        ctx.fillStyle = '#111827';
+        ctx.beginPath(); ctx.roundRect(0, 0, W, H, 8); ctx.fill();
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (var v = 0; v <= 1; v += 0.25) {
+          var gy = pad.top + ph * (1 - v);
+          ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(pad.left + pw, gy); ctx.stroke();
+        }
+        for (var g = 0; g <= 1000; g += 250) {
+          var gx = pad.left + pw * g / 1000;
+          ctx.beginPath(); ctx.moveTo(gx, pad.top); ctx.lineTo(gx, pad.top + ph); ctx.stroke();
+        }
+        // Curve
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (var i = 0; i < T; i++) {
+          var x = pad.left + pw * i / (T - 1);
+          var y = pad.top + ph * (1 - alphaBar[i]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        // Axes
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + ph); ctx.lineTo(pad.left + pw, pad.top + ph);
+        ctx.stroke();
+        // Tick labels
+        ctx.fillStyle = '#b8ad98';
+        ctx.font = '12px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        for (var g = 0; g <= 1000; g += 250) {
+          ctx.fillText(g, pad.left + pw * g / 1000, pad.top + ph + 18);
+        }
+        ctx.textAlign = 'right';
+        for (var v = 0; v <= 1; v += 0.25) {
+          ctx.fillText(v.toFixed(2), pad.left - 8, pad.top + ph * (1 - v) + 4);
+        }
+        // Axis titles
+        ctx.fillStyle = '#e8dcc8';
+        ctx.font = '13px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Timestep t', pad.left + pw / 2, H - 4);
+        ctx.save();
+        ctx.translate(14, pad.top + ph / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('\u0101\u0305_t', 0, 0);
+        ctx.restore();
+        // Title
+        ctx.fillStyle = '#e8dcc8';
+        ctx.font = '600 13px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Cosine Schedule: \u0101\u0305_t over timesteps', pad.left, pad.top - 8);
+      })();
+      </script>
+    </div>
+
     <h3 id="sigmoid-schedule">Sigmoid Schedule</h3>
 
     <p>The sigmoid schedule ramps $\beta_t$ through a sigmoid curve&mdash;gentle at the extremes, steep in the middle. It's a compromise between linear and cosine, and performs well in practice.</p>
+
+    <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
+      <canvas id="sigmoidAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
+      <script>
+      (function() {
+        var c = document.getElementById('sigmoidAlphaBarPlot');
+        var ctx = c.getContext('2d');
+        var W = c.width, H = c.height;
+        var T = 1000;
+        // Compute ᾱ_t for sigmoid schedule
+        // Sigmoid ramp for betas between 0.0001 and 0.02
+        var alphaBar = new Float64Array(T);
+        var cum = 1.0;
+        for (var i = 0; i < T; i++) {
+          var x = 12 * (i / (T - 1)) - 6; // sigmoid input range [-6, 6]
+          var sig = 1 / (1 + Math.exp(-x));
+          var beta = 0.0001 + (0.02 - 0.0001) * sig;
+          cum *= (1 - beta);
+          alphaBar[i] = cum;
+        }
+        // Plot dimensions
+        var pad = { top: 24, right: 20, bottom: 44, left: 52 };
+        var pw = W - pad.left - pad.right;
+        var ph = H - pad.top - pad.bottom;
+        // Background
+        ctx.fillStyle = '#111827';
+        ctx.beginPath(); ctx.roundRect(0, 0, W, H, 8); ctx.fill();
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (var v = 0; v <= 1; v += 0.25) {
+          var gy = pad.top + ph * (1 - v);
+          ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(pad.left + pw, gy); ctx.stroke();
+        }
+        for (var g = 0; g <= 1000; g += 250) {
+          var gx = pad.left + pw * g / 1000;
+          ctx.beginPath(); ctx.moveTo(gx, pad.top); ctx.lineTo(gx, pad.top + ph); ctx.stroke();
+        }
+        // Curve
+        ctx.strokeStyle = '#a78bfa';
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (var i = 0; i < T; i++) {
+          var x = pad.left + pw * i / (T - 1);
+          var y = pad.top + ph * (1 - alphaBar[i]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        // Axes
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + ph); ctx.lineTo(pad.left + pw, pad.top + ph);
+        ctx.stroke();
+        // Tick labels
+        ctx.fillStyle = '#b8ad98';
+        ctx.font = '12px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        for (var g = 0; g <= 1000; g += 250) {
+          ctx.fillText(g, pad.left + pw * g / 1000, pad.top + ph + 18);
+        }
+        ctx.textAlign = 'right';
+        for (var v = 0; v <= 1; v += 0.25) {
+          ctx.fillText(v.toFixed(2), pad.left - 8, pad.top + ph * (1 - v) + 4);
+        }
+        // Axis titles
+        ctx.fillStyle = '#e8dcc8';
+        ctx.font = '13px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Timestep t', pad.left + pw / 2, H - 4);
+        ctx.save();
+        ctx.translate(14, pad.top + ph / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('\u0101\u0305_t', 0, 0);
+        ctx.restore();
+        // Title
+        ctx.fillStyle = '#e8dcc8';
+        ctx.font = '600 13px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Sigmoid Schedule: \u0101\u0305_t over timesteps', pad.left, pad.top - 8);
+      })();
+      </script>
+    </div>
 
     <div class="pseudocode">
 <span class="keyword">def</span> linear_schedule(T, beta_start=0.0001, beta_end=0.02):<br>
