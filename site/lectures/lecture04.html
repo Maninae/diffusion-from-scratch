@@ -58,7 +58,7 @@
     <p class="lecture-roadmap">A diffusion model needs a neural network that takes a noisy image and outputs a noise prediction of the <em>exact same shape</em>. That rules out standard classifiers, which compress spatial detail away. We'll build the U-Net from scratch: an encoder that captures <em>what's</em> in the image, a decoder that recovers <em>where</em> things are, and skip connections that carry fine detail across the gap.</p>
 
     <!-- Section 1: The Architecture Problem -->
-    <h2 id="architecture-problem">The Architecture Problem</h2>
+    <h2 id="architecture-problem"><span class="section-number">4.1</span> The Architecture Problem</h2>
 
     <p>In Lecture 3, we derived the training objective for diffusion models: predict the noise $\varepsilon$ that was added to a clean image. The network takes a noisy image of shape $(B, 1, 28, 28)$ and must output a noise prediction of the <em>exact same shape</em>. But what neural network should we use?</p>
 
@@ -75,7 +75,7 @@
 
 
     <!-- Section 2: U-Net History -->
-    <h2 id="history">From Segmentation to Generation</h2>
+    <h2 id="history"><span class="section-number">4.2</span> From Segmentation to Generation</h2>
 
     <p>The U-Net was originally designed by <a href="https://arxiv.org/abs/1505.04597" target="_blank">Ronneberger et al. (2015)</a> for biomedical image segmentation, labeling every pixel in a microscopy image as "cell" or "background." That task has the same structural requirement as denoising: the output must be the same resolution as the input, and every pixel needs a prediction.</p>
 
@@ -96,7 +96,7 @@
 
 
     <!-- Section 3: Encoder Path -->
-    <h2 id="encoder">The Encoder Path &mdash; Progressive Downsampling</h2>
+    <h2 id="encoder"><span class="section-number">4.3</span> The Encoder Path &mdash; Progressive Downsampling</h2>
 
     <p>The encoder's job is to progressively compress the spatial dimensions while increasing the channel depth. Think of it as building a hierarchy of features: early layers detect simple patterns (edges, textures), deeper layers detect complex structure (digit shapes, global composition).</p>
 
@@ -147,7 +147,7 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
 
 
     <!-- Section 4: Decoder Path -->
-    <h2 id="decoder">The Decoder Path &mdash; Upsampling + Skip Concatenation</h2>
+    <h2 id="decoder"><span class="section-number">4.4</span> The Decoder Path &mdash; Upsampling + Skip Concatenation</h2>
 
     <p>The decoder mirrors the encoder: it progressively increases spatial resolution while decreasing channels. But unlike a simple mirror, the decoder has a superpower: at each level, it receives the corresponding encoder feature map via a skip connection.</p>
 
@@ -198,7 +198,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
 
     <!-- Section 5: Skip Connections -->
-    <h2 id="skip-connections">Why Skip Connections Are Critical</h2>
+    <h2 id="skip-connections"><span class="section-number">4.5</span> Why Skip Connections Are Critical</h2>
 
     <p>Skip connections are the feature that makes U-Net a U-Net. Without them, you'd have a vanilla encoder-decoder, and the results would be dramatically worse. Let's understand why.</p>
 
@@ -237,7 +237,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
 
     <!-- Section 6: Middle Block -->
-    <h2 id="middle-block">The Middle Block (Bottleneck)</h2>
+    <h2 id="middle-block"><span class="section-number">4.6</span> The Middle Block (Bottleneck)</h2>
 
     <p>Between the encoder and decoder sits the <strong>middle block</strong>, operating at the lowest spatial resolution. For our MNIST model, that's 7&times;7. Its structure is:</p>
 
@@ -249,7 +249,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
 
     <!-- Section 7: Full Architecture -->
-    <h2 id="full-architecture">Assembling the Full U-Net</h2>
+    <h2 id="full-architecture"><span class="section-number">4.7</span> Assembling the Full U-Net</h2>
 
     <p>Now let's put all the pieces together. The full forward pass proceeds in five stages:</p>
 
@@ -298,7 +298,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
 
     <!-- Section 8: ResBlock Internals -->
-    <h2 id="resblock">Inside the ResBlock</h2>
+    <h2 id="resblock"><span class="section-number">4.8</span> Inside the ResBlock</h2>
 
     <p>The ResBlock is the fundamental building block. The U-Net is essentially built by stacking these. Let's look at what happens inside one:</p>
 
@@ -327,7 +327,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
 
     <!-- Section 9: Key Equations Summary -->
-    <h2 id="equations">Key Operations &mdash; Summary</h2>
+    <h2 id="equations"><span class="section-number">4.9</span> Key Operations &mdash; Summary</h2>
 
     <p>Here are the four core operations that define the U-Net's data flow:</p>
 
@@ -357,7 +357,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
 
     <!-- Section 10: PyTorch Reference -->
-    <h2 id="pytorch-reference">PyTorch Reference</h2>
+    <h2 id="pytorch-reference"><span class="section-number">4.10</span> PyTorch Reference</h2>
 
     <p>In our codebase, the full U-Net lives in <code>utils/unet.py</code>. Here's how it maps to what we've discussed:</p>
 
@@ -394,7 +394,7 @@ assert noise_pred.shape == x_t.shape  <span style="color: var(--text-muted)"># (
 
 
     <!-- Section 11: Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">4.11</span> Looking Ahead</h2>
 
     <p>We now have the architectural skeleton of our denoising network: the U-shaped encoder-decoder with skip connections that can take a noisy image and predict the noise. But there's a critical piece missing: the network has no idea what noise level it's working with.</p>
 

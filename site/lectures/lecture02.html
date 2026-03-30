@@ -48,7 +48,7 @@
     <p class="lecture-roadmap">Diffusion starts with destruction. We'll define the forward noising process step-by-step, then discover the key mathematical shortcut &mdash; cumulative products $\bar{\alpha}_t$ &mdash; that lets us jump to <em>any</em> noise level in a single operation. Along the way, we'll build intuition for noise schedules, signal-to-noise ratios, and why these choices quietly shape everything the model learns.</p>
 
     <!-- Section 2.1 -->
-    <h2 id="forward-chain">The Forward Markov Chain</h2>
+    <h2 id="forward-chain"><span class="section-number">2.1</span> The Forward Markov Chain</h2>
 
     <p>In Lecture 1, we said diffusion models learn to reverse a destruction process. Now let's define that process precisely.</p>
 
@@ -81,7 +81,7 @@
     <p>After $T = 1000$ steps, the cumulative effect is devastating: the original image is completely gone. $x_T$ is indistinguishable from pure Gaussian noise $\mathcal{N}(0, I)$. Every trace of the face, the digit, the landscape: erased. That's exactly what we want.</p>
 
     <!-- Section 2.2 -->
-    <h2 id="cumulative-products">The Cumulative Products &mdash; &alpha;<sub>t</sub> and &alpha;&#772;<sub>t</sub></h2>
+    <h2 id="cumulative-products"><span class="section-number">2.2</span> The Cumulative Products &mdash; &alpha;<sub>t</sub> and &alpha;&#772;<sub>t</sub></h2>
 
     <p>Working with individual $\beta_t$ values gets tedious quickly. Let's introduce two quantities that make everything cleaner.</p>
 
@@ -107,7 +107,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     </div>
 
     <!-- Section 2.3 -->
-    <h2 id="closed-form">The Closed-Form Shortcut</h2>
+    <h2 id="closed-form"><span class="section-number">2.3</span> The Closed-Form Shortcut</h2>
 
     <p>Training a diffusion model means generating millions of $(x_0, t, \varepsilon)$ triples. If we had to iterate the forward chain step-by-step to get $x_t$ from $x_0$, this would be impossibly slow: 500 sequential noise operations just to produce a single noised image for one gradient step.</p>
 
@@ -156,7 +156,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     </div>
 
     <!-- Section 2.5 -->
-    <h2 id="noise-schedules">Noise Schedules</h2>
+    <h2 id="noise-schedules"><span class="section-number">2.4</span> Noise Schedules</h2>
 
     <p>Recall that at every timestep, we add a bit more noise to the image. The value $\beta_t$ controls exactly how much noise gets added at step $t$. It's the knob that governs the pace of destruction.</p>
 
@@ -609,7 +609,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     <p>The three schedules start and end at the same place&mdash;pure signal and pure noise&mdash;but they differ dramatically in how they distribute the transition. The linear schedule burns through signal quickly in the early steps, wasting capacity on timesteps where the image is already mostly destroyed. The cosine schedule preserves signal longer, giving the model more training time at medium noise levels, exactly where the denoising problem is hardest and learning is richest.</p>
 
     <!-- Section 2.6 -->
-    <h2 id="snr">Signal-to-Noise Ratio</h2>
+    <h2 id="snr"><span class="section-number">2.5</span> Signal-to-Noise Ratio</h2>
 
     <p>We've now seen three schedules that distribute the transition from image to noise in very different ways, but how do we compare them on equal footing? We need a single quantity that captures how much signal remains relative to noise at any given timestep. That quantity is the <strong>signal-to-noise ratio</strong> (SNR).</p>
 
@@ -630,7 +630,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas)&nbsp;<
     <p>Log-SNR gives us a unified lens for comparing different noise schedules. A "good" schedule should decrease the log-SNR smoothly and spend enough timesteps in the difficult mid-range.</p>
 
     <!-- Section 2.7 -->
-    <h2 id="visualizing-forward">Visualizing the Forward Process</h2>
+    <h2 id="visualizing-forward"><span class="section-number">2.6</span> Visualizing the Forward Process</h2>
 
     <p>To build intuition, let's watch what happens to a single image as the forward process runs.</p>
 

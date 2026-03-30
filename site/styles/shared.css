@@ -785,6 +785,16 @@ body::before {
   scroll-margin-top: 24px;
 }
 
+.section-number {
+  color: var(--accent);
+  margin-right: 10px;
+  font-family: var(--mono);
+  font-size: 0.75em;
+  font-weight: 500;
+  vertical-align: baseline;
+  opacity: 0.7;
+}
+
 .lecture-article h3 {
   font-family: var(--serif);
   font-size: 24px;

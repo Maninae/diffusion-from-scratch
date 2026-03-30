@@ -48,7 +48,7 @@
     <p class="lecture-roadmap">Every major generative framework &mdash; GANs, VAEs, normalizing flows, autoregressive models &mdash; found a different answer, and each one paid a different price. We'll survey those tradeoffs to understand the gap that diffusion models fill: stable training, full mode coverage, and high-quality samples, all from a single, elegant idea &mdash; learning to reverse destruction.</p>
 
     <!-- Section 1.1 -->
-    <h2 id="generative-modeling">The Generative Modeling Problem</h2>
+    <h2 id="generative-modeling"><span class="section-number">1.1</span> The Generative Modeling Problem</h2>
 
     <p>Here's the setup. You have a dataset of images, say a million photographs of faces. These images were drawn from some true distribution $p_{\text{data}}(x)$ that we can never write down in closed form.</p>
 
@@ -70,7 +70,7 @@
     <p>No framework gets all of these for free. Every approach makes a tradeoff, and understanding those tradeoffs is the key to understanding why diffusion models exist.</p>
 
     <!-- Section 1.2 -->
-    <h2 id="generative-zoo">The Generative Models Zoo</h2>
+    <h2 id="generative-zoo"><span class="section-number">1.2</span> The Generative Models Zoo</h2>
 
     <p>Before diffusion models, four major frameworks dominated generative modeling. Each one found a clever way to learn $p(x)$, and each one paid a price.</p>
 
@@ -106,7 +106,7 @@
     </div>
 
     <!-- Section 1.3 -->
-    <h2 id="enter-diffusion">Enter Diffusion Models</h2>
+    <h2 id="enter-diffusion"><span class="section-number">1.3</span> Enter Diffusion Models</h2>
 
     <p>Diffusion models take a completely different angle. Instead of trying to learn the data distribution in one shot&mdash;through a generator, a decoder, an invertible transform, or a sequential factorization&mdash;they learn to <strong>gradually reverse a simple destruction process</strong>.</p>
 
@@ -138,7 +138,7 @@
     <p>The main cost is <strong>sampling speed</strong>. Generating an image requires iterating through hundreds or thousands of denoising steps. This is the main weakness, and much of the research since 2020 has focused on reducing the number of steps needed. We'll cover accelerated sampling in later lectures.</p>
 
     <!-- Section 1.4 -->
-    <h2 id="timeline">Historical Timeline</h2>
+    <h2 id="timeline"><span class="section-number">1.4</span> Historical Timeline</h2>
 
     <p>Diffusion models didn't appear overnight. The journey from theoretical curiosity to the backbone of modern generative AI spans nearly a decade.</p>
 
@@ -168,7 +168,7 @@
     </div>
 
     <!-- Section 1.5 -->
-    <h2 id="whats-ahead">What's Ahead in This Course</h2>
+    <h2 id="whats-ahead"><span class="section-number">1.5</span> What's Ahead in This Course</h2>
 
     <p>This course builds your understanding of diffusion models from the ground up: math, architecture, training, sampling, conditioning, and scaling.</p>
 

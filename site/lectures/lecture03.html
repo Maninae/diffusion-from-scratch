@@ -49,7 +49,7 @@
     <p class="lecture-roadmap">We know how to destroy images. Now comes the hard part: reversing that destruction. We'll work through the full derivation &mdash; from an intractable posterior, through the ELBO, to the result that training a diffusion model reduces to predicting noise. Six lines of pseudocode, backed by a rigorous mathematical chain.</p>
 
     <!-- Section 3.1 -->
-    <h2 id="reverse-process">The Reverse Process &mdash; What We Need</h2>
+    <h2 id="reverse-process"><span class="section-number">3.1</span> The Reverse Process &mdash; What We Need</h2>
 
     <p>We know how to destroy images (Lecture 2). Now comes the real question: how do we generate new ones?</p>
 
@@ -64,7 +64,7 @@
     <p>There's a deep result by <a href="https://en.wikipedia.org/wiki/Feller%27s_theorem" target="_blank">Feller (1949)</a> that justifies this: when the forward steps are small enough (small $\beta_t$), the reverse steps are also approximately Gaussian. Our Gaussian parameterization is therefore not only convenient but also theoretically grounded.</p>
 
     <!-- Section 3.2 -->
-    <h2 id="intractable-reverse">Why the True Reverse Is Intractable</h2>
+    <h2 id="intractable-reverse"><span class="section-number">3.2</span> Why the True Reverse Is Intractable</h2>
 
     <p>But there's a problem. The <strong>true</strong> reverse distribution $q(x_{t-1} \mid x_t)$ requires marginalizing over all possible clean images:</p>
 
@@ -83,7 +83,7 @@
     </div>
 
     <!-- Section 3.3 -->
-    <h2 id="tractable-posterior">The Tractable Posterior &mdash; q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>)</h2>
+    <h2 id="tractable-posterior"><span class="section-number">3.3</span> The Tractable Posterior &mdash; q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>)</h2>
 
     <p>There is a tractable alternative. If we condition on <strong>both</strong> $x_t$ and $x_0$&mdash;the noisy image and the clean original&mdash;the posterior becomes tractable. Using Bayes' rule:</p>
 
@@ -111,7 +111,7 @@
     <p>So why is this useful? Because it tells us what the model should <strong>aim for</strong>. If the model can estimate $x_0$ from $x_t$, it can compute this posterior and take the reverse step. The ELBO derivation makes this precise.</p>
 
     <!-- Section 3.4 -->
-    <h2 id="elbo">The ELBO Derivation</h2>
+    <h2 id="elbo"><span class="section-number">3.4</span> The ELBO Derivation</h2>
 
     <p>The tractable posterior $q(x_{t-1} \mid x_t, x_0)$ gives us a training target: we know what the ideal reverse step looks like when $x_0$ is available. Since we have $x_0$ during training (it's our clean image from the training data), we can use it. The ELBO (Evidence Lower BOund) formalizes this into a tractable training objective.</p>
 
@@ -153,7 +153,7 @@
     <p><strong>The takeaway:</strong> the ELBO tells us to make the learned reverse step match the true posterior at every timestep. When both are Gaussian with fixed variance, this reduces to matching their means. The training objective is a sum of mean-squared errors, one per timestep.</p>
 
     <!-- Section 3.5 -->
-    <h2 id="epsilon-prediction">The &epsilon;-Prediction Reparameterization</h2>
+    <h2 id="epsilon-prediction"><span class="section-number">3.5</span> The &epsilon;-Prediction Reparameterization</h2>
 
     <p>We could train the model to predict $\tilde{\mu}_t$ directly. But <a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al. (2020)</a> found a much better parameterization: instead of predicting the mean, predict the <strong>noise</strong> $\varepsilon$ that was added.</p>
 
@@ -190,7 +190,7 @@
     <p>This noise-prediction loss is almost the final training objective, but the ELBO still prescribes specific weights for each timestep. One more simplification remains.</p>
 
     <!-- Section 3.6 -->
-    <h2 id="simplified-loss">The Simplified Loss (L<sub>simple</sub>)</h2>
+    <h2 id="simplified-loss"><span class="section-number">3.6</span> The Simplified Loss (L<sub>simple</sub>)</h2>
 
     <p>The full ELBO loss has <strong>timestep-dependent weights</strong> in front of each $L_t$ term (related to $1/\text{SNR}(t)$). These weights emphasize high-noise timesteps where the KL divergence is largest.</p>
 
@@ -208,7 +208,7 @@
     </div>
 
     <!-- Section 3.7 -->
-    <h2 id="algorithm-1">DDPM Algorithm 1 &mdash; The Training Procedure</h2>
+    <h2 id="algorithm-1"><span class="section-number">3.7</span> DDPM Algorithm 1 &mdash; The Training Procedure</h2>
 
     <p>Everything we've derived collapses into a six-line training procedure: sample an image, pick a random timestep, add noise, predict that noise, compute MSE, take a gradient step.</p>
 
@@ -253,7 +253,7 @@
     </div>
 
     <!-- Section 3.8 -->
-    <h2 id="parameterizations">Alternative Parameterizations (Preview)</h2>
+    <h2 id="parameterizations"><span class="section-number">3.8</span> Alternative Parameterizations (Preview)</h2>
 
     <p>Although we've focused on the prevailing $\varepsilon$-prediction parameterization, it's not the only option. Three parameterizations are common in practice, and they're all <strong>mathematically equivalent</strong>; you can convert between them given $(x_t, t)$.</p>
 
