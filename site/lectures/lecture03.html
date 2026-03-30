@@ -287,14 +287,18 @@
       <div class="code-block-label">PyTorch</div>
 <pre><span class="keyword">import</span> torch
 <span class="keyword">import</span> torch.nn.functional <span class="keyword">as</span> F
+
 <span class="keyword">def</span> <span class="function">train_step</span>(model, x_0, schedule, optimizer):
     <span class="string">"""One training step of DDPM (Algorithm 1)."""</span>
     B = x_0.shape[<span class="number">0</span>]
     device = x_0.device
+
     <span class="comment"># Sample random timesteps</span>
     t = torch.randint(<span class="number">0</span>, schedule[<span class="string">'T'</span>], (B,), device=device)
+
     <span class="comment"># Sample noise ε ~ N(0, I)</span>
     noise = torch.randn_like(x_0)                     <span class="comment"># (B, C, H, W)</span>
+
     <span class="comment"># Forward process: noise x_0 to timestep t</span>
     sqrt_ab = schedule[<span class="string">'sqrt_alphas_cumprod'</span>][t]   <span class="comment"># (B,)</span>
     sqrt_om = schedule[<span class="string">'sqrt_one_minus_ac'</span>][t]    <span class="comment"># (B,)</span>
@@ -302,13 +306,16 @@
         sqrt_ab = sqrt_ab.unsqueeze(-<span class="number">1</span>)
         sqrt_om = sqrt_om.unsqueeze(-<span class="number">1</span>)
     x_t = sqrt_ab * x_0 + sqrt_om * noise         <span class="comment"># (B, C, H, W)</span>
+
     <span class="comment"># Predict noise and compute loss</span>
     noise_pred = model(x_t, t)                     <span class="comment"># (B, C, H, W)</span>
     loss = F.mse_loss(noise, noise_pred)
+
     <span class="comment"># Gradient step</span>
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+
     <span class="keyword">return</span> loss.item()</pre>
     </div>
 
