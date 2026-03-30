@@ -224,7 +224,7 @@
 
     <h3 id="encoder-shapes">Tensor Shapes Through the Encoder</h3>
 
-    <p>For our MNIST model with channel progression $1 \to 64 \to 128 \to 256$, here's exactly what happens to a batch of images:</p>
+    <p>With MNIST's 28×28 grayscale images and a channel progression of $1 \to 64 \to 128 \to 256$, here's exactly what happens to a batch of images:</p>
 
     <div class="code-block">
 <pre>Input:          (B, 1, 28, 28)    &mdash; raw noisy image
@@ -316,7 +316,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
 
     <h3 id="without-skips">Without Skip Connections</h3>
 
-    <p>Without skips, the decoder must reconstruct <em>all</em> spatial detail from the bottleneck alone. For our MNIST model, that bottleneck is $(B, 256, 7, 7)$, a 7&times;7 spatial grid. Every fine detail of the original 28&times;28 image (exact edge positions, subtle textures, thin strokes) must be encoded in those 49 spatial positions. Information gets crushed.</p>
+    <p>Without skips, the decoder must reconstruct <em>all</em> spatial detail from the bottleneck alone. With 28&times;28 inputs and two downsampling stages, that bottleneck is $(B, 256, 7, 7)$, a 7&times;7 spatial grid. Every fine detail of the original 28&times;28 image (exact edge positions, subtle textures, thin strokes) must be encoded in those 49 spatial positions. Information gets crushed.</p>
 
     <p>The result: blurry, smooth noise predictions. The network captures the rough structure but loses the fine details that matter for sharp denoising.</p>
 
@@ -351,7 +351,7 @@ Final conv:     (B, 1, 28, 28)             &mdash; same shape as input!</pre>
     <!-- Section 6: Middle Block -->
     <h2 id="middle-block"><span class="section-number">4.6</span> The Middle Block (Bottleneck)</h2>
 
-    <p>Between the encoder and decoder sits the <strong>middle block</strong>, operating at the lowest spatial resolution. For our MNIST model, that's 7&times;7. Its structure is:</p>
+    <p>Between the encoder and decoder sits the <strong>middle block</strong>, operating at the lowest spatial resolution. With 28&times;28 inputs, that's 7&times;7. Its structure is:</p>
 
     <p><strong>ResBlock &rarr; Self-Attention &rarr; ResBlock</strong></p>
 
