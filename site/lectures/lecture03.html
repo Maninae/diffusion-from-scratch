@@ -177,9 +177,11 @@
       <p>Sample noise. Add it to an image. Ask the model to predict that noise. Minimize MSE. That's it.</p>
     </div>
 
-    <p>Why is $\varepsilon$-prediction better than $\mu$-prediction? Empirically, it produces better samples.</p>
+    <p>Why does predicting noise work better than predicting the mean $\mu$ directly? Consider what the network's target looks like in each case.</p>
 
-    <p>Intuitively, predicting noise is a more "uniform" task across timesteps: at every noise level, the target $\varepsilon$ is a standard Gaussian. Predicting $\mu$ or $x_0$ directly has wildly different scales and difficulties across timesteps.</p>
+    <p>With $\mu$-prediction, the target changes dramatically across timesteps. At low $t$ (clean images), $\tilde{\mu}_t$ is close to $x_0$&mdash;a high-magnitude, highly structured signal. At high $t$ (pure noise), $\tilde{\mu}_t$ is close to zero&mdash;a tiny, unstructured target. The network must learn fundamentally different behaviors depending on the noise level, and the gradient signal at high-noise timesteps is vanishingly small.</p>
+
+    <p>With $\varepsilon$-prediction, the target is always a sample from $\mathcal{N}(0, I)$, regardless of timestep. The scale and distribution of the target stay constant&mdash;what changes is how much information $x_t$ gives the network to work with. This makes the learning problem more balanced across all noise levels.</p>
 
     <!-- Section 3.6 -->
     <h2 id="simplified-loss">The Simplified Loss (L<sub>simple</sub>)</h2>
