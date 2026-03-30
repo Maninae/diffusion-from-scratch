@@ -71,7 +71,7 @@
 
     <p>All three approaches below are <strong>mathematically equivalent</strong>&mdash;you can convert freely between them given $(x_t, t)$. They differ in <em>numerical stability</em> and <em>gradient behavior</em> across timesteps.</p>
 
-    <h3 id="epsilon-prediction">$\varepsilon$-Prediction (DDPM Standard)</h3>
+    <h3 id="epsilon-prediction">&epsilon;-Prediction (DDPM Standard)</h3>
 
     <p>The model predicts the noise $\varepsilon$ that was added to $x_0$:</p>
 
@@ -82,7 +82,7 @@
       <li><strong>Weakness:</strong> at low noise ($t$ near 0), the noise $\varepsilon$ is scaled down by $\sqrt{1 - \bar\alpha_t}$ which approaches zero&mdash;the loss signal per training step is tiny</li>
     </ul>
 
-    <h3 id="x0-prediction">$x_0$-Prediction</h3>
+    <h3 id="x0-prediction">x<sub>0</sub>-Prediction</h3>
 
     <p>The model predicts the clean image $x_0$ directly:</p>
 
@@ -93,7 +93,7 @@
       <li><strong>Weakness:</strong> at high noise, predicting $x_0$ from near-pure noise produces large errors and unstable gradients. The model is asked to hallucinate a clean image from almost nothing.</li>
     </ul>
 
-    <h3 id="v-prediction">$v$-Prediction (Salimans &amp; Ho, 2022)</h3>
+    <h3 id="v-prediction">v-Prediction (Salimans &amp; Ho, 2022)</h3>
 
     <p>Define the <strong>velocity</strong>:</p>
 
@@ -298,7 +298,7 @@ noise = torch.randn_like(x) + 0.1 * torch.randn(B, C, 1, 1)
     </div>
 
     <!-- Section 7: Training with v-prediction -->
-    <h2 id="v-prediction-training">Training with $v$-Prediction</h2>
+    <h2 id="v-prediction-training">Training with v-Prediction</h2>
 
     <p>Switching from $\varepsilon$-prediction to $v$-prediction requires very few code changes. Here's the diff:</p>
 

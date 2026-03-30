@@ -100,7 +100,7 @@ def train_step_cfg(model, x_0, class_label, schedule, p_uncond=0.1):
 
     <p>The term $(\epsilon_\text{cond} - \epsilon_\text{uncond})$ is the <strong>conditioning signal</strong> &mdash; it captures exactly what's different about the model's prediction when it knows the class versus when it doesn't. The guidance scale $s$ controls how aggressively we amplify this difference.</p>
 
-    <h3 id="guidance-scale-values">The Guidance Scale $s$</h3>
+    <h3 id="guidance-scale-values">The Guidance Scale <em>s</em></h3>
 
     <ul>
       <li>$s = 0$: pure unconditional generation (the $\epsilon_\text{cond}$ term vanishes)</li>
