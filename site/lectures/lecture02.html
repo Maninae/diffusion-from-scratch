@@ -640,7 +640,7 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <p>Now think about this from the model's perspective. At each timestep, the model sees $x_t$ and must predict the noise $\varepsilon$ that was added. At low $t$ (clean images), this is easy&mdash;the noise is small and the image provides strong context. At high $t$ (nearly pure noise), the model must essentially hallucinate plausible image structure.</p>
 
-    <p>The <strong>schedule determines how many training samples fall at each difficulty level</strong>.</p>
+    <p>The <strong>choice of noise schedule determines how often the model trains at each difficulty level</strong>.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
