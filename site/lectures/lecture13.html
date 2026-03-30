@@ -75,7 +75,7 @@
       <li><strong>A zoo of precomputed tensors</strong> &mdash; $\sqrt{\bar{\alpha}_t}$, $\sqrt{1 - \bar{\alpha}_t}$, posterior variance $\tilde{\beta}_t$, and more. We built a whole <code>prepare_schedule()</code> function just to manage them.</li>
       <li><strong>A long derivation chain</strong> &mdash; forward process &rarr; <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a> for the posterior &rarr; variational lower bound (ELBO) &rarr; <a href="https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence" target="_blank">KL</a> between Gaussians &rarr; noise reparameterization &rarr; simplified loss</li>
       <li><strong>1000 discrete timesteps</strong> for full-quality sampling (or DDIM tricks to reduce it)</li>
-      <li><strong>Schedule sensitivity</strong> &mdash; the choice between linear, cosine, and sigmoid schedules meaningfully affects results. The schedule <em>is</em> a hyperparameter, and a finicky one.</li>
+      <li><strong>Schedule sensitivity</strong> &mdash; the choice between linear, cosine, and sigmoid schedules meaningfully affects results. The schedule is a sensitive hyperparameter.</li>
     </ul>
 
     <p>All of this works, as we've seen throughout this course. But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
@@ -83,7 +83,7 @@
     <!-- Section 13.2 — THE BRIDGE -->
     <h2 id="velocity-fields-bridge"><span class="section-number">13.2</span> The Bridge: v-Prediction to Flow Matching</h2>
 
-    <p>The path from DDPM to flow matching ran through an intermediate improvement called <strong>v-prediction</strong> (<a href="https://arxiv.org/abs/2202.00512" target="_blank">Salimans &amp; Ho, 2022</a>). Understanding that middle step makes flow matching feel inevitable rather than arbitrary.</p>
+    <p>The path from DDPM to flow matching ran through an intermediate improvement called <strong>v-prediction</strong> (<a href="https://arxiv.org/abs/2202.00512" target="_blank">Salimans &amp; Ho, 2022</a>). Understanding that middle step shows how flow matching follows naturally from earlier work.</p>
 
     <h3 id="epsilon-problem">The Problem with Noise Prediction</h3>
 
@@ -196,7 +196,7 @@
       </ol>
     </div>
 
-    <p>There are no cumulative alpha products. No schedule tensors. No reparameterization trick. Just: interpolate between data and noise along a straight line, and train the model to predict the velocity of that line.</p>
+    <p>The training loop requires no cumulative alpha products, no schedule tensors, and no reparameterization trick. You interpolate between data and noise along a straight line, and train the model to predict the velocity of that line.</p>
 
     <h3 id="pseudocode-training">Pseudocode: Flow Matching Training Step</h3>
 
@@ -213,7 +213,7 @@
 
     <h3 id="side-by-side">Side-by-Side: DDPM vs. Flow Matching</h3>
 
-    <p>The difference in complexity is stark. Here's the interpolation step for each:</p>
+    <p>The complexity difference is visible in the code. Here's the interpolation step for each:</p>
 
     <div class="code-block">
 <span class="comment"># DDPM: schedule-dependent, needs precomputed tensors</span>
@@ -223,7 +223,7 @@ sqrt_one_minus = sqrt(1 - alphas_cumprod[t])         <span class="comment"># mor
 x_t = sqrt_alpha_bar * x_0 + sqrt_one_minus * noise <span class="comment"># weighted combination</span>
 
 <span class="comment"># Flow matching: schedule-free, just linear interpolation</span>
-x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that's it</span>
+x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># linear interpolation</span>
     </div>
 
     <p>DDPM's interpolation coefficients ($\sqrt{\bar{\alpha}_t}$ and $\sqrt{1 - \bar{\alpha}_t}$) are nonlinear functions of the noise schedule, precomputed and stored in dictionaries. Flow matching's coefficients are $(1 - t)$ and $t$, literally just the time variable.</p>
@@ -382,7 +382,7 @@ x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># con
       </tbody>
     </table>
 
-    <p>The deep connection: DDPM can be viewed as flow matching with a specific <em>non-straight</em> interpolation path. The probability flow ODE from Lecture 7 is the bridge &mdash; it showed that DDPM's discrete sampling process has a continuous ODE equivalent. Flow matching takes this insight and asks: why not use a simpler ODE in the first place?</p>
+    <p>The deep connection: DDPM can be viewed as flow matching with a specific <em>non-straight</em> interpolation path. The probability flow ODE from Lecture 7 is the bridge &mdash; it showed that DDPM's discrete sampling process has a continuous ODE equivalent. Flow matching applies this insight by using a simpler ODE from the start.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -406,7 +406,7 @@ x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># con
     <!-- Looking Ahead -->
     <h2 id="looking-ahead"><span class="section-number">13.10</span> Looking Ahead</h2>
 
-    <p>Over the last thirteen lectures, we've built diffusion models from the ground up. We started with forward noising and learned to reverse it. We built U-Nets and replaced them with transformers. We experimented with noise schedules and then threw them away entirely. Each step was a simplification &mdash; stripping away complexity that turned out to be incidental to the core idea of learning to transport noise into data.</p>
+    <p>Over the last thirteen lectures, we've built diffusion models from the ground up. We started with forward noising and learned to reverse it. We built U-Nets and replaced them with transformers. We experimented with noise schedules and then threw them away entirely. Each step simplified the framework, removing complexity that was not essential to the core idea of transporting noise into data.</p>
 
     <p>In the assessment, you'll put all of this together &mdash; from foundational concepts through modern architectures &mdash; demonstrating that you can reason about and implement the full stack of generative modeling with diffusion.</p>
 
