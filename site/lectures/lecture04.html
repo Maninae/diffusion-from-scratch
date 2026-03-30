@@ -77,13 +77,13 @@
     <!-- Section 2: U-Net History -->
     <h2 id="history">From Segmentation to Generation</h2>
 
-    <p>The U-Net was originally designed by Ronneberger et al. (2015) for biomedical image segmentation &mdash; labeling every pixel in a microscopy image as "cell" or "background." That task has the same structural requirement as denoising: the output must be the same resolution as the input, and every pixel needs a prediction.</p>
+    <p>The U-Net was originally designed by <a href="https://arxiv.org/abs/1505.04597" target="_blank">Ronneberger et al. (2015)</a> for biomedical image segmentation &mdash; labeling every pixel in a microscopy image as "cell" or "background." That task has the same structural requirement as denoising: the output must be the same resolution as the input, and every pixel needs a prediction.</p>
 
     <p>The key insight was simple but powerful: combine <strong>high-level semantics</strong> from deep layers with <strong>fine spatial detail</strong> from shallow layers. An encoder compresses the image (capturing what's in it), a decoder expands it back (recovering where things are), and <strong>skip connections</strong> carry detail directly from encoder to decoder at each resolution level.</p>
 
     <h3 id="diffusion-adaptations">What Changed for Diffusion</h3>
 
-    <p>When Ho et al. (2020) adopted the U-Net for DDPM, they made several modifications:</p>
+    <p>When <a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al. (2020)</a> adopted the U-Net for DDPM, they made several modifications:</p>
 
     <ul>
       <li><strong>GroupNorm instead of BatchNorm</strong> &mdash; BatchNorm's statistics depend on batch size, which varies during sampling. GroupNorm computes statistics per-sample, making it stable regardless of batch size.</li>

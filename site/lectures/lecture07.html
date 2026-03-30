@@ -83,7 +83,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>Training taught the model to predict noise at any timestep. Sampling reverses the process: start from pure Gaussian noise $\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ and iteratively denoise, one step at a time, until we arrive at a clean image $\mathbf{x}_0$.</p>
 
     <div class="algorithm">
-      <div class="algorithm-title">Algorithm 2 &mdash; DDPM Sampling (Ho et al., 2020)</div>
+      <div class="algorithm-title">Algorithm 2 &mdash; DDPM Sampling (<a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al., 2020</a>)</div>
       <ol>
         <li>$\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ <span class="comment">&mdash; start from pure noise</span></li>
         <li><span class="keyword">for</span> $t = T, T-1, \ldots, 1$ <span class="keyword">do</span></li>
@@ -171,7 +171,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps &mdash; the noise magnitudes would be wrong, and sample quality collapses.</p>
 
-    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, Song, Meng &amp; Ermon, 2020) solves this by reformulating the reverse process with a tunable noise parameter $\eta$:</p>
+    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, <a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>) solves this by reformulating the reverse process with a tunable noise parameter $\eta$:</p>
 
     <ul>
       <li>$\eta = 1$: equivalent to DDPM (full stochastic sampling)</li>
@@ -200,7 +200,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>DDIM (Song, Meng &amp; Ermon, 2020).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling &mdash; no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
+      <strong>DDIM (<a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling &mdash; no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
     </div>
 
     <h3 id="ddim-pseudocode">Pseudocode</h3>
@@ -283,7 +283,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <h3 id="dynamic-clip">Dynamic Thresholding (Imagen)</h3>
 
-    <p><strong>Dynamic thresholding</strong> (Saharia et al., 2022) is smarter. At each step, compute the $p$-th percentile of $|\hat{\mathbf{x}}_0|$ (typically $p = 99.5$). If that percentile exceeds 1, clip to that value and rescale to $[-1, 1]$. This allows higher guidance scales without saturation artifacts.</p>
+    <p><strong>Dynamic thresholding</strong> (<a href="https://arxiv.org/abs/2205.11487" target="_blank">Saharia et al., 2022</a>) is smarter. At each step, compute the $p$-th percentile of $|\hat{\mathbf{x}}_0|$ (typically $p = 99.5$). If that percentile exceeds 1, clip to that value and rescale to $[-1, 1]$. This allows higher guidance scales without saturation artifacts.</p>
 
     <p>For MNIST with standard DDPM/DDIM (no guidance), static clipping is perfectly fine. Dynamic thresholding becomes important in Lecture 9 when we add classifier-free guidance.</p>
 
@@ -342,7 +342,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     $$\nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \approx -\frac{\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)}{\sqrt{1-\bar{\alpha}_t}}$$
 
-    <p>In other words, predicting noise $\boldsymbol{\epsilon}$ is equivalent to estimating the score function. This connection is profound &mdash; it unifies diffusion models with score-based generative models (Song &amp; Ermon, 2019) and explains why DDIM works.</p>
+    <p>In other words, predicting noise $\boldsymbol{\epsilon}$ is equivalent to estimating the score function. This connection is profound &mdash; it unifies diffusion models with score-based generative models (<a href="https://arxiv.org/abs/1907.05600" target="_blank">Song &amp; Ermon, 2019</a>) and explains why DDIM works.</p>
 
     <h3 id="ddim-as-euler">DDIM as Euler Discretization</h3>
 
@@ -350,7 +350,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <ul>
       <li><strong>Heun's method</strong> (second-order): roughly halves the required steps vs. Euler</li>
-      <li><strong>DPM-Solver</strong> (Lu et al., 2022): purpose-built for diffusion ODEs, achieves good quality in 10&ndash;20 steps</li>
+      <li><strong>DPM-Solver</strong> (<a href="https://arxiv.org/abs/2206.00927" target="_blank">Lu et al., 2022</a>): purpose-built for diffusion ODEs, achieves good quality in 10&ndash;20 steps</li>
       <li><strong>DPM-Solver++</strong>: further improvements, used in Stable Diffusion</li>
     </ul>
 

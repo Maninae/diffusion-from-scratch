@@ -111,7 +111,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <p>Let's expand the six-line DDPM training algorithm into real, working code. Each line of the algorithm maps to a concrete operation with specific shapes and device requirements.</p>
 
     <div class="algorithm">
-      <div class="algorithm-title">Algorithm 1 &mdash; DDPM Training (Ho et al., 2020)</div>
+      <div class="algorithm-title">Algorithm 1 &mdash; DDPM Training (<a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al., 2020</a>)</div>
       <ol>
         <li><span class="keyword">repeat</span></li>
         <li style="list-style: none; padding-left: 1.5em;">$\mathbf{x}_0 \sim q(\mathbf{x}_0)$ <span class="comment">&mdash; sample a batch of clean images</span></li>
@@ -188,7 +188,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
 
     <h3 id="importance-weighting">Importance Weighting (P2)</h3>
 
-    <p><strong>P2 weighting</strong> (Perception Prioritized, Choi et al. 2022) reweights the loss by $1/(1 + \text{SNR}(t))$, which upweights mid-noise timesteps where the gradients are most useful. This improves FID scores, especially on complex datasets like CIFAR-10 and ImageNet.</p>
+    <p><strong>P2 weighting</strong> (Perception Prioritized, <a href="https://arxiv.org/abs/2204.00227" target="_blank">Choi et al. 2022</a>) reweights the loss by $1/(1 + \text{SNR}(t))$, which upweights mid-noise timesteps where the gradients are most useful. This improves FID scores, especially on complex datasets like CIFAR-10 and ImageNet.</p>
 
     <p><strong>Practical advice:</strong> start with uniform sampling. It's simpler and works well for MNIST. Switch to importance weighting if you're training on harder datasets and want to squeeze out better FID.</p>
 
