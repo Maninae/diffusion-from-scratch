@@ -314,7 +314,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
     <!-- Section 13.8 -->
     <h2 id="connection-to-diffusion">Connection to Diffusion</h2>
 
-    <p>Flow matching isn't a <em>replacement</em> for diffusion &mdash; it's a <strong>continuous generalization</strong>. Let's make the connection explicit.</p>
+    <p>Flow matching is a <strong>continuous generalization</strong> of diffusion. Let's make the connection explicit.</p>
 
     <h3 id="interpolation-paths">The Interpolation Path Is the Difference</h3>
 
@@ -380,7 +380,7 @@ x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># con
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      The progression from DDPM to flow matching isn't a revolution &mdash; it's a simplification. DDPM proved that the "noise to data" idea works. Score matching showed it has a continuous formulation. v-prediction showed that velocity is a better prediction target. Flow matching completed the arc: build the <em>entire framework</em> around velocity and straight-line transport, dropping everything that was incidental to the core idea.
+      The progression from DDPM to flow matching is a simplification. DDPM proved that the "noise to data" idea works. Score matching showed it has a continuous formulation. v-prediction showed that velocity is a better prediction target. Flow matching completed the arc: build the <em>entire framework</em> around velocity and straight-line transport, dropping everything that was incidental to the core idea.
     </div>
 
     <!-- Section 13.9 -->
