@@ -330,15 +330,15 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>There are two equivalent mathematical descriptions of diffusion sampling:</p>
 
     <ol>
-      <li><strong>SDE (Stochastic Differential Equation):</strong> DDPM sampling. The reverse process includes a random noise term &mdash; it's a stochastic trajectory from $\mathbf{x}_T$ to $\mathbf{x}_0$.</li>
-      <li><strong>ODE (Ordinary Differential Equation):</strong> A deterministic trajectory. No randomness &mdash; the path from noise to data is a smooth curve defined by the model's predictions.</li>
+      <li><strong><a href="https://en.wikipedia.org/wiki/Stochastic_differential_equation" target="_blank">SDE</a> (Stochastic Differential Equation):</strong> DDPM sampling. The reverse process includes a random noise term &mdash; it's a stochastic trajectory from $\mathbf{x}_T$ to $\mathbf{x}_0$.</li>
+      <li><strong><a href="https://en.wikipedia.org/wiki/Ordinary_differential_equation" target="_blank">ODE</a> (Ordinary Differential Equation):</strong> A deterministic trajectory. No randomness &mdash; the path from noise to data is a smooth curve defined by the model's predictions.</li>
     </ol>
 
     <p>The ODE form is:</p>
 
     $$d\mathbf{x} = \left[f(\mathbf{x}, t) - \frac{1}{2}g(t)^2 \nabla_{\mathbf{x}} \log p_t(\mathbf{x})\right] dt$$
 
-    <p>The key term is the <strong>score function</strong> $\nabla_{\mathbf{x}} \log p_t(\mathbf{x})$ &mdash; the gradient of the log-probability of the data at noise level $t$. Our trained model gives us this for free:</p>
+    <p>The key term is the <strong><a href="https://en.wikipedia.org/wiki/Score_(statistics)" target="_blank">score function</a></strong> $\nabla_{\mathbf{x}} \log p_t(\mathbf{x})$ &mdash; the gradient of the log-probability of the data at noise level $t$. Our trained model gives us this for free:</p>
 
     $$\nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \approx -\frac{\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)}{\sqrt{1-\bar{\alpha}_t}}$$
 
@@ -346,7 +346,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <h3 id="ddim-as-euler">DDIM as Euler Discretization</h3>
 
-    <p>DDIM with $\eta = 0$ is exactly the <strong>Euler method</strong> applied to this ODE. And just like in numerical methods, we can use better ODE solvers to get the same quality in fewer steps:</p>
+    <p>DDIM with $\eta = 0$ is exactly the <strong><a href="https://en.wikipedia.org/wiki/Euler_method" target="_blank">Euler method</a></strong> applied to this ODE. And just like in numerical methods, we can use better ODE solvers to get the same quality in fewer steps:</p>
 
     <ul>
       <li><strong>Heun's method</strong> (second-order): roughly halves the required steps vs. Euler</li>

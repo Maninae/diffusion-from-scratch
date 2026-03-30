@@ -197,7 +197,7 @@
 
     $$p_\text{guided}(x \mid y) \propto p(x) \cdot p(y \mid x)^s$$
 
-    <p>When $s = 1$, this is just Bayes' rule &mdash; we get the standard conditional $p(x \mid y)$. When $s > 1$, we're raising the classifier likelihood to a power, which sharpens the distribution around images that the classifier confidently assigns to class $y$. Higher $s$ means sharper peaks but thinner tails &mdash; better fidelity, less diversity.</p>
+    <p>When $s = 1$, this is just <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a> &mdash; we get the standard conditional $p(x \mid y)$. When $s > 1$, we're raising the classifier likelihood to a power, which sharpens the distribution around images that the classifier confidently assigns to class $y$. Higher $s$ means sharper peaks but thinner tails &mdash; better fidelity, less diversity.</p>
 
     <h3 id="classifier-guidance-pseudocode">Sampling with Classifier Guidance</h3>
 

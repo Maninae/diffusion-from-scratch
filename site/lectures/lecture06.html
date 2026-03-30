@@ -188,7 +188,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
 
     <h3 id="importance-weighting">Importance Weighting (P2)</h3>
 
-    <p><strong>P2 weighting</strong> (Perception Prioritized, <a href="https://arxiv.org/abs/2204.00227" target="_blank">Choi et al. 2022</a>) reweights the loss by $1/(1 + \text{SNR}(t))$, which upweights mid-noise timesteps where the gradients are most useful. This improves FID scores, especially on complex datasets like CIFAR-10 and ImageNet.</p>
+    <p><strong>P2 weighting</strong> (Perception Prioritized, <a href="https://arxiv.org/abs/2204.00227" target="_blank">Choi et al. 2022</a>) reweights the loss by $1/(1 + \text{SNR}(t))$, which upweights mid-noise timesteps where the gradients are most useful. This improves <a href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance" target="_blank">FID</a> scores, especially on complex datasets like CIFAR-10 and ImageNet.</p>
 
     <p><strong>Practical advice:</strong> start with uniform sampling. It's simpler and works well for MNIST. Switch to importance weighting if you're training on harder datasets and want to squeeze out better FID.</p>
 
@@ -197,7 +197,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
 
     <p>Diffusion training loss can spike, especially in the first few hundred steps when the model is still learning basic structure, or when an unlucky batch happens to contain all high-noise timesteps. Without protection, a single bad batch can produce enormous gradients that blow up your model weights.</p>
 
-    <p>The fix is gradient clipping:</p>
+    <p>The fix is <a href="https://en.wikipedia.org/wiki/Gradient_clipping" target="_blank">gradient clipping</a>:</p>
 
     <div class="pseudocode">
 torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="function">parameters</span>(), max_norm=<span class="number">1.0</span>)
@@ -217,7 +217,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <h3 id="why-ema">Why EMA Helps</h3>
 
-    <p>During training, model weights oscillate around the optimum, overshooting in one direction, then correcting. These oscillations are fine for computing gradients (the optimizer handles them), but they produce noisy, inconsistent samples. EMA averages out the oscillations, yielding a smoother set of weights that generates higher-quality images.</p>
+    <p>During training, model weights oscillate around the optimum, overshooting in one direction, then correcting. These oscillations are fine for computing gradients (the optimizer handles them), but they produce noisy, inconsistent samples. <a href="https://en.wikipedia.org/wiki/Exponential_smoothing" target="_blank">EMA</a> averages out the oscillations, yielding a smoother set of weights that generates higher-quality images.</p>
 
     <p>The update rule is:</p>
 
@@ -262,7 +262,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <h3 id="practical-recipe">The Practical Recipe</h3>
 
-    <p>For MNIST, the simplest approach works fine: <strong>Adam with a constant learning rate of $2 \times 10^{-4}$</strong>. This is what the original DDPM paper used, and for a small dataset like MNIST it's all you need.</p>
+    <p>For MNIST, the simplest approach works fine: <strong><a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent#Adam" target="_blank">Adam</a> with a constant learning rate of $2 \times 10^{-4}$</strong>. This is what the original DDPM paper used, and for a small dataset like MNIST it's all you need.</p>
 
     <p>For more complex datasets (CIFAR-10, ImageNet), the full recipe is: <strong>AdamW</strong> with $\text{lr} = 2 \times 10^{-4}$, linear warmup for 1,000 steps, cosine decay to 0. AdamW adds decoupled weight decay regularization, which is modern best practice.</p>
 

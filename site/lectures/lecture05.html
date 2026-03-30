@@ -85,7 +85,7 @@
 
     <p>We could pass the timestep as a raw scalar, concatenate $t$ to the input or feed it as an extra feature. But a single number doesn't give the network enough structure to modulate its behavior across hundreds of distinct noise levels. We need a <strong>high-dimensional, structured representation</strong> of each timestep.</p>
 
-    <p>The solution is sinusoidal positional encoding, borrowed from transformers (<a href="https://arxiv.org/abs/1706.03762" target="_blank">Vaswani et al., 2017</a>). The same formula that encodes token positions in a sequence can encode noise levels for a U-Net.</p>
+    <p>The solution is sinusoidal <a href="https://en.wikipedia.org/wiki/Positional_encoding" target="_blank">positional encoding</a>, borrowed from transformers (<a href="https://arxiv.org/abs/1706.03762" target="_blank">Vaswani et al., 2017</a>). The same formula that encodes token positions in a sequence can encode noise levels for a U-Net.</p>
 
     <h3 id="embedding-formula">The Formula</h3>
 
@@ -194,7 +194,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
     <ol>
       <li><strong>First half:</strong> GroupNorm &rarr; SiLU &rarr; Conv</li>
       <li><strong>Time injection:</strong> project time embedding, add (or scale-shift) into features</li>
-      <li><strong>Second half:</strong> GroupNorm &rarr; SiLU &rarr; Dropout &rarr; Conv</li>
+      <li><strong>Second half:</strong> GroupNorm &rarr; SiLU &rarr; <a href="https://en.wikipedia.org/wiki/Dilution_(neural_networks)" target="_blank">Dropout</a> &rarr; Conv</li>
       <li><strong>Residual:</strong> add shortcut connection (1&times;1 conv if channels change)</li>
     </ol>
 
@@ -289,7 +289,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
     <p>Everything we've discussed so far is <strong>self-attention</strong>: the query, key, and value all come from the same feature map. But there's a powerful variant used in conditional generation.</p>
 
-    <p>In <strong>cross-attention</strong>, the queries still come from the image features, but the keys and values come from an <em>external conditioning signal</em> &mdash; like a text embedding from CLIP. This is exactly how Stable Diffusion injects text prompts into the U-Net: the image features "ask questions" (queries) about the text (keys and values).</p>
+    <p>In <strong><a href="https://en.wikipedia.org/wiki/Attention_(machine_learning)" target="_blank">cross-attention</a></strong>, the queries still come from the image features, but the keys and values come from an <em>external conditioning signal</em> &mdash; like a text embedding from <a href="https://openai.com/research/clip" target="_blank">CLIP</a>. This is exactly how Stable Diffusion injects text prompts into the U-Net: the image features "ask questions" (queries) about the text (keys and values).</p>
 
     <ul>
       <li><strong>Self-attention:</strong> $Q, K, V$ all from image features &mdash; "how do different parts of this image relate to each other?"</li>
