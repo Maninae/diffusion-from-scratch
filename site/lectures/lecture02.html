@@ -176,6 +176,89 @@ alphas_cumprod = cumulative_product(alphas)&nbsp;<span class="comment"># (T,) â€
 
     <p>Simple and effective&mdash;but it has a problem. The $\bar{\alpha}_t$ curve drops quickly in the early steps and then flattens. This means the model spends too many timesteps in the "nearly destroyed" regime and not enough in the perceptually important middle range.</p>
 
+    <div class="schedule-plot" style="max-width: 540px; margin: 1.5rem auto;">
+      <canvas id="linearAlphaBarPlot" width="540" height="300" style="width: 100%; border-radius: 8px;"></canvas>
+      <script>
+      (function() {
+        var c = document.getElementById('linearAlphaBarPlot');
+        var ctx = c.getContext('2d');
+        var W = c.width, H = c.height;
+        var T = 1000;
+        // Compute á¾±_t for linear schedule
+        var alphaBar = new Float64Array(T);
+        var cum = 1.0;
+        for (var i = 0; i < T; i++) {
+          var beta = 0.0001 + (0.02 - 0.0001) * i / (T - 1);
+          cum *= (1 - beta);
+          alphaBar[i] = cum;
+        }
+        // Plot dimensions
+        var pad = { top: 24, right: 20, bottom: 44, left: 52 };
+        var pw = W - pad.left - pad.right;
+        var ph = H - pad.top - pad.bottom;
+        // Background
+        ctx.fillStyle = '#111827';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, W, H, 8);
+        ctx.fill();
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (var v = 0; v <= 1; v += 0.25) {
+          var gy = pad.top + ph * (1 - v);
+          ctx.beginPath(); ctx.moveTo(pad.left, gy); ctx.lineTo(pad.left + pw, gy); ctx.stroke();
+        }
+        for (var g = 0; g <= 1000; g += 250) {
+          var gx = pad.left + pw * g / 1000;
+          ctx.beginPath(); ctx.moveTo(gx, pad.top); ctx.lineTo(gx, pad.top + ph); ctx.stroke();
+        }
+        // Curve
+        ctx.strokeStyle = '#2dd4bf';
+        ctx.lineWidth = 2.5;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (var i = 0; i < T; i++) {
+          var x = pad.left + pw * i / (T - 1);
+          var y = pad.top + ph * (1 - alphaBar[i]);
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        // Axes
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, pad.top); ctx.lineTo(pad.left, pad.top + ph); ctx.lineTo(pad.left + pw, pad.top + ph);
+        ctx.stroke();
+        // Labels
+        ctx.fillStyle = '#b8ad98';
+        ctx.font = '12px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        for (var g = 0; g <= 1000; g += 250) {
+          ctx.fillText(g, pad.left + pw * g / 1000, pad.top + ph + 18);
+        }
+        ctx.textAlign = 'right';
+        for (var v = 0; v <= 1; v += 0.25) {
+          ctx.fillText(v.toFixed(2), pad.left - 8, pad.top + ph * (1 - v) + 4);
+        }
+        // Axis titles
+        ctx.fillStyle = '#e8dcc8';
+        ctx.font = '13px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Timestep t', pad.left + pw / 2, H - 4);
+        ctx.save();
+        ctx.translate(14, pad.top + ph / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('\u0101\u0305_t', 0, 0);
+        ctx.restore();
+        // Title
+        ctx.fillStyle = '#e8dcc8';
+        ctx.font = '600 13px "Source Sans 3", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Linear Schedule: \u0101\u0305_t over timesteps', pad.left, pad.top - 8);
+      })();
+      </script>
+    </div>
+
     <h3 id="cosine-schedule">Cosine Schedule (Improved DDPM)</h3>
 
     <p>Nichol &amp; Dhariwal (2021) proposed a cosine schedule that defines $\bar{\alpha}_t$ directly:</p>
