@@ -68,7 +68,7 @@
     <!-- Section 8.1 -->
     <h2 id="unconditional-to-conditional"><span class="section-number">8.1</span> From Unconditional to Conditional Generation</h2>
 
-    <p>Up to now, our diffusion model generates images, but we have no control over <em>what</em> it generates. We get random digits, random objects, random faces. For any practical application, we need to tell the model what to produce: "generate a 7" or "generate a cat."</p>
+    <p>Up to now, our diffusion model generates images, but we have no control over <em>what</em> it generates. We get random samples with no way to steer the output. For any practical application, we need to tell the model what to produce: "generate a 7" or "generate a cat."</p>
 
     <p>The shift is surprisingly simple at the architectural level. Our unconditional model takes two inputs:</p>
 
@@ -146,7 +146,7 @@
 
     <p>The model learns to make <em>class-specific</em> noise predictions. When told "this is a 7 at noise level $t$," it predicts the noise differently than when told "this is a 3 at noise level $t$."</p>
 
-    <p>The conditioning signal helps the model resolve ambiguity. At high noise levels, digits can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
+    <p>The conditioning signal helps the model resolve ambiguity. At high noise levels, images from different classes can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
 
     <div class="pseudocode">
 <strong>Conditional Training Step</strong>

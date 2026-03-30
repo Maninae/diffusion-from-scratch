@@ -72,7 +72,7 @@
 
     <p>A plain CNN with pooling layers could work in theory, but there's a fundamental tension: pooling compresses spatial information, great for classification, terrible for pixel-level prediction. Fine spatial detail gets progressively destroyed.</p>
 
-    <p>We need an architecture that can reason at multiple scales simultaneously: high-level understanding (what digit is this?) <em>and</em> fine spatial detail (where exactly are the edges?). That architecture is the <strong>U-Net</strong>.</p>
+    <p>We need an architecture that can reason at multiple scales simultaneously: high-level understanding (what object is this?) <em>and</em> fine spatial detail (where exactly are the edges?). That architecture is the <strong>U-Net</strong>.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -216,7 +216,7 @@
     <!-- Section 3: Encoder Path -->
     <h2 id="encoder"><span class="section-number">4.3</span> The Encoder Path &mdash; Progressive Downsampling</h2>
 
-    <p>The encoder's job is to progressively compress the spatial dimensions while increasing the channel depth. Think of it as building a hierarchy of features: early layers detect simple patterns (edges, textures), deeper layers detect complex structure (digit shapes, global composition).</p>
+    <p>The encoder's job is to progressively compress the spatial dimensions while increasing the channel depth. Think of it as building a hierarchy of features: early layers detect simple patterns (edges, textures), deeper layers detect complex structure (object shapes, global composition).</p>
 
     <h3 id="encoder-structure">Structure of Each Encoder Level</h3>
 

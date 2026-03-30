@@ -536,7 +536,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
     <!-- Section 6: Where Attention Goes -->
     <h2 id="attention-placement"><span class="section-number">5.6</span> Where Attention Goes in the U-Net</h2>
 
-    <p>Convolutions are inherently local: a 3&times;3 kernel sees only its immediate neighborhood. For denoising, we often need <strong>global context</strong>: "the top-left of this digit should be consistent with the bottom-right." Self-attention provides this global receptive field, but it comes at a steep computational cost.</p>
+    <p>Convolutions are inherently local: a 3&times;3 kernel sees only its immediate neighborhood. For denoising, we often need <strong>global context</strong>: "the top-left of this image should be consistent with the bottom-right." Self-attention provides this global receptive field, but it comes at a steep computational cost.</p>
 
     <h3 id="attention-cost">The Quadratic Cost Problem</h3>
 
@@ -686,7 +686,7 @@ noise_pred = <span class="function">model</span>(x_t, t)
 <span class="function">print</span>(f<span class="string">"Output: {tuple(noise_pred.shape)}"</span>)  <span class="comment"># (4, 1, 28, 28) — same!</span></pre>
     </div>
 
-    <p>The network is ready. It takes a noisy image and a timestep, and outputs a noise prediction of the same shape. In Lecture 6, we'll use this architecture to actually <em>train</em> a diffusion model, implementing the DDPM training algorithm from scratch and watching it learn to denoise MNIST digits.</p>
+    <p>The network is ready. It takes a noisy image and a timestep, and outputs a noise prediction of the same shape. In Lecture 6, we'll use this architecture to actually <em>train</em> a diffusion model, implementing the DDPM training algorithm from scratch and watching it learn to denoise real images.</p>
 
 
     <!-- Section 11: Looking Ahead -->
@@ -694,7 +694,7 @@ noise_pred = <span class="function">model</span>(x_t, t)
 
     <p>Across Lectures 4 and 5, we've built the complete denoising network &mdash; the U-Net with time conditioning and spatial attention. We know how every tensor flows through the architecture, where skip connections carry spatial detail, how the timestep modulates every ResBlock, and why attention is placed strategically at low resolutions.</p>
 
-    <p>Now it's time to <em>use</em> this architecture. In Lecture 6, we'll implement the full DDPM training loop: sample random timesteps, add noise to clean images, have the U-Net predict the noise, and backpropagate the loss. We'll train on MNIST and watch the model learn to generate digits from pure noise.</p>
+    <p>Now it's time to <em>use</em> this architecture. In Lecture 6, we'll implement the full DDPM training loop: sample random timesteps, add noise to clean images, have the U-Net predict the noise, and backpropagate the loss. We'll train on real data and watch the model learn to generate images from pure noise.</p>
 
   </article>
 

@@ -168,7 +168,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <h3 id="diversity">Diversity</h3>
 
-    <p>The noise also produces <strong>sample diversity</strong>. Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. Run DDPM twice from the same starting noise and you'll get two different digits. This stochasticity is what makes the model a proper generative model; it doesn't memorize a fixed mapping.</p>
+    <p>The noise also produces <strong>sample diversity</strong>. Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. Run DDPM twice from the same starting noise and you'll get two different images. This stochasticity is what makes the model a proper generative model; it doesn't memorize a fixed mapping.</p>
 
     <h3 id="deterministic-alternative">The Deterministic Alternative</h3>
 
@@ -267,7 +267,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
       <li><strong>1000 steps</strong> &mdash; best quality (the DDPM baseline)</li>
       <li><strong>200 steps</strong> &mdash; nearly identical quality, hard to tell the difference</li>
       <li><strong>50 steps</strong> &mdash; minimal quality loss. <strong>This is the sweet spot.</strong></li>
-      <li><strong>20 steps</strong> &mdash; visible degradation but still recognizable digits</li>
+      <li><strong>20 steps</strong> &mdash; visible degradation but still recognizable images</li>
       <li><strong>10 steps</strong> &mdash; significant quality loss, blurry outputs</li>
     </ul>
 
@@ -322,8 +322,8 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>A revealing experiment: take the <strong>same</strong> starting noise $\mathbf{x}_T$ and generate images with both methods.</p>
 
     <ul>
-      <li><strong>DDPM (stochastic):</strong> Run it three times &mdash; you get three different digits each time. The noise injected at each step makes each run unique.</li>
-      <li><strong>DDIM (deterministic, $\eta = 0$):</strong> Run it three times &mdash; you get the <em>exact same digit</em> every time. The mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$ is fixed.</li>
+      <li><strong>DDPM (stochastic):</strong> Run it three times &mdash; you get three different images each time. The noise injected at each step makes each run unique.</li>
+      <li><strong>DDIM (deterministic, $\eta = 0$):</strong> Run it three times &mdash; you get the <em>exact same image</em> every time. The mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$ is fixed.</li>
     </ul>
 
     <p>This determinism is what makes DDIM useful beyond just speed. It enables <strong>latent space interpolation</strong>: smoothly blend between two starting noises $\mathbf{x}_T^{(1)}$ and $\mathbf{x}_T^{(2)}$ and the generated images smoothly morph between the two outputs.</p>
@@ -394,7 +394,7 @@ show_denoising_trajectory(model, schedule, shape=(<span class="number">1</span>,
     <!-- Section 9: Looking Ahead -->
     <h2 id="looking-ahead"><span class="section-number">7.10</span> Looking Ahead</h2>
 
-    <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> digits, and we have no control over what it produces. You might get a 7, a 3, or a 0. There's no way to say "generate a 5."</p>
+    <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> images, and we have no control over what it produces. There's no way to say "generate this specific class."</p>
 
     <p>The next lecture introduces <strong>conditioning</strong>: feeding class labels, text, or other signals into the model so it generates specific outputs on demand. This is the leap from an interesting mathematical framework to a practical tool: text-to-image generation, class-conditional synthesis, and everything that makes diffusion models useful in the real world.</p>
 

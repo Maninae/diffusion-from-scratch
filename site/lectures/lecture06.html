@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 6</div>
     <h2>Training a Diffusion Model</h2>
-    <p class="lecture-desc">From Algorithm 1 on paper to a working training pipeline: data normalization, optimizer recipes, EMA, gradient clipping, and everything else that separates a model that generates digits from one that generates noise.</p>
+    <p class="lecture-desc">From Algorithm 1 on paper to a working training pipeline: data normalization, optimizer recipes, EMA, gradient clipping, and everything else that separates a model that generates images from one that generates noise.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">Training Loop</span>
       <span class="lecture-tag">EMA</span>
@@ -56,7 +56,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">We have the math and the architecture. Now we make them work. The gap between Algorithm 1 on paper and a model that generates recognizable digits is filled with practical engineering: data normalization, optimizer choices, EMA weight averaging, gradient clipping, and checkpointing. Get any one of these wrong, and the model quietly produces noise instead of images.</p>
+    <p class="lecture-roadmap">We have the math and the architecture. Now we make them work. The gap between Algorithm 1 on paper and a model that generates recognizable images is filled with practical engineering: data normalization, optimizer choices, EMA weight averaging, gradient clipping, and checkpointing. Each of these choices affects training stability and sample quality.</p>
 
 
     <div class="callout prereq">
@@ -73,7 +73,7 @@
 
     <p>This lecture is about the <strong>practical engineering</strong> that turns Algorithm 1 into a pipeline that actually works.</p>
 
-    <p>None of these techniques are optional extras. They're the difference between generating recognizable digits in 5K steps and generating noise at 50K steps.</p>
+    <p>None of these techniques are optional extras. They're the difference between generating recognizable images in 5K steps and generating noise at 50K steps.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -292,7 +292,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p><strong>Symptom:</strong> Loss becomes <code>NaN</code> and never recovers. <strong>Cause:</strong> Usually overflow in sinusoidal time embeddings or divide-by-zero in the noise schedule. <strong>Fix:</strong> Ensure everything is in <code>float32</code>. Check schedule values at the boundaries ($t = 0$ and $t = T$).</p>
 
     <h3 id="slow-convergence">Slow Convergence</h3>
-    <p><strong>Symptom:</strong> Model still produces bad samples after many steps. <strong>Cause:</strong> Diffusion models are slow by nature. <strong>Benchmarks:</strong> ~5K steps for recognizable MNIST digits, 50K+ for CIFAR-10. If you're within that range, keep training.</p>
+    <p><strong>Symptom:</strong> Model still produces bad samples after many steps. <strong>Cause:</strong> Diffusion models are slow by nature. <strong>Benchmarks:</strong> ~5K steps for recognizable MNIST samples, 50K+ for CIFAR-10. If you're within that range, keep training.</p>
 
     <!-- Section 9: Monitoring Training -->
     <h2 id="monitoring"><span class="section-number">6.9</span> Monitoring Training</h2>
@@ -301,7 +301,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <h3 id="visual-inspection">Visual Inspection</h3>
 
-    <p><strong>This is the most important monitoring tool.</strong> Every 1,000&ndash;5,000 steps, generate a grid of samples using the EMA model and look at them. If you see recognizable digits, training is working. If you see blurry blobs, keep training. If you see the same digit repeated, you have a bug.</p>
+    <p><strong>This is the most important monitoring tool.</strong> Every 1,000&ndash;5,000 steps, generate a grid of samples using the EMA model and look at them. If you see recognizable images, training is working. If you see blurry blobs, keep training. If you see the same image repeated, you have a bug.</p>
 
     <h3 id="loss-curve">The Loss Curve</h3>
 
@@ -349,7 +349,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <!-- Section 11: Putting It All Together -->
     <h2 id="full-training-script"><span class="section-number">6.11</span> Putting It All Together</h2>
 
-    <p>Here's the complete training pipeline, combining everything from this lecture. This is the script that, given 20 minutes on a GPU (or an hour on CPU), produces a model that generates recognizable MNIST digits.</p>
+    <p>Here's the complete training pipeline, combining everything from this lecture. This is the script that, given 20 minutes on a GPU (or an hour on CPU), produces a model that generates recognizable images.</p>
 
     <div class="pseudocode">
 <span class="comment"># Setup</span>
