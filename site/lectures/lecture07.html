@@ -248,7 +248,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <!-- Section 4: Accelerated Sampling -->
     <h2 id="fewer-steps"><span class="section-number">7.5</span> Fewer Steps &mdash; Accelerated Sampling</h2>
 
-    <p>This is the real payoff of DDIM. When $\eta = 0$, the sampling trajectory is a smooth, deterministic curve from $\mathbf{x}_T$ to $\mathbf{x}_0$. Smooth curves can be traversed at any resolution; you don't need to visit every one of 1,000 points along the way.</p>
+    <p>This is where DDIM's design pays off. When $\eta = 0$, the sampling trajectory is a smooth, deterministic curve from $\mathbf{x}_T$ to $\mathbf{x}_0$. Smooth curves can be traversed at any resolution; you don't need to visit every one of 1,000 points along the way.</p>
 
     <h3 id="timestep-subselection">Timestep Sub-Selection</h3>
 
@@ -266,14 +266,14 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <ul>
       <li><strong>1000 steps</strong> &mdash; best quality (the DDPM baseline)</li>
       <li><strong>200 steps</strong> &mdash; nearly identical quality, hard to tell the difference</li>
-      <li><strong>50 steps</strong> &mdash; minimal quality loss. <strong>This is the sweet spot.</strong></li>
+      <li><strong>50 steps</strong> &mdash; minimal quality loss. <strong>A common default for production use.</strong></li>
       <li><strong>20 steps</strong> &mdash; visible degradation but still recognizable images</li>
       <li><strong>10 steps</strong> &mdash; significant quality loss, blurry outputs</li>
     </ul>
 
     <p>Going from 1,000 to 50 steps is a <strong>20&times; speedup</strong> with nearly the same output quality.</p>
 
-    <p>This is why DDIM was a breakthrough. It made diffusion models practical for interactive use.</p>
+    <p>DDIM's ability to reduce steps by 20&times; with minimal quality loss made diffusion models practical for interactive use.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -338,8 +338,8 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>There are two equivalent mathematical descriptions of diffusion sampling:</p>
 
     <ol>
-      <li><strong><a href="https://en.wikipedia.org/wiki/Stochastic_differential_equation" target="_blank">SDE</a> (Stochastic Differential Equation):</strong> DDPM sampling. The reverse process includes a random noise term &mdash; it's a stochastic trajectory from $\mathbf{x}_T$ to $\mathbf{x}_0$.</li>
-      <li><strong><a href="https://en.wikipedia.org/wiki/Ordinary_differential_equation" target="_blank">ODE</a> (Ordinary Differential Equation):</strong> A deterministic trajectory. No randomness &mdash; the path from noise to data is a smooth curve defined by the model's predictions.</li>
+      <li><strong><a href="https://en.wikipedia.org/wiki/Stochastic_differential_equation" target="_blank">SDE</a> (Stochastic Differential Equation):</strong> DDPM sampling. The reverse process includes a random noise term, producing a stochastic trajectory from $\mathbf{x}_T$ to $\mathbf{x}_0$.</li>
+      <li><strong><a href="https://en.wikipedia.org/wiki/Ordinary_differential_equation" target="_blank">ODE</a> (Ordinary Differential Equation):</strong> A deterministic trajectory. No randomness: the path from noise to data is a smooth curve defined by the model's predictions.</li>
     </ol>
 
     <p>The ODE form is:</p>
@@ -350,7 +350,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     $$\nabla_{\mathbf{x}} \log p_t(\mathbf{x}) \approx -\frac{\boldsymbol{\epsilon}_\theta(\mathbf{x}_t, t)}{\sqrt{1-\bar{\alpha}_t}}$$
 
-    <p>In other words, predicting noise $\boldsymbol{\epsilon}$ is equivalent to estimating the score function. This connection is profound: it unifies diffusion models with score-based generative models (<a href="https://arxiv.org/abs/1907.05600" target="_blank">Song &amp; Ermon, 2019</a>) and explains why DDIM works.</p>
+    <p>In other words, predicting noise $\boldsymbol{\epsilon}$ is equivalent to estimating the score function. This connection unifies diffusion models with score-based generative models (<a href="https://arxiv.org/abs/1907.05600" target="_blank">Song &amp; Ermon, 2019</a>) and explains why DDIM works.</p>
 
     <h3 id="ddim-as-euler">DDIM as Euler Discretization</h3>
 
@@ -396,7 +396,7 @@ show_denoising_trajectory(model, schedule, shape=(<span class="number">1</span>,
 
     <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> images, and we have no control over what it produces. There's no way to say "generate this specific class."</p>
 
-    <p>The next lecture introduces <strong>conditioning</strong>: feeding class labels, text, or other signals into the model so it generates specific outputs on demand. This is the leap from an interesting mathematical framework to a practical tool: text-to-image generation, class-conditional synthesis, and everything that makes diffusion models useful in the real world.</p>
+    <p>The next lecture introduces <strong>conditioning</strong>: feeding class labels, text, or other signals into the model so it generates specific outputs on demand. Conditioning is what turns unconditional generation into a practical tool: text-to-image synthesis, class-conditional generation, and the other applications that make diffusion models widely used.</p>
 
   </article>
 

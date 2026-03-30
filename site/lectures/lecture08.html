@@ -163,13 +163,13 @@
 
     <div class="callout example">
       <div class="callout-label">Example</div>
-      <strong>Minimal change from unconditional training.</strong> Compare this to the unconditional training step from Lecture 6 &mdash; the only difference is passing <code>class_label</code> to the model. The loss, the noise sampling, the forward diffusion process: all identical. The architecture does the heavy lifting.
+      <strong>Minimal change from unconditional training.</strong> Compare this to the unconditional training step from Lecture 6 &mdash; the only difference is passing <code>class_label</code> to the model. The loss, the noise sampling, the forward diffusion process: all identical. The conditioning is handled entirely by the architecture change.
     </div>
 
     <!-- Section 8.4 -->
     <h2 id="classifier-guidance"><span class="section-number">8.4</span> Classifier Guidance (Historical Context)</h2>
 
-    <p>Can we amplify how much the model pays attention to its conditioning during sampling? <a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal &amp; Nichol (2021)</a> proposed <strong>classifier guidance</strong>&mdash;using gradients from a separately trained classifier to steer the denoising direction toward a target class. It was later superseded by the simpler classifier-free approach in Lecture 9, but understanding the original idea helps you appreciate why CFG was such a breakthrough.</p>
+    <p>Can we amplify how much the model pays attention to its conditioning during sampling? <a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal &amp; Nichol (2021)</a> proposed <strong>classifier guidance</strong>&mdash;using gradients from a separately trained classifier to steer the denoising direction toward a target class. It was later superseded by the simpler classifier-free approach in Lecture 9, but understanding the original idea clarifies why CFG was such an improvement.</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
@@ -248,7 +248,7 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      Classifier guidance proves that external signals can steer diffusion models during sampling. The limitation is practical: training a separate classifier for each conditioning type is expensive and inflexible. What if the guidance signal could come from the diffusion model itself? Classifier-free guidance achieves this by training a single model with random label dropout, so it learns both conditional and unconditional prediction&mdash;then extrapolating between them at inference. That's Lecture 9.
+      Classifier guidance proves that external signals can steer diffusion models during sampling. The limitation is practical: training a separate classifier for each conditioning type is expensive and inflexible. What if the guidance signal could come from the diffusion model itself? Classifier-free guidance achieves this by training a single model with random label dropout, so it learns both conditional and unconditional prediction&mdash;then extrapolating between them at inference, as we'll see in Lecture 9.
     </div>
 
     <!-- Section 8.6: PyTorch Reference -->

@@ -188,8 +188,8 @@
     <p>The two stages <strong>specialize</strong> in different things:</p>
 
     <ul>
-      <li>The <strong>VAE handles perceptual compression</strong>&mdash;it strips away imperceptible high-frequency detail that humans don't notice. The pixel-level reconstruction doesn't need to be perfect; it just needs to look right.</li>
-      <li>The <strong>diffusion model handles semantic generation</strong>&mdash;it only needs to model the meaningful structure of images (shapes, textures, compositions), not every individual pixel.</li>
+      <li>The <strong>VAE handles perceptual compression</strong>: it strips away imperceptible high-frequency detail that humans don't notice. The pixel-level reconstruction doesn't need to be perfect; it just needs to look right.</li>
+      <li>The <strong>diffusion model handles semantic generation</strong>: it only needs to model the meaningful structure of images (shapes, textures, compositions), not every individual pixel.</li>
     </ul>
 
     <p>The compression from $512 \times 512 \times 3$ to $64 \times 64 \times 4$ is a <strong>48&times; reduction</strong> in the number of values. The U-Net is proportionally smaller, attention is affordable (operating on $64 \times 64 = 4{,}096$ tokens instead of $512 \times 512 = 262{,}144$), and training is <strong>10&ndash;100&times; cheaper</strong> than pixel-space diffusion at the same resolution.</p>
@@ -274,7 +274,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
     <p>Stable Diffusion has evolved rapidly since its release, with each version improving text encoders, model capacity, and the underlying framework:</p>
 
     <ul>
-      <li><strong>SD 1.5</strong> &mdash; the original release. CLIP text encoder, $64 \times 64$ latent, ~860M U-Net parameters. $\varepsilon$-prediction with a linear noise schedule. The model that made open-source image generation mainstream.</li>
+      <li><strong>SD 1.5</strong> &mdash; the original release. CLIP text encoder, $64 \times 64$ latent, ~860M U-Net parameters. $\varepsilon$-prediction with a linear noise schedule. The first widely adopted open-source image generation model.</li>
       <li><strong>SD 2.x</strong> &mdash; switched to OpenCLIP text encoder, adopted <strong>v-prediction</strong> (we'll cover this in Lecture 11), larger model. Better image quality, especially at higher resolutions.</li>
       <li><strong>SDXL</strong> &mdash; dual text encoders for richer text understanding, $128 \times 128$ base latent for higher fidelity, plus a separate refiner model. Significantly better prompt adherence.</li>
       <li><strong>SD 3</strong> &mdash; a major architecture shift: replaces the U-Net with a <strong>Diffusion Transformer</strong> (Lecture 12), uses T5-XXL text encoder, and adopts <strong>flow matching</strong> (Lecture 13) instead of DDPM. The state of the art.</li>
@@ -282,7 +282,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      The trend across SD versions is clear: better text encoders, larger models, and more advanced training frameworks. But the core latent diffusion insight&mdash;compress with a VAE, diffuse in latent space&mdash;remains unchanged. It's the foundation that everything else builds on.
+      The trend across SD versions is clear: better text encoders, larger models, and more advanced training frameworks. But the core latent diffusion insight&mdash;compress with a VAE, diffuse in latent space&mdash;remains unchanged.
     </div>
 
     <!-- Section 6: Looking Ahead -->

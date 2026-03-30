@@ -223,7 +223,7 @@
 
     <p>You might notice this as a bias toward medium-brightness outputs, or an inability to produce dramatic lighting.</p>
 
-    <p>The fix (<a href="https://arxiv.org/abs/2305.08891" target="_blank">Lin et al., 2023</a>) is elegant, just two lines of code:</p>
+    <p>The fix (<a href="https://arxiv.org/abs/2305.08891" target="_blank">Lin et al., 2023</a>) is just two lines of code:</p>
 
     <div class="pseudocode">
 <span class="comment"># Standard noise (zero mean per channel)</span>
@@ -330,7 +330,7 @@ x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
 <span class="keyword">loss = F.mse_loss(predicted_v, v_target)</span>                                   <span class="comment"># NEW target</span>
     </div>
 
-    <p>Three lines change. The model architecture is identical; it still takes $(x_t, t)$ and outputs a tensor of the same shape. Only the target and the loss computation change. The sampling loop needs corresponding updates to convert the predicted $v$ back to $\varepsilon$ or $x_0$ at each step, using the formulas from the conversion table above.</p>
+    <p>Only three lines change. The model architecture is identical; it still takes $(x_t, t)$ and outputs a tensor of the same shape. Only the target and the loss computation change. The sampling loop needs corresponding updates to convert the predicted $v$ back to $\varepsilon$ or $x_0$ at each step, using the formulas from the conversion table above.</p>
 
     <!-- Section 8: Looking Ahead -->
     <h2 id="looking-ahead"><span class="section-number">11.8</span> Looking Ahead</h2>

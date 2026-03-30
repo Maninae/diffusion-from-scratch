@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 9</div>
     <h2>Classifier-Free Guidance</h2>
-    <p class="lecture-desc">The single most impactful trick in modern diffusion: one model, two predictions, and an extrapolation that transformed generative AI.</p>
+    <p class="lecture-desc">One model, two predictions, and an extrapolation between them: how classifier-free guidance replaced external classifiers and became the standard conditioning method in modern diffusion systems.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">CFG</span>
       <span class="lecture-tag">Label Dropout</span>
@@ -56,7 +56,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">Classifier guidance works, but it needs a separate classifier trained on noisy images, which is expensive and inflexible. What if one model could guide itself? The answer is classifier-free guidance: randomly drop labels during training so the model learns both conditional and unconditional prediction, then extrapolate between them at sampling time. This single trick &mdash; just label dropout &mdash; is behind every modern text-to-image system.</p>
+    <p class="lecture-roadmap">Classifier guidance works, but it needs a separate classifier trained on noisy images, which is expensive and inflexible. What if one model could guide itself? The answer is classifier-free guidance: randomly drop labels during training so the model learns both conditional and unconditional prediction, then extrapolate between them at sampling time. This single trick, random label dropout during training, is behind every modern text-to-image system.</p>
 
 
     <div class="callout prereq">
@@ -75,7 +75,7 @@
 
     <p>During training, with probability $p_\text{uncond}$ (typically 10&ndash;20%), we replace the class label with a special <strong>null token</strong>, the extra embedding at index <code>num_classes</code> that we set up in Lecture 8. The rest of the time, we train normally with the real class label.</p>
 
-    <p>The result: the same network learns two skills:</p>
+    <p>With this dropout, the same network learns two skills:</p>
 
     <ul>
       <li>$\epsilon_\theta(x_t, t, c)$ &mdash; <strong>conditional</strong> noise prediction (when given a real class label)</li>
@@ -84,7 +84,7 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      This is the entire training trick. No new loss function, no new architecture, no second model. Just randomly dropping labels during training. The null token at index <code>num_classes</code> (e.g., index 10 for MNIST digits 0&ndash;9) is what tells the model "there is no class; predict noise unconditionally."
+      The training change is minimal: no new loss function, architecture, or second model. You randomly drop labels during training. The null token at index <code>num_classes</code> (e.g., index 10 for MNIST digits 0&ndash;9) is what tells the model "there is no class; predict noise unconditionally."
     </div>
 
     <div class="pseudocode">
@@ -296,7 +296,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      <strong>No classifier anywhere.</strong> Compare this to the classifier guidance pseudocode in Lecture 8. There's no separate classifier, no gradient computation, no <code>autograd.grad</code>. The guidance comes entirely from the diffusion model itself &mdash; from the difference between its conditional and unconditional predictions. This is what makes CFG effective.
+      <strong>No classifier anywhere.</strong> Compare this to the classifier guidance pseudocode in Lecture 8. There's no separate classifier, no gradient computation, no <code>autograd.grad</code>. The guidance comes entirely from the diffusion model itself: the difference between its conditional and unconditional predictions.
     </div>
 
     <!-- Section 9.7: PyTorch -->

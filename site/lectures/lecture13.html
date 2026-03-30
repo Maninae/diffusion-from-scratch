@@ -55,7 +55,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">What if we could generate images from noise with dramatically less scaffolding? In this lecture, we trace the arc from DDPM to a cleaner modern framework called <strong>flow matching</strong>. We start by cataloguing all the machinery DDPM requires, then see how <strong>v-prediction</strong> &mdash; a key intermediate improvement &mdash; pointed toward the right idea but couldn't escape the framework's complexity. Flow matching completes that arc: it builds the entire generative process around straight-line transport and learned velocity fields, dropping the noise schedules, cumulative products, and ELBO derivation that turned out to be scaffolding, not structure.</p>
+    <p class="lecture-roadmap">What if we could generate images from noise with dramatically less scaffolding? In this lecture, we trace the arc from DDPM to a cleaner modern framework called <strong>flow matching</strong>. We start by cataloguing all the machinery DDPM requires, then see how <strong>v-prediction</strong> &mdash; a key intermediate improvement &mdash; pointed toward the right idea but couldn't escape the framework's complexity. Flow matching completes that arc: it builds the entire generative process around straight-line transport and learned velocity fields, dropping the noise schedules, cumulative products, and ELBO derivation entirely.</p>
 
 
     <div class="callout prereq">
@@ -78,9 +78,7 @@
       <li><strong>Schedule sensitivity</strong> &mdash; the choice between linear, cosine, and sigmoid schedules meaningfully affects results. The schedule <em>is</em> a hyperparameter, and a finicky one.</li>
     </ul>
 
-    <p>All of this works. We've proven that through this entire course.</p>
-
-    <p>But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
+    <p>All of this works, as we've seen throughout this course. But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
 
     <!-- Section 13.2 — THE BRIDGE -->
     <h2 id="velocity-fields-bridge"><span class="section-number">13.2</span> The Bridge: v-Prediction to Flow Matching</h2>
@@ -118,7 +116,7 @@
 
     <p>v-prediction fixed the <em>prediction target</em>, but it didn't simplify the <em>framework</em>.</p>
 
-    <p>It was the right <strong>concept</strong> &mdash; think in terms of velocities &mdash; trapped in the wrong <strong>framework</strong> &mdash; DDPM's schedule-driven noising process.</p>
+    <p>The concept was right (think in terms of velocities), but it was still trapped inside DDPM's schedule-driven noising process.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -149,7 +147,7 @@
       <li><strong>An ODE solver</strong> to follow the learned velocity field at inference</li>
     </ol>
 
-    <p>The complete list. No schedule. No ELBO. No reverse process derivation. No cumulative alpha products.</p>
+    <p>That's the complete list: no schedule, no ELBO, no reverse process derivation, no cumulative alpha products.</p>
 
     <p>The question is: <strong>what paths should we use?</strong></p>
 
@@ -277,7 +275,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
 
     <h3 id="simpler-math">Simpler Math</h3>
 
-    <p>No ELBO derivation, no KL divergence between Gaussians, no reparameterization trick. The loss is direct: predict the velocity, minimize MSE. A first-year grad student can derive the entire framework in ten minutes.</p>
+    <p>No ELBO derivation, no KL divergence between Gaussians, no reparameterization trick. The loss is direct: predict the velocity, minimize MSE. The entire framework can be derived in a few pages of algebra.</p>
 
     <h3 id="stable-training">More Stable Training</h3>
 
@@ -285,12 +283,12 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
 
     <h3 id="fewer-steps">Straight Paths Need Fewer Steps</h3>
 
-    <p>Because the learned flow approximately follows straight lines, ODE solvers can take larger steps without losing accuracy. Curved paths (like DDPM's) require small steps to stay on track. Straight paths are easier to follow &mdash; literally.</p>
+    <p>Because the learned flow approximately follows straight lines, ODE solvers can take larger steps without losing accuracy. Curved paths (like DDPM's) require small steps to stay on track. Straight paths can be traversed accurately with larger step sizes.</p>
 
     <!-- Section 13.7 -->
     <h2 id="rectified-flows"><span class="section-number">13.7</span> Rectified Flows</h2>
 
-    <p>There's a subtlety we've been glossing over. Even though each individual training pair $(x_0, x_1)$ defines a straight path, the <em>aggregate</em> learned flow isn't perfectly straight. Why? Because different data-noise pairs share regions of space, and their flows interact. Imagine two straight arrows crossing through the same point &mdash; the average velocity at that point is a compromise between the two directions, creating curvature.</p>
+    <p>There's a subtlety we've been glossing over. Even though each individual training pair $(x_0, x_1)$ defines a straight path, the <em>aggregate</em> learned flow isn't perfectly straight, because different data-noise pairs share regions of space, and their flows interact. Imagine two straight arrows crossing through the same point &mdash; the average velocity at that point is a compromise between the two directions, creating curvature.</p>
 
     <h3 id="rectification-idea">The Rectification Idea</h3>
 
@@ -403,7 +401,7 @@ x_t = (1 - t) &middot; x_0 + t &middot; x_1          <span class="comment"># con
       <li><strong>Sampling</strong> &mdash; 20&ndash;50 Euler steps for good quality. With rectification, as few as 4 steps.</li>
     </ul>
 
-    <p>The trend is clear: flow matching is to DDPM what transformers were to RNNs &mdash; a simpler framework that does the same job with less overhead, and scales better to boot.</p>
+    <p>The trend is clear: flow matching is replacing DDPM as the default framework, offering simpler math, fewer hyperparameters, and better scaling.</p>
 
     <!-- Looking Ahead -->
     <h2 id="looking-ahead"><span class="section-number">13.10</span> Looking Ahead</h2>
