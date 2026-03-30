@@ -58,7 +58,7 @@
     <p class="lecture-roadmap">Our U-Net can denoise, but it doesn't know <em>how much</em> noise it's looking at. Denoising at $t = 10$ and $t = 990$ are fundamentally different tasks, yet the network treats them identically. We'll fix that with sinusoidal timestep embeddings borrowed from transformers, inject them into every ResBlock, and then add self-attention so the network can coordinate distant spatial regions &mdash; completing the architecture.</p>
 
     <!-- Section 1: Why t matters -->
-    <h2 id="why-time-matters">Why the Network Needs to Know <em>t</em></h2>
+    <h2 id="why-time-matters"><span class="section-number">5.1</span> Why the Network Needs to Know <em>t</em></h2>
 
     <p>The U-Net from Lecture 4 can take a noisy image and produce a noise prediction. But right now, it's blind to an absolutely critical piece of information: <em>how much noise is in the image</em>.</p>
 
@@ -81,7 +81,7 @@
 
 
     <!-- Section 2: Sinusoidal Embeddings -->
-    <h2 id="sinusoidal-embeddings">Sinusoidal Timestep Embeddings</h2>
+    <h2 id="sinusoidal-embeddings"><span class="section-number">5.2</span> Sinusoidal Timestep Embeddings</h2>
 
     <p>We could pass the timestep as a raw scalar, concatenate $t$ to the input or feed it as an extra feature. But a single number doesn't give the network enough structure to modulate its behavior across hundreds of distinct noise levels. We need a <strong>high-dimensional, structured representation</strong> of each timestep.</p>
 
@@ -121,7 +121,7 @@
 
 
     <!-- Section 3: MLP Projection -->
-    <h2 id="mlp-projection">The Time MLP</h2>
+    <h2 id="mlp-projection"><span class="section-number">5.3</span> The Time MLP</h2>
 
     <p>The raw sinusoidal embedding is a fixed, deterministic function with no learnable parameters. To give the network flexibility in how it uses the timestep information, we pass the embedding through a small MLP:</p>
 
@@ -144,7 +144,7 @@
 
 
     <!-- Section 4: Time Injection -->
-    <h2 id="time-injection">Injecting Time into ResBlocks</h2>
+    <h2 id="time-injection"><span class="section-number">5.4</span> Injecting Time into ResBlocks</h2>
 
     <p>Now we have a rich time embedding vector of shape $(B, C_\text{emb})$. How do we get it into the convolutional layers that operate on feature maps of shape $(B, C, H, W)$? There are two main approaches.</p>
 
@@ -187,7 +187,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
 
     <!-- Section 5: Complete ResBlock -->
-    <h2 id="complete-resblock">The Complete ResBlock with Time</h2>
+    <h2 id="complete-resblock"><span class="section-number">5.5</span> The Complete ResBlock with Time</h2>
 
     <p>Combining what we've covered, here's the complete data flow through a single ResBlock with time conditioning:</p>
 
@@ -212,7 +212,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
 
     <!-- Section 6: Where Attention Goes -->
-    <h2 id="attention-placement">Where Attention Goes in the U-Net</h2>
+    <h2 id="attention-placement"><span class="section-number">5.6</span> Where Attention Goes in the U-Net</h2>
 
     <p>Convolutions are inherently local: a 3&times;3 kernel sees only its immediate neighborhood. For denoising, we often need <strong>global context</strong>: "the top-left of this digit should be consistent with the bottom-right." Self-attention provides this global receptive field, but it comes at a steep computational cost.</p>
 
@@ -242,7 +242,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
 
     <!-- Section 7: Spatial Self-Attention -->
-    <h2 id="spatial-attention">Spatial Self-Attention</h2>
+    <h2 id="spatial-attention"><span class="section-number">5.7</span> Spatial Self-Attention</h2>
 
     <p>Images aren't sequences, but we can reshape them into one. The core trick of spatial self-attention: treat each spatial position $(h, w)$ as a "token" and apply standard multi-head self-attention.</p>
 
@@ -285,7 +285,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
 
     <!-- Section 8: Cross-Attention Preview -->
-    <h2 id="cross-attention-preview">Cross-Attention Preview</h2>
+    <h2 id="cross-attention-preview"><span class="section-number">5.8</span> Cross-Attention Preview</h2>
 
     <p>Everything we've discussed so far is <strong>self-attention</strong>: the query, key, and value all come from the same feature map. But there's a powerful variant used in conditional generation.</p>
 
@@ -300,7 +300,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
 
     <!-- Section 9: Complete Architecture -->
-    <h2 id="complete-architecture">The Complete U-Net &mdash; All Pieces Connected</h2>
+    <h2 id="complete-architecture"><span class="section-number">5.9</span> The Complete U-Net &mdash; All Pieces Connected</h2>
 
     <p>Let's assemble everything we've built across Lectures 4 and 5 into the complete architecture:</p>
 
@@ -333,7 +333,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
 
     <!-- Section 10: Verification -->
-    <h2 id="verification">Putting It to the Test</h2>
+    <h2 id="verification"><span class="section-number">5.10</span> Putting It to the Test</h2>
 
     <p>We can now verify that our complete U-Net produces output with the correct shape:</p>
 
@@ -368,7 +368,7 @@ print(f"Output: {tuple(noise_pred.shape)}")  <span style="color: var(--text-mute
 
 
     <!-- Section 11: Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">5.11</span> Looking Ahead</h2>
 
     <p>Across Lectures 4 and 5, we've built the complete denoising network &mdash; the U-Net with time conditioning and spatial attention. We know how every tensor flows through the architecture, where skip connections carry spatial detail, how the timestep modulates every ResBlock, and why attention is placed strategically at low resolutions.</p>
 

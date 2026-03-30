@@ -59,7 +59,7 @@
     <p class="lecture-roadmap">Training taught the model to predict noise. Now we run the process in reverse to generate images from scratch. We'll implement DDPM's full 1000-step stochastic sampler, then see how DDIM reformulates the same model as a deterministic ODE, cutting the step count dramatically while unlocking smooth interpolation and the probability flow perspective that connects diffusion to continuous dynamics.</p>
 
     <!-- Section 0: Dependencies & Setup -->
-    <h2 id="setup">Loading the Trained Model</h2>
+    <h2 id="setup"><span class="section-number">7.1</span> Loading the Trained Model</h2>
 
     <p>This lecture picks up exactly where Lecture 6 left off. We trained a diffusion model on MNIST digits and saved a checkpoint containing both the training weights and the smoothed EMA weights. Now we load that checkpoint and use the model to actually <em>generate</em> images.</p>
 
@@ -78,7 +78,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 1: DDPM Sampling -->
-    <h2 id="ddpm-sampling">DDPM Sampling &mdash; Algorithm 2</h2>
+    <h2 id="ddpm-sampling"><span class="section-number">7.2</span> DDPM Sampling &mdash; Algorithm 2</h2>
 
     <p>Training taught the model to predict noise at any timestep. Sampling reverses the process: start from pure Gaussian noise $\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ and iteratively denoise, one step at a time, until we arrive at a clean image $\mathbf{x}_0$.</p>
 
@@ -146,7 +146,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 2: Why Add Noise During Sampling? -->
-    <h2 id="why-add-noise">Why We Add Noise During Sampling</h2>
+    <h2 id="why-add-noise"><span class="section-number">7.3</span> Why We Add Noise During Sampling</h2>
 
     <p>This is the most counterintuitive part of diffusion sampling. We're trying to <em>remove</em> noise, so why do we add <em>more</em> noise at each step?</p>
 
@@ -167,7 +167,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>What happens if we set $\sigma_t = 0$ &mdash; no noise at all? We get a <strong>deterministic</strong> mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$. The same starting noise always produces the same image. This loses diversity but gains something valuable: <strong>reproducibility and interpolation</strong>. And as we'll see next, it also enables step-skipping.</p>
 
     <!-- Section 3: DDIM -->
-    <h2 id="ddim">DDIM &mdash; Deterministic Sampling</h2>
+    <h2 id="ddim"><span class="section-number">7.4</span> DDIM &mdash; Deterministic Sampling</h2>
 
     <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps; the noise magnitudes would be wrong, and sample quality collapses.</p>
 
@@ -238,7 +238,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 4: Accelerated Sampling -->
-    <h2 id="fewer-steps">Fewer Steps &mdash; Accelerated Sampling</h2>
+    <h2 id="fewer-steps"><span class="section-number">7.5</span> Fewer Steps &mdash; Accelerated Sampling</h2>
 
     <p>This is the real payoff of DDIM. When $\eta = 0$, the sampling trajectory is a smooth, deterministic curve from $\mathbf{x}_T$ to $\mathbf{x}_0$. Smooth curves can be traversed at any resolution; you don't need to visit every one of 1,000 points along the way.</p>
 
@@ -273,7 +273,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 5: Dynamic Thresholding -->
-    <h2 id="dynamic-thresholding">Dynamic Thresholding</h2>
+    <h2 id="dynamic-thresholding"><span class="section-number">7.6</span> Dynamic Thresholding</h2>
 
     <p>At each DDIM step, we compute a prediction of $\hat{\mathbf{x}}_0$. Ideally this prediction stays in the $[-1, 1]$ range (since our training data was normalized there), but in practice it can overshoot, especially at high guidance scales (which we'll encounter in Lecture 9).</p>
 
@@ -288,7 +288,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>For MNIST with standard DDPM/DDIM (no guidance), static clipping is perfectly fine. Dynamic thresholding becomes important in Lecture 9 when we add classifier-free guidance.</p>
 
     <!-- Section 6: Full Sampling Pipeline -->
-    <h2 id="full-pipeline">The Full Sampling Pipeline</h2>
+    <h2 id="full-pipeline"><span class="section-number">7.7</span> The Full Sampling Pipeline</h2>
 
     <p>Let's put the complete end-to-end pipeline together, from random noise to displayable images:</p>
 
@@ -321,7 +321,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>This determinism is what makes DDIM useful beyond just speed. It enables <strong>latent space interpolation</strong>: smoothly blend between two starting noises $\mathbf{x}_T^{(1)}$ and $\mathbf{x}_T^{(2)}$ and the generated images smoothly morph between the two outputs.</p>
 
     <!-- Section 7: Probability Flow ODE -->
-    <h2 id="probability-flow-ode">The Probability Flow ODE <span class="lecture-tag optional" style="font-size: 11px; vertical-align: middle;">Optional / Advanced</span></h2>
+    <h2 id="probability-flow-ode"><span class="section-number">7.8</span> The Probability Flow ODE <span class="lecture-tag optional" style="font-size: 11px; vertical-align: middle;">Optional / Advanced</span></h2>
 
     <p>If you want to understand <em>why</em> DDIM works &mdash; and where the field is heading &mdash; this section provides the theoretical perspective. Feel free to skip it on a first reading.</p>
 
@@ -362,7 +362,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 8: PyTorch Reference -->
-    <h2 id="pytorch-reference">PyTorch Reference</h2>
+    <h2 id="pytorch-reference"><span class="section-number">7.9</span> PyTorch Reference</h2>
 
     <p>The complete sampling implementations live in the Module 7 notebook and in <code>utils/diffusion.py</code>. The key functions:</p>
 
@@ -384,7 +384,7 @@ show_denoising_trajectory(model, schedule, shape=(<span class="number">1</span>,
     </div>
 
     <!-- Section 9: Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">7.10</span> Looking Ahead</h2>
 
     <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> digits, and we have no control over what it produces. You might get a 7, a 3, or a 0. There's no way to say "generate a 5."</p>
 

@@ -59,7 +59,7 @@
     <p class="lecture-roadmap">We have the math and the architecture. Now we make them work. The gap between Algorithm 1 on paper and a model that generates recognizable digits is filled with practical engineering: data normalization, optimizer choices, EMA weight averaging, gradient clipping, and checkpointing. Get any one of these wrong, and the model quietly produces noise instead of images.</p>
 
     <!-- Section 1: From Math to Working Code -->
-    <h2 id="from-math-to-code">From Math to Working Code</h2>
+    <h2 id="from-math-to-code"><span class="section-number">6.1</span> From Math to Working Code</h2>
 
     <p>We have the math from Lecture 3: a loss function, a forward noising process, and a six-line training algorithm. We have the architecture from Lectures 4&ndash;5: a U-Net with time conditioning and attention. In principle, we could just wire them together and start training. In practice, doing that naively will produce a model that trains painfully slowly, generates blurry mush, or quietly diverges at step 5,000.</p>
 
@@ -73,7 +73,7 @@
     </div>
 
     <!-- Section 2: Data Loading & Preprocessing -->
-    <h2 id="data-preprocessing">Data Loading &amp; Preprocessing</h2>
+    <h2 id="data-preprocessing"><span class="section-number">6.2</span> Data Loading &amp; Preprocessing</h2>
 
     <h3 id="normalize-to-minus-one">Normalize to [&minus;1, 1], Not [0, 1]</h3>
 
@@ -106,7 +106,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     </div>
 
     <!-- Section 3: The Training Loop -->
-    <h2 id="training-loop">The Training Loop &mdash; Algorithm 1 in Code</h2>
+    <h2 id="training-loop"><span class="section-number">6.3</span> The Training Loop &mdash; Algorithm 1 in Code</h2>
 
     <p>Let's expand the six-line DDPM training algorithm into real, working code. Each line of the algorithm maps to a concrete operation with specific shapes and device requirements.</p>
 
@@ -166,7 +166,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     </div>
 
     <!-- Section 4: Timestep Sampling -->
-    <h2 id="timestep-sampling">Timestep Sampling Strategies</h2>
+    <h2 id="timestep-sampling"><span class="section-number">6.4</span> Timestep Sampling Strategies</h2>
 
     <p>Algorithm 1 says "sample $t$ uniformly." This is the standard approach and works well, but it's worth understanding why it's suboptimal, and what alternatives exist.</p>
 
@@ -193,7 +193,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <p><strong>Practical advice:</strong> start with uniform sampling. It's simpler and works well for MNIST. Switch to importance weighting if you're training on harder datasets and want to squeeze out better FID.</p>
 
     <!-- Section 5: Gradient Clipping -->
-    <h2 id="gradient-clipping">Gradient Clipping</h2>
+    <h2 id="gradient-clipping"><span class="section-number">6.5</span> Gradient Clipping</h2>
 
     <p>Diffusion training loss can spike, especially in the first few hundred steps when the model is still learning basic structure, or when an unlucky batch happens to contain all high-noise timesteps. Without protection, a single bad batch can produce enormous gradients that blow up your model weights.</p>
 
@@ -211,7 +211,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     </div>
 
     <!-- Section 6: EMA -->
-    <h2 id="ema">EMA &mdash; Exponential Moving Average</h2>
+    <h2 id="ema"><span class="section-number">6.6</span> EMA &mdash; Exponential Moving Average</h2>
 
     <p>This may seem counterintuitive, but the best weights for <em>generating samples</em> are not the current training weights. They're a smoothed average of all recent training weights.</p>
 
@@ -248,7 +248,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     </div>
 
     <!-- Section 7: Learning Rate Schedule -->
-    <h2 id="learning-rate">Learning Rate Schedule</h2>
+    <h2 id="learning-rate"><span class="section-number">6.7</span> Learning Rate Schedule</h2>
 
     <p>The learning rate controls how big each optimizer step is. Getting this right has an outsized effect on training stability and convergence speed.</p>
 
@@ -267,7 +267,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p>For more complex datasets (CIFAR-10, ImageNet), the full recipe is: <strong>AdamW</strong> with $\text{lr} = 2 \times 10^{-4}$, linear warmup for 1,000 steps, cosine decay to 0. AdamW adds decoupled weight decay regularization, which is modern best practice.</p>
 
     <!-- Section 8: Common Pitfalls -->
-    <h2 id="common-pitfalls">Common Training Pitfalls</h2>
+    <h2 id="common-pitfalls"><span class="section-number">6.8</span> Common Training Pitfalls</h2>
 
     <p>Diffusion models fail in predictable ways. The most common failure modes and their fixes.</p>
 
@@ -287,7 +287,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p><strong>Symptom:</strong> Model still produces bad samples after many steps. <strong>Cause:</strong> Diffusion models are slow by nature. <strong>Benchmarks:</strong> ~5K steps for recognizable MNIST digits, 50K+ for CIFAR-10. If you're within that range, keep training.</p>
 
     <!-- Section 9: Monitoring Training -->
-    <h2 id="monitoring">Monitoring Training</h2>
+    <h2 id="monitoring"><span class="section-number">6.9</span> Monitoring Training</h2>
 
     <p>How do you know training is working? Two methods: look at the images, and look at the loss curve.</p>
 
@@ -306,7 +306,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p>FID is too expensive to compute during training (it requires thousands of generated samples per evaluation). For this course, visual inspection plus the loss curve is sufficient.</p>
 
     <!-- Section 10: Saving Checkpoints -->
-    <h2 id="saving-checkpoints">Saving Checkpoints</h2>
+    <h2 id="saving-checkpoints"><span class="section-number">6.10</span> Saving Checkpoints</h2>
 
     <p>This is the bridge between Lecture 6 and Lecture 7. We need to save our trained model so that the next lecture can load it for sampling, and Lectures 8&ndash;9 can use it for conditioning experiments.</p>
 
@@ -339,7 +339,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     </div>
 
     <!-- Section 11: Putting It All Together -->
-    <h2 id="full-training-script">Putting It All Together</h2>
+    <h2 id="full-training-script"><span class="section-number">6.11</span> Putting It All Together</h2>
 
     <p>Here's the complete training pipeline, combining everything from this lecture. This is the script that, given 20 minutes on a GPU (or an hour on CPU), produces a model that generates recognizable MNIST digits.</p>
 
@@ -390,7 +390,7 @@ dataloader = get_mnist_dataloader(batch_size=<span class="number">64</span>)
     </div>
 
     <!-- Section 12: Looking Ahead -->
-    <h2 id="looking-ahead">Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">6.12</span> Looking Ahead</h2>
 
     <p>We now have a trained diffusion model and a saved checkpoint. The model can predict the noise in an image at any timestep, but we haven't actually <em>generated</em> any images yet. We've only trained the model; we haven't sampled from it.</p>
 

@@ -58,7 +58,7 @@
     <p class="lecture-roadmap">So far our model generates random images with no user control. To make it useful, we need conditioning, the ability to say "generate a 7." We'll embed class labels into the U-Net, then discover a more powerful idea: steering generation at <em>sampling time</em> using gradients from a trained classifier, trading diversity for fidelity with a single guidance scale parameter.</p>
 
     <!-- Section 8.1 -->
-    <h2 id="unconditional-to-conditional">From Unconditional to Conditional Generation</h2>
+    <h2 id="unconditional-to-conditional"><span class="section-number">8.1</span> From Unconditional to Conditional Generation</h2>
 
     <p>Up to now, our diffusion model generates images, but we have no control over <em>what</em> it generates. We get random digits, random objects, random faces. For any practical application, we need to tell the model what to produce: "generate a 7" or "generate a cat."</p>
 
@@ -78,7 +78,7 @@
     </div>
 
     <!-- Section 8.2 -->
-    <h2 id="class-embedding">Class Embedding &amp; Injection</h2>
+    <h2 id="class-embedding"><span class="section-number">8.2</span> Class Embedding &amp; Injection</h2>
 
     <p>A class label is an integer; it carries no geometric or semantic structure. We need to lift it into a continuous vector that the network can work with. This is the same idea as word embeddings in NLP: map discrete tokens to learned vectors.</p>
 
@@ -130,7 +130,7 @@
     </div>
 
     <!-- Section 8.3 -->
-    <h2 id="training-conditional">Training the Conditional Model</h2>
+    <h2 id="training-conditional"><span class="section-number">8.3</span> Training the Conditional Model</h2>
 
     <p>The good news: training is nearly identical to what we did in Lecture 6. Each training sample now includes a label alongside the image: $(x_0, c)$. The label gets embedded and added to the time embedding. The loss function is unchanged:</p>
 
@@ -159,7 +159,7 @@
     </div>
 
     <!-- Section 8.4 -->
-    <h2 id="classifier-guidance">Classifier Guidance (Historical Context)</h2>
+    <h2 id="classifier-guidance"><span class="section-number">8.4</span> Classifier Guidance (Historical Context)</h2>
 
     <p>Can we amplify how much the model pays attention to its conditioning during sampling? <a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal &amp; Nichol (2021)</a> proposed <strong>classifier guidance</strong>&mdash;using gradients from a separately trained classifier to steer the denoising direction toward a target class. It was later superseded by the simpler classifier-free approach in Lecture 9, but understanding the original idea helps you appreciate why CFG was such a breakthrough.</p>
 
@@ -227,7 +227,7 @@
     </div>
 
     <!-- Section 8.5 -->
-    <h2 id="classifier-guidance-limitations">Why Classifier Guidance Falls Short</h2>
+    <h2 id="classifier-guidance-limitations"><span class="section-number">8.5</span> Why Classifier Guidance Falls Short</h2>
 
     <p>Classifier guidance works. It produces sharp, class-specific images. But it has significant practical drawbacks:</p>
 
@@ -244,7 +244,7 @@
     </div>
 
     <!-- Section 8.6: PyTorch Reference -->
-    <h2 id="pytorch-reference">PyTorch Reference</h2>
+    <h2 id="pytorch-reference"><span class="section-number">8.6</span> PyTorch Reference</h2>
 
     <p>Here's how the conditional U-Net modification looks in real PyTorch. The key change from our unconditional model is just three lines: embedding initialization, embedding lookup, and the addition.</p>
 
