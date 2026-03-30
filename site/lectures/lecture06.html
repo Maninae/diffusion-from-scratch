@@ -88,7 +88,13 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
 
     <p>When you want to <em>display</em> images, you reverse it: $x_{\text{display}} = (x + 1) / 2$, mapping back to $[0, 1]$. Our <code>denormalize()</code> utility handles this.</p>
 
-    <p>Diffusion training provides strong implicit augmentation: each image is seen at many different noise levels across training, so traditional augmentation matters less here than in classification tasks.</p>
+    <h3 id="implicit-augmentation">Implicit augmentation from noise</h3>
+
+    <p>In classification, data augmentation (random flips, crops, color jitter) is essential to prevent overfitting. Diffusion models get much of this for free. During training, each image is paired with a random timestep $t$, producing a different noisy version every time. A single image seen at $t = 10$, $t = 100$, and $t = 900$ looks like three entirely different training examples, ranging from nearly clean to nearly pure noise.</p>
+
+    <p>Over the course of training, each image appears at hundreds of distinct noise levels. This provides far more variation than geometric augmentation alone, and it comes at no extra cost since it is already part of the training algorithm.</p>
+
+    <p>Traditional augmentation techniques (horizontal flips, random crops) are still used in larger-scale diffusion training on datasets like ImageNet, where they provide additional diversity. But their relative importance is lower than in classification: the noise-level variation already covers a large portion of what augmentation is meant to achieve.</p>
 
     <!-- Section 2: The Training Loop -->
     <h2 id="training-loop"><span class="section-number">6.2</span> The Training Loop &mdash; Algorithm 1 in Code</h2>
