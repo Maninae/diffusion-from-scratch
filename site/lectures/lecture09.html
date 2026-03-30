@@ -63,7 +63,7 @@
 
     <p>Classifier guidance (Lecture 8) works, but it requires training a separate classifier on noisy images at every noise level. Want to condition on text? Train another classifier. Want to adjust guidance strength? Still need that extra model. The approach is expensive and inflexible.</p>
 
-    <p>What if we could get guidance without any classifier at all? The key insight, from Ho &amp; Salimans (2022), is straightforward: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
+    <p>What if we could get guidance without any classifier at all? The key insight, from <a href="https://arxiv.org/abs/2207.12598" target="_blank">Ho &amp; Salimans (2022)</a>, is straightforward: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
 
     <p>During training, with probability $p_\text{uncond}$ (typically 10&ndash;20%), we replace the class label with a special <strong>null token</strong> &mdash; the extra embedding at index <code>num_classes</code> that we set up in Lecture 8. The rest of the time, we train normally with the real class label.</p>
 

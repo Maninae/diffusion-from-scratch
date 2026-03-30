@@ -156,7 +156,7 @@
     <!-- Section 3: Latent Diffusion -->
     <h2 id="latent-diffusion">Latent Diffusion &mdash; The Key Insight</h2>
 
-    <p>The key idea (Rombach et al., 2022): instead of running diffusion in pixel space, <strong>run it in the VAE's latent space</strong>. The recipe has three steps:</p>
+    <p>The key idea (<a href="https://arxiv.org/abs/2112.10752" target="_blank">Rombach et al., 2022</a>): instead of running diffusion in pixel space, <strong>run it in the VAE's latent space</strong>. The recipe has three steps:</p>
 
     <div class="algorithm">
       <div class="algorithm-title">The Latent Diffusion Recipe</div>
@@ -210,7 +210,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
     <!-- Section 4: Stable Diffusion Architecture -->
     <h2 id="stable-diffusion">The Stable Diffusion Architecture</h2>
 
-    <p>Stable Diffusion (Rombach et al., 2022) is latent diffusion plus text conditioning. The architecture has three main components, each trained separately:</p>
+    <p>Stable Diffusion (<a href="https://arxiv.org/abs/2112.10752" target="_blank">Rombach et al., 2022</a>) is latent diffusion plus text conditioning. The architecture has three main components, each trained separately:</p>
 
     <h3 id="component-vae">Component 1: The VAE</h3>
 

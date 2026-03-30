@@ -98,7 +98,7 @@
       <li><strong>Weakness:</strong> at high noise, predicting $x_0$ from near-pure noise produces large errors and unstable gradients. The model is asked to hallucinate a clean image from almost nothing.</li>
     </ul>
 
-    <h3 id="v-prediction">v-Prediction (Salimans &amp; Ho, 2022)</h3>
+    <h3 id="v-prediction">v-Prediction (<a href="https://arxiv.org/abs/2202.00512" target="_blank">Salimans &amp; Ho, 2022</a>)</h3>
 
     <p>Define the <strong>velocity</strong>:</p>
 
@@ -201,7 +201,7 @@
 
     <h3 id="cosine-recap">Cosine Schedule (Recap)</h3>
 
-    <p>Nichol &amp; Dhariwal (2021) introduced the cosine schedule where $\bar\alpha_t$ follows a cosine curve instead of a linear decay. The information in $x_t$ is preserved longer, giving the model more signal to work with at medium timesteps. This is generally preferred over linear for all applications&mdash;there's rarely a reason to use a linear schedule.</p>
+    <p><a href="https://arxiv.org/abs/2102.09672" target="_blank">Nichol &amp; Dhariwal (2021)</a> introduced the cosine schedule where $\bar\alpha_t$ follows a cosine curve instead of a linear decay. The information in $x_t$ is preserved longer, giving the model more signal to work with at medium timesteps. This is generally preferred over linear for all applications&mdash;there's rarely a reason to use a linear schedule.</p>
 
     <h3 id="offset-noise">Offset Noise</h3>
 
@@ -215,7 +215,7 @@
 
     <p>You might notice this as a bias toward medium-brightness outputs, or an inability to produce dramatic lighting.</p>
 
-    <p>The fix (Lin et al., 2023) is elegant&mdash;two lines of code:</p>
+    <p>The fix (<a href="https://arxiv.org/abs/2305.08891" target="_blank">Lin et al., 2023</a>) is elegant&mdash;two lines of code:</p>
 
     <div class="pseudocode">
 <span class="comment"># Standard noise (zero mean per channel)</span>
@@ -245,7 +245,7 @@ noise = torch.<span class="function">randn_like</span>(x) + <span class="number"
 
     <p>The model was never trained on the exact distribution it encounters at the start of sampling. This mismatch can cause subtle artifacts, especially in color distribution and global structure.</p>
 
-    <p>The fix (Lin et al., 2023): enforce $\bar\alpha_T = 0$ exactly, so $\text{SNR}(T) = 0$. Now the last timestep during training uses pure noise, matching the inference starting point perfectly.</p>
+    <p>The fix (<a href="https://arxiv.org/abs/2305.08891" target="_blank">Lin et al., 2023</a>): enforce $\bar\alpha_T = 0$ exactly, so $\text{SNR}(T) = 0$. Now the last timestep during training uses pure noise, matching the inference starting point perfectly.</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
