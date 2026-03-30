@@ -32,7 +32,8 @@ function renderMath() {
         { left: '\\[', right: '\\]', display: true },
         { left: '\\(', right: '\\)', display: false }
       ],
-      throwOnError: false
+      throwOnError: false,
+      trust: true
     });
   }
 }
@@ -237,6 +238,34 @@ function buildLectureNav() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// MATH TOOLTIPS
+// ═══════════════════════════════════════════════════════════════
+
+function initMathTooltips() {
+  const tip = document.createElement('div');
+  tip.className = 'math-tooltip';
+  document.body.appendChild(tip);
+
+  document.addEventListener('mouseover', function(e) {
+    const el = e.target.closest('[data-tip]');
+    if (!el) return;
+    tip.textContent = el.getAttribute('data-tip');
+    tip.classList.add('visible');
+    const rect = el.getBoundingClientRect();
+    tip.style.left = Math.max(8, rect.left + rect.width / 2 - tip.offsetWidth / 2) + 'px';
+    tip.style.top = (rect.top - tip.offsetHeight - 8) + 'px';
+  });
+
+  document.addEventListener('mouseout', function(e) {
+    const el = e.target.closest('[data-tip]');
+    if (!el) return;
+    if (!el.contains(e.relatedTarget)) {
+      tip.classList.remove('visible');
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
 
@@ -246,4 +275,5 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   renderMath();
   updateProgress();
+  initMathTooltips();
 });

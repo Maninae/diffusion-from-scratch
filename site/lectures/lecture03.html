@@ -192,7 +192,7 @@
 
     <p><a href="https://arxiv.org/abs/2006.11239" target="_blank">Ho et al.</a> made a surprising empirical finding: <strong>dropping these weights and using uniform weighting works better.</strong> The simplified loss is:</p>
 
-    $$L_\text{simple} = \mathbb{E}_{t, x_0, \varepsilon}\!\left[\left\| \varepsilon - \varepsilon_\theta\!\left(\sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon,\; t\right) \right\|^2\right]$$
+    $$L_\text{simple} = \mathbb{E}_{t, x_0, \varepsilon}\!\left[\left\| \varepsilon - \htmlData{tip=The neural network (with weights θ) predicting the noise ε from the noisy image}{\varepsilon_\theta\!\left(\sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon,\; t\right)} \right\|^2\right]$$
 
     <p>where $t$ is sampled uniformly from $\{1, \ldots, T\}$.</p>
 
@@ -200,7 +200,7 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      <p>$L_\text{simple}$ is not the theoretically optimal ELBO loss&mdash;it's a practical modification that produces better samples. This is a common pattern in deep learning: the "correct" objective isn't always the best one. Diffusion research continues to explore better loss weightings, including min-SNR weighting and progressive noise level emphasis.</p>
+      <p>Although $L_\text{simple}$ isn't the theoretically optimal ELBO loss, it's nonetheless a practical modification that produces better samples. This is a common pattern in deep learning: the "correct" objective isn't always the best one. Diffusion research continues to explore better loss weightings, including min-SNR weighting and progressive noise level emphasis.</p>
     </div>
 
     <!-- Section 3.7 -->

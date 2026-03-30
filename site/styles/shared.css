@@ -1063,6 +1063,35 @@ body::before {
   opacity: 0.8;
 }
 
+/* ── Math hover tooltips ── */
+[data-tip] {
+  cursor: help;
+  border-bottom: 1px dotted var(--teal);
+  padding-bottom: 1px;
+}
+
+.math-tooltip {
+  position: fixed;
+  background: var(--bg-elevated);
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 320px;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.math-tooltip.visible {
+  opacity: 1;
+}
+
 /* ── Display math overflow ── */
 .katex-display {
   overflow-x: auto;
