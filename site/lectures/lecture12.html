@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 12</div>
     <h2>Diffusion Transformers (DiT)</h2>
-    <p class="lecture-desc">Replacing the U-Net with a simpler, more scalable architecture &mdash; patchify, transform, unpatchify &mdash; and the conditioning trick that makes it all work.</p>
+    <p class="lecture-desc">Replacing the U-Net with a simpler, more scalable architecture (patchify, transform, unpatchify) and the conditioning trick that makes it all work.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">DiT</span>
       <span class="lecture-tag">Patchify</span>
@@ -55,22 +55,22 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">The U-Net has been diffusion's workhorse, but it doesn't scale cleanly &mdash; you can't just make it bigger and reliably get better results. Transformers can. We'll replace the U-Net with a simpler architecture: patchify the image into tokens, process them with standard transformer blocks conditioned via adaLN-Zero, and unpatchify back. The result scales predictably with compute, and it's what powers Stable Diffusion 3 and DALL-E 3.</p>
+    <p class="lecture-roadmap">The U-Net has been diffusion's workhorse, but it doesn't scale cleanly. You can't just make it bigger and reliably get better results. Transformers can. We'll replace the U-Net with a simpler architecture: patchify the image into tokens, process them with standard transformer blocks conditioned via adaLN-Zero, and unpatchify back. The result scales predictably with compute, and it's what powers Stable Diffusion 3 and DALL-E 3.</p>
 
     <!-- Section 12.1 -->
     <h2 id="transformers-for-everything">The Trend: Transformers for Everything</h2>
 
-    <p>We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020 &mdash; and it works well.</p>
+    <p>We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020, and it works well.</p>
 
     <p>But let's be honest about what it asks of us: an encoder-decoder structure, skip connections at every resolution, attention blocks injected at specific layers, carefully tuned channel multipliers. It's a lot of bespoke engineering.</p>
 
     <p>Meanwhile, a different story has been unfolding across machine learning. Transformers have conquered NLP (2017), vision classification with ViT (2020), protein structure prediction, code generation, and more.</p>
 
-    <p>The recipe is always the same: take a simple, repeated building block (self-attention + feedforward), stack it deep, and throw compute at it. The architecture itself barely changes &mdash; you just make it bigger.</p>
+    <p>The recipe is always the same: take a simple, repeated building block (self-attention + feedforward), stack it deep, and throw compute at it. The architecture itself barely changes; you just make it bigger.</p>
 
     <p>This is exactly the property that makes transformers so appealing for scaling. They follow <strong>predictable scaling laws</strong>: double the compute, get a measurable improvement.</p>
 
-    <p>U-Nets don't have this property. Scaling a U-Net means deciding where to add channels, which resolutions get attention, how deep each stage should be &mdash; it's an architecture search problem, not a compute scaling problem.</p>
+    <p>U-Nets don't have this property. Scaling a U-Net means deciding where to add channels, which resolutions get attention, how deep each stage should be. It's an architecture search problem, not a compute scaling problem.</p>
 
     <p>So the question becomes natural: can we replace the U-Net with a transformer and get the same (or better) results, while inheriting the transformer's scaling properties?</p>
 
@@ -90,7 +90,7 @@
       <li>Shape: $(B, 3, 32, 32) \rightarrow (B, 64, d_{\text{model}})$ &mdash; 64 tokens of dimension $d_{\text{model}}$</li>
     </ul>
 
-    <p>We then add <strong>2D positional encodings</strong> (learnable or sinusoidal) so each token knows where in the image it came from. Without these, the transformer has no concept of spatial layout &mdash; it just sees an unordered bag of tokens.</p>
+    <p>We then add <strong>2D positional encodings</strong> (learnable or sinusoidal) so each token knows where in the image it came from. Without these, the transformer has no concept of spatial layout; it just sees an unordered bag of tokens.</p>
 
     <div class="callout note">
       <div class="callout-label">MNIST Note</div>
@@ -110,7 +110,7 @@
       <li>Residual connection</li>
     </ol>
 
-    <p>The twist is in how we handle conditioning &mdash; the timestep and (optionally) class label need to modulate every block. Standard LayerNorm won't cut it. This is where <strong>adaLN-Zero</strong> comes in, and it's the key innovation that makes DiT work. We'll cover it in detail in the next section.</p>
+    <p>The twist is in how we handle conditioning. The timestep and (optionally) class label need to modulate every block. Standard LayerNorm won't cut it. This is where <strong>adaLN-Zero</strong> comes in, and it's the key innovation that makes DiT work. We'll cover it in detail in the next section.</p>
 
     <h3 id="unpatchify">Unpatchify: Sequence &rarr; Image</h3>
 
@@ -118,7 +118,7 @@
 
     <p>$(B, 64, d_{\text{model}}) \rightarrow (B, 3, 32, 32)$</p>
 
-    <p>The output is the predicted noise $\hat{\epsilon}$, same as with our U-Net &mdash; DiT is a drop-in replacement for the denoiser.</p>
+    <p>The output is the predicted noise $\hat{\epsilon}$, same as with our U-Net. DiT is a drop-in replacement for the denoiser.</p>
 
     <h3 id="dit-pseudocode">Putting It Together</h3>
 
@@ -146,7 +146,7 @@
     <!-- Section 12.3 -->
     <h2 id="adaln-zero">Conditioning via adaLN-Zero</h2>
 
-    <p>The challenge is conditioning. A diffusion model needs to know <em>what timestep</em> it's denoising at &mdash; the behavior at $t = 10$ (light noise) is completely different from $t = 990$ (nearly pure noise). In our U-Net, we injected timestep information through adaptive group normalization. DiT needs something equivalent for transformer blocks.</p>
+    <p>The challenge is conditioning. A diffusion model needs to know <em>what timestep</em> it's denoising at, since the behavior at $t = 10$ (light noise) is completely different from $t = 990$ (nearly pure noise). In our U-Net, we injected timestep information through adaptive group normalization. DiT needs something equivalent for transformer blocks.</p>
 
     <h3 id="from-layernorm-to-adaln">From LayerNorm to Adaptive LayerNorm</h3>
 
@@ -231,7 +231,7 @@
       <p>The "/2" means patch size $p = 2$. FID (Fr&eacute;chet Inception Distance) measures image quality &mdash; lower is better.</p>
     </div>
 
-    <p>The pattern is clear: each step up in model size gives a predictable drop in FID. This is the transformer scaling recipe at work &mdash; more parameters, more compute, better results, no architecture surgery needed.</p>
+    <p>The pattern is clear: each step up in model size gives a predictable drop in FID. This is the transformer scaling recipe at work: more parameters, more compute, better results, no architecture surgery needed.</p>
 
     <!-- Section 12.5 -->
     <h2 id="unet-vs-dit">U-Net vs. DiT &mdash; When to Use Each</h2>
@@ -280,7 +280,7 @@
       </tbody>
     </table>
 
-    <p>For our MNIST experiments in this course, the U-Net is the right tool &mdash; it's smaller, faster to train, and we don't need scaling laws. But if you were building a production image generator? You'd reach for DiT.</p>
+    <p>For our MNIST experiments in this course, the U-Net is the right tool; it's smaller, faster to train, and we don't need scaling laws. But if you were building a production image generator? You'd reach for DiT.</p>
 
     <!-- Section 12.6 -->
     <h2 id="dit-in-practice">DiT in the Wild</h2>

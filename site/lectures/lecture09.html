@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 9</div>
     <h2>Classifier-Free Guidance</h2>
-    <p class="lecture-desc">The single most impactful trick in modern diffusion &mdash; one model, two predictions, and an extrapolation that transformed generative AI.</p>
+    <p class="lecture-desc">The single most impactful trick in modern diffusion: one model, two predictions, and an extrapolation that transformed generative AI.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">CFG</span>
       <span class="lecture-tag">Label Dropout</span>
@@ -56,7 +56,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">Classifier guidance works, but it needs a separate classifier trained on noisy images &mdash; expensive and inflexible. What if one model could guide itself? The answer is classifier-free guidance: randomly drop labels during training so the model learns both conditional and unconditional prediction, then extrapolate between them at sampling time. This single trick &mdash; just label dropout &mdash; is behind every modern text-to-image system.</p>
+    <p class="lecture-roadmap">Classifier guidance works, but it needs a separate classifier trained on noisy images, which is expensive and inflexible. What if one model could guide itself? The answer is classifier-free guidance: randomly drop labels during training so the model learns both conditional and unconditional prediction, then extrapolate between them at sampling time. This single trick &mdash; just label dropout &mdash; is behind every modern text-to-image system.</p>
 
     <!-- Section 9.1 -->
     <h2 id="the-training-trick">The Training Trick: Random Label Dropout</h2>
@@ -65,7 +65,7 @@
 
     <p>What if we could get guidance without any classifier at all? The key insight, from <a href="https://arxiv.org/abs/2207.12598" target="_blank">Ho &amp; Salimans (2022)</a>, is straightforward: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
 
-    <p>During training, with probability $p_\text{uncond}$ (typically 10&ndash;20%), we replace the class label with a special <strong>null token</strong> &mdash; the extra embedding at index <code>num_classes</code> that we set up in Lecture 8. The rest of the time, we train normally with the real class label.</p>
+    <p>During training, with probability $p_\text{uncond}$ (typically 10&ndash;20%), we replace the class label with a special <strong>null token</strong>, the extra embedding at index <code>num_classes</code> that we set up in Lecture 8. The rest of the time, we train normally with the real class label.</p>
 
     <p>The result: the same network learns two skills:</p>
 
@@ -76,7 +76,7 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      This is the entire training trick. No new loss function, no new architecture, no second model. Just randomly dropping labels during training. The null token at index <code>num_classes</code> (e.g., index 10 for MNIST digits 0&ndash;9) is what tells the model "there is no class &mdash; predict noise unconditionally."
+      This is the entire training trick. No new loss function, no new architecture, no second model. Just randomly dropping labels during training. The null token at index <code>num_classes</code> (e.g., index 10 for MNIST digits 0&ndash;9) is what tells the model "there is no class; predict noise unconditionally."
     </div>
 
     <div class="pseudocode">
@@ -103,7 +103,7 @@
 
     $$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$$
 
-    <p>The term $(\epsilon_\text{cond} - \epsilon_\text{uncond})$ is the <strong>conditioning signal</strong> &mdash; it captures exactly what's different about the model's prediction when it knows the class versus when it doesn't. The guidance scale $s$ controls how aggressively we amplify this difference.</p>
+    <p>The term $(\epsilon_\text{cond} - \epsilon_\text{uncond})$ is the <strong>conditioning signal</strong>: it captures exactly what's different about the model's prediction when it knows the class versus when it doesn't. The guidance scale $s$ controls how aggressively we amplify this difference.</p>
 
     <h3 id="guidance-scale-values">The Guidance Scale <em>s</em></h3>
 
@@ -131,7 +131,7 @@
       <div class="callout-label">Algebraic Equivalence</div>
       <p>To see these are the same, expand Form 1:</p>
       <p>$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot \epsilon_\text{cond} - s \cdot \epsilon_\text{uncond} = (1 - s) \cdot \epsilon_\text{uncond} + s \cdot \epsilon_\text{cond}$</p>
-      <p>Form 1 makes the <strong>amplification</strong> interpretation clearer &mdash; we're adding $s$ times the conditioning signal. Form 2 reveals that it's a <strong>weighted combination</strong>: when $s = 1$, it's pure conditional; when $s > 1$, we're <em>extrapolating</em> beyond the conditional prediction, which is why guided outputs look sharper than standard conditional ones.</p>
+      <p>Form 1 makes the <strong>amplification</strong> interpretation clearer, since we're adding $s$ times the conditioning signal. Form 2 reveals that it's a <strong>weighted combination</strong>: when $s = 1$, it's pure conditional; when $s > 1$, we're <em>extrapolating</em> beyond the conditional prediction, which is why guided outputs look sharper than standard conditional ones.</p>
     </div>
 
     <h3 id="batched-forward-pass">Efficient Implementation: Batched Forward Pass</h3>
@@ -195,7 +195,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      <strong>The temperature analogy.</strong> The guidance scale $s$ acts like inverse temperature on the conditional distribution. At $s = 1$, we sample from the standard conditional. At $s > 1$, the distribution sharpens &mdash; peaks become taller, tails shrink. As $s \to \infty$, we converge to the single most likely image for that class. This is why higher guidance produces sharper but less diverse outputs.
+      <strong>The temperature analogy.</strong> The guidance scale $s$ acts like inverse temperature on the conditional distribution. At $s = 1$, we sample from the standard conditional. At $s > 1$, the distribution sharpens: peaks become taller, tails shrink. As $s \to \infty$, we converge to the single most likely image for that class. This is why higher guidance produces sharper but less diverse outputs.
     </div>
 
     <h3 id="diversity-fidelity">The Diversity-Fidelity Tradeoff</h3>
@@ -211,7 +211,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <!-- Section 9.4 -->
     <h2 id="text-conditioning">Text Conditioning via Cross-Attention</h2>
 
-    <p>Everything we've covered so far uses class labels &mdash; a single integer per image. But the real power of CFG emerges when the conditioning signal is a <strong>text prompt</strong>. This is how Stable Diffusion, DALL-E, and Imagen work.</p>
+    <p>Everything we've covered so far uses class labels, a single integer per image. But the real power of CFG emerges when the conditioning signal is a <strong>text prompt</strong>. This is how Stable Diffusion, DALL-E, and Imagen work.</p>
 
     <h3 id="text-to-image-pipeline">The Text-to-Image Pipeline</h3>
 
@@ -232,12 +232,12 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
       <strong>Cross-Attention.</strong> The same mechanism as the self-attention from Lecture 5, but Q comes from one source (image features) and K, V come from another (text embeddings). This allows the image to "query" the text: each pixel asks "which words in the prompt are relevant to what I should look like?"
     </div>
 
-    <p>We won't implement text conditioning in this course (it requires pretrained text encoders), but understanding the architecture is important. The <em>guidance mechanism</em> is identical &mdash; CFG doesn't care whether the conditioning is a class integer or a text embedding. You still train with random dropout and combine conditional + unconditional predictions at inference.</p>
+    <p>We won't implement text conditioning in this course (it requires pretrained text encoders), but understanding the architecture is important. The <em>guidance mechanism</em> is identical; CFG doesn't care whether the conditioning is a class integer or a text embedding. You still train with random dropout and combine conditional + unconditional predictions at inference.</p>
 
     <!-- Section 9.5 -->
     <h2 id="negative-prompts">Negative Prompts</h2>
 
-    <p>If you've used Stable Diffusion, you've probably entered a "negative prompt" &mdash; text describing what you <em>don't</em> want. This feature falls directly out of the CFG framework with one small modification.</p>
+    <p>If you've used Stable Diffusion, you've probably entered a "negative prompt," text describing what you <em>don't</em> want. This feature falls directly out of the CFG framework with one small modification.</p>
 
     <p>In standard CFG, the unconditional prediction $\epsilon_\text{uncond}$ serves as the "baseline" we extrapolate away from:</p>
 

@@ -55,7 +55,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">We've been predicting noise ($\varepsilon$-prediction) since Lecture 3, but that's not the only option &mdash; and it's not always the best one. We'll compare three prediction targets ($\varepsilon$, $x_0$, and $v$), see why each handles different timesteps differently, and then turn to the noise schedule improvements &mdash; cosine schedules, zero terminal SNR, offset noise &mdash; that fixed real production problems in systems like Imagen and Stable Diffusion.</p>
+    <p class="lecture-roadmap">We've been predicting noise ($\varepsilon$-prediction) since Lecture 3, but that's not the only option, and it's not always the best one. We'll compare three prediction targets ($\varepsilon$, $x_0$, and $v$), see why each handles different timesteps differently, and then turn to the noise schedule improvements &mdash; cosine schedules, zero terminal SNR, offset noise &mdash; that fixed real production problems in systems like Imagen and Stable Diffusion.</p>
 
     <!-- Section 1: The Prediction Target Problem -->
     <h2 id="prediction-target-problem">The Prediction Target Problem</h2>
@@ -65,8 +65,8 @@
     <p>Recall the forward process: $x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1 - \bar\alpha_t} \cdot \varepsilon$. At different timesteps, the balance between signal and noise changes dramatically:</p>
 
     <ul>
-      <li>At <strong>low noise</strong> ($t$ near 0): $x_t \approx x_0$ with a tiny sprinkle of noise. Predicting that tiny noise accurately is hard&mdash;the loss signal is weak, and gradients are small.</li>
-      <li>At <strong>high noise</strong> ($t$ near $T$): $x_t \approx \varepsilon$ with almost no signal. Predicting noise is numerically stable here, but the model has almost nothing to work with&mdash;it's essentially guessing.</li>
+      <li>At <strong>low noise</strong> ($t$ near 0): $x_t \approx x_0$ with a tiny sprinkle of noise. Predicting that tiny noise accurately is hard; the loss signal is weak, and gradients are small.</li>
+      <li>At <strong>high noise</strong> ($t$ near $T$): $x_t \approx \varepsilon$ with almost no signal. Predicting noise is numerically stable here, but the model has almost nothing to work with, so it's essentially guessing.</li>
     </ul>
 
     <p>Can we do better? Let's look at what happens when we change what the model predicts.</p>
@@ -74,7 +74,7 @@
     <!-- Section 2: Three Parameterizations -->
     <h2 id="three-parameterizations">Three Prediction Parameterizations</h2>
 
-    <p>All three approaches below are <strong>mathematically equivalent</strong>&mdash;you can convert freely between them given $(x_t, t)$. They differ in <em>numerical stability</em> and <em>gradient behavior</em> across timesteps.</p>
+    <p>All three approaches below are <strong>mathematically equivalent</strong>; you can convert freely between them given $(x_t, t)$. They differ in <em>numerical stability</em> and <em>gradient behavior</em> across timesteps.</p>
 
     <h3 id="epsilon-prediction">&epsilon;-Prediction (DDPM Standard)</h3>
 
@@ -84,7 +84,7 @@
 
     <ul>
       <li><strong>Strengths:</strong> stable at high noise ($t$ near $T$), well-studied, the default choice for most tutorials and papers</li>
-      <li><strong>Weakness:</strong> at low noise ($t$ near 0), the noise $\varepsilon$ is scaled down by $\sqrt{1 - \bar\alpha_t}$ which approaches zero&mdash;the loss signal per training step is tiny</li>
+      <li><strong>Weakness:</strong> at low noise ($t$ near 0), the noise $\varepsilon$ is scaled down by $\sqrt{1 - \bar\alpha_t}$ which approaches zero, so the loss signal per training step is tiny</li>
     </ul>
 
     <h3 id="x0-prediction">x<sub>0</sub>-Prediction</h3>
@@ -94,7 +94,7 @@
     $$\mathcal{L}_{x_0} = \mathbb{E}_{t, x_0, \varepsilon}\Big[\|x_0 - \hat{x}_0(x_t, t)\|^2\Big]$$
 
     <ul>
-      <li><strong>Strengths:</strong> intuitive&mdash;"what did the image look like before we added noise?" Good at low noise timesteps where $x_t \approx x_0$.</li>
+      <li><strong>Strengths:</strong> intuitive ("what did the image look like before we added noise?"). Good at low noise timesteps where $x_t \approx x_0$.</li>
       <li><strong>Weakness:</strong> at high noise, predicting $x_0$ from near-pure noise produces large errors and unstable gradients. The model is asked to hallucinate a clean image from almost nothing.</li>
     </ul>
 
@@ -201,7 +201,7 @@
 
     <h3 id="cosine-recap">Cosine Schedule (Recap)</h3>
 
-    <p><a href="https://arxiv.org/abs/2102.09672" target="_blank">Nichol &amp; Dhariwal (2021)</a> introduced the cosine schedule where $\bar\alpha_t$ follows a cosine curve instead of a linear decay. The information in $x_t$ is preserved longer, giving the model more signal to work with at medium timesteps. This is generally preferred over linear for all applications&mdash;there's rarely a reason to use a linear schedule.</p>
+    <p><a href="https://arxiv.org/abs/2102.09672" target="_blank">Nichol &amp; Dhariwal (2021)</a> introduced the cosine schedule where $\bar\alpha_t$ follows a cosine curve instead of a linear decay. The information in $x_t$ is preserved longer, giving the model more signal to work with at medium timesteps. This is generally preferred over linear for all applications; there's rarely a reason to use a linear schedule.</p>
 
     <h3 id="offset-noise">Offset Noise</h3>
 
@@ -215,7 +215,7 @@
 
     <p>You might notice this as a bias toward medium-brightness outputs, or an inability to produce dramatic lighting.</p>
 
-    <p>The fix (<a href="https://arxiv.org/abs/2305.08891" target="_blank">Lin et al., 2023</a>) is elegant&mdash;two lines of code:</p>
+    <p>The fix (<a href="https://arxiv.org/abs/2305.08891" target="_blank">Lin et al., 2023</a>) is elegant, just two lines of code:</p>
 
     <div class="pseudocode">
 <span class="comment"># Standard noise (zero mean per channel)</span>
@@ -228,7 +228,7 @@ noise = torch.<span class="function">randn_like</span>(x) + <span class="number"
 <span class="comment">#                             allowing dark/bright generation</span>
     </div>
 
-    <p>The <code>randn(B, C, 1, 1)</code> term is a single random value per channel per sample, broadcast across all spatial positions. It shifts the entire channel up or down, teaching the model that brightness can change. The $0.1$ scaling is a hyperparameter&mdash;too large and you distort the diffusion process, too small and the effect is negligible.</p>
+    <p>The <code>randn(B, C, 1, 1)</code> term is a single random value per channel per sample, broadcast across all spatial positions. It shifts the entire channel up or down, teaching the model that brightness can change. The $0.1$ scaling is a hyperparameter: too large and you distort the diffusion process, too small and the effect is negligible.</p>
 
     <h3 id="zero-terminal-snr">Zero Terminal SNR</h3>
 
@@ -236,7 +236,7 @@ noise = torch.<span class="function">randn_like</span>(x) + <span class="number"
 
     $$\text{SNR}(t) = \frac{\bar\alpha_t}{1 - \bar\alpha_t}$$
 
-    <p>Here's the problem: many noise schedules don't actually reach $\text{SNR} = 0$ at $t = T$. There's a tiny bit of residual signal&mdash;$\bar\alpha_T$ is very small but not exactly zero. This creates a <strong>train-test mismatch</strong>:</p>
+    <p>Here's the problem: many noise schedules don't actually reach $\text{SNR} = 0$ at $t = T$. There's a tiny bit of residual signal ($\bar\alpha_T$ is very small but not exactly zero). This creates a <strong>train-test mismatch</strong>:</p>
 
     <ul>
       <li><strong>Training:</strong> at $t = T$, the model sees $x_T$ with a faint trace of signal</li>
@@ -322,7 +322,7 @@ x_t = sqrt_alpha_bar[t] * x_0 + sqrt_one_minus_alpha_bar[t] * noise
 <span class="keyword">loss = F.mse_loss(predicted_v, v_target)</span>                                   <span class="comment"># NEW target</span>
     </div>
 
-    <p>Three lines change. The model architecture is identical&mdash;it still takes $(x_t, t)$ and outputs a tensor of the same shape. Only the target and the loss computation change. The sampling loop needs corresponding updates to convert the predicted $v$ back to $\varepsilon$ or $x_0$ at each step, using the formulas from the conversion table above.</p>
+    <p>Three lines change. The model architecture is identical; it still takes $(x_t, t)$ and outputs a tensor of the same shape. Only the target and the loss computation change. The sampling loop needs corresponding updates to convert the predicted $v$ back to $\varepsilon$ or $x_0$ at each step, using the formulas from the conversion table above.</p>
 
     <!-- Section 8: Looking Ahead -->
     <h2 id="looking-ahead">Looking Ahead</h2>

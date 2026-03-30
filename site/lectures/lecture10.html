@@ -55,7 +55,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">Our diffusion model works on 28&times;28 digits, but real-world generation happens at 512&times;512 and beyond. Pixel-space diffusion can't scale there &mdash; attention costs explode quadratically with resolution. The solution: compress images into a small latent space with a VAE, then run diffusion in that latent space. This is the architecture behind Stable Diffusion, and it's what made high-resolution generation practical.</p>
+    <p class="lecture-roadmap">Our diffusion model works on 28&times;28 digits, but real-world generation happens at 512&times;512 and beyond. Pixel-space diffusion can't scale there because attention costs explode quadratically with resolution. The solution: compress images into a small latent space with a VAE, then run diffusion in that latent space. This is the architecture behind Stable Diffusion, and it's what made high-resolution generation practical.</p>
 
     <!-- Section 1: The Resolution Bottleneck -->
     <h2 id="resolution-bottleneck">The Resolution Bottleneck</h2>
@@ -71,7 +71,7 @@
       <li><strong>512&times;512&times;3</strong>: 786,432 values</li>
     </ul>
 
-    <p>Our U-Net can handle 784 values without breaking a sweat. But at 512&times;512, it's processing <strong>786K pixel values per denoising step</strong>&mdash;and we need hundreds of steps. The model size isn't the bottleneck; it's the <em>feature map sizes</em> flowing through the network.</p>
+    <p>Our U-Net can handle 784 values without breaking a sweat. But at 512&times;512, it's processing <strong>786K pixel values per denoising step</strong>, and we need hundreds of steps. The model size isn't the bottleneck; it's the <em>feature map sizes</em> flowing through the network.</p>
 
     <h3 id="attention-cost">The Attention Problem</h3>
 
@@ -82,7 +82,7 @@
       <li>At <strong>256&times;256</strong>: attention operates on 65,536 tokens &rarr; ~4 billion operations per layer. Impractical.</li>
     </ul>
 
-    <p>You could avoid attention at high resolutions and rely only on convolutions&mdash;but convolutions are local operators. Without attention, the model loses the <strong>global context</strong> that makes generated images coherent.</p>
+    <p>You could avoid attention at high resolutions and rely only on convolutions, but convolutions are local operators. Without attention, the model loses the <strong>global context</strong> that makes generated images coherent.</p>
 
     <p>A face might have perfectly rendered eyes but mismatched ears, because the receptive field of convolutions isn't large enough to coordinate distant features.</p>
 
@@ -96,7 +96,7 @@
     <!-- Section 2: VAE Primer -->
     <h2 id="vae-primer">VAE Primer</h2>
 
-    <p>If you took CS231N, you've seen variational autoencoders before. We need a compact treatment here because the VAE is a critical component of latent diffusion&mdash;not the main event, but you need to understand what it does and why it works.</p>
+    <p>If you took CS231N, you've seen variational autoencoders before. We need a compact treatment here because the VAE is a critical component of latent diffusion, not the main event, but you need to understand what it does and why it works.</p>
 
     <p>Let's go deeper than a refresher but keep the focus on what matters for diffusion.</p>
 
@@ -106,7 +106,7 @@
 
     <p>The <strong>encoder</strong> $E$ maps an image $x$ to a lower-dimensional latent representation $z$. Architecturally, it's a series of convolutional layers with downsampling (stride-2 convolutions or pooling).</p>
 
-    <p>Crucially, the encoder doesn't output a single point in latent space&mdash;it outputs two things: a <strong>mean</strong> $\mu$ and a <strong>log-variance</strong> $\log \sigma^2$ for a Gaussian distribution over latent codes.</p>
+    <p>Crucially, the encoder doesn't output a single point in latent space; it outputs two things: a <strong>mean</strong> $\mu$ and a <strong>log-variance</strong> $\log \sigma^2$ for a Gaussian distribution over latent codes.</p>
 
     <p>The <strong>decoder</strong> $D$ maps a latent code $z$ back to pixel space, producing a reconstructed image $\hat{x}$. It's the mirror of the encoder: convolutional layers with upsampling (transposed convolutions or interpolation followed by convolution).</p>
 
@@ -126,11 +126,11 @@
 
     <h3 id="reparameterization">The Reparameterization Trick</h3>
 
-    <p>Sampling $z$ from the distribution $q(z|x) = \mathcal{N}(\mu, \sigma^2)$ isn't differentiable&mdash;you can't backpropagate through a random sampling operation. The reparameterization trick sidesteps this:</p>
+    <p>Sampling $z$ from the distribution $q(z|x) = \mathcal{N}(\mu, \sigma^2)$ isn't differentiable; you can't backpropagate through a random sampling operation. The reparameterization trick sidesteps this:</p>
 
     $$z = \mu + \sigma \cdot \varepsilon, \quad \varepsilon \sim \mathcal{N}(0, I)$$
 
-    <p>The randomness $\varepsilon$ is now an <em>input</em> to the computation, not embedded in it. Gradients flow cleanly through $\mu$ and $\sigma$. You saw exactly this trick in Lecture 2 when we separated the noise from the diffusion forward process&mdash;same idea, different context.</p>
+    <p>The randomness $\varepsilon$ is now an <em>input</em> to the computation, not embedded in it. Gradients flow cleanly through $\mu$ and $\sigma$. You saw exactly this trick in Lecture 2 when we separated the noise from the diffusion forward process. Same idea, different context.</p>
 
     <h3 id="normalization-note">BatchNorm vs. GroupNorm: A Practical Note</h3>
 
@@ -147,11 +147,11 @@
 
     <ul>
       <li><strong>Nearby points</strong> in latent space map to <strong>similar images</strong> after decoding</li>
-      <li><strong>Interpolation</strong> between two latent codes produces a smooth visual transition&mdash;not a jarring pixel-space average</li>
+      <li><strong>Interpolation</strong> between two latent codes produces a smooth visual transition, not a jarring pixel-space average</li>
       <li>The space is <strong>dense</strong>: most random samples from $\mathcal{N}(0, I)$ decode to plausible-looking images (not noise or artifacts)</li>
     </ul>
 
-    <p>This last property is exactly why the VAE latent space is a good place to run diffusion. The diffusion model's job at the end of sampling is to produce a clean latent code $z_0$&mdash;and the VAE decoder can turn any reasonable latent code into a good image.</p>
+    <p>This last property is exactly why the VAE latent space is a good place to run diffusion. The diffusion model's job at the end of sampling is to produce a clean latent code $z_0$, and the VAE decoder can turn any reasonable latent code into a good image.</p>
 
     <!-- Section 3: Latent Diffusion -->
     <h2 id="latent-diffusion">Latent Diffusion &mdash; The Key Insight</h2>
@@ -205,7 +205,7 @@ z_0 = <span class="function">ddim_sample</span>(diffusion_model, z_T, schedule, 
 images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># decode back to pixel space: (B, 3, 512, 512)</span>
     </div>
 
-    <p>Notice how little changes from our MNIST pipeline. The forward process, training loop, and sampling algorithm are <em>identical</em>&mdash;we've just swapped the data from pixels to latents.</p>
+    <p>Notice how little changes from our MNIST pipeline. The forward process, training loop, and sampling algorithm are <em>identical</em>; we've just swapped the data from pixels to latents.</p>
 
     <!-- Section 4: Stable Diffusion Architecture -->
     <h2 id="stable-diffusion">The Stable Diffusion Architecture</h2>

@@ -39,7 +39,7 @@
   <div class="lecture-header">
     <div class="lecture-eyebrow">Lecture 13</div>
     <h2>Flow Matching &amp; Rectified Flows</h2>
-    <p class="lecture-desc">Dropping the noise schedule, the ELBO, and the cumulative alpha products &mdash; learning straight-line velocity fields from noise to data.</p>
+    <p class="lecture-desc">Dropping the noise schedule, the ELBO, and the cumulative alpha products. Learning straight-line velocity fields from noise to data.</p>
     <div class="lecture-tags">
       <span class="lecture-tag">Flow Matching</span>
       <span class="lecture-tag">Rectified Flows</span>
@@ -70,7 +70,7 @@
       <li><strong>Schedule sensitivity</strong> &mdash; the choice between linear, cosine, and sigmoid schedules meaningfully affects results. The schedule <em>is</em> a hyperparameter, and a finicky one.</li>
     </ul>
 
-    <p>All of this works &mdash; we've proven that through this entire course.</p>
+    <p>All of this works. We've proven that through this entire course.</p>
 
     <p>But it's a lot of machinery for what should be a simple goal: <strong>transport samples from $\mathcal{N}(0, I)$ to the data distribution</strong>.</p>
 
@@ -81,14 +81,14 @@
 
     <h3 id="epsilon-problem">The Problem with Noise Prediction</h3>
 
-    <p>Recall from Lecture 11: DDPM's standard prediction target is $\epsilon$-prediction &mdash; the model learns to predict the noise that was added. This works, but it has a problem at the <strong>boundary timesteps</strong>:</p>
+    <p>Recall from Lecture 11: DDPM's standard prediction target is $\epsilon$-prediction, where the model learns to predict the noise that was added. This works, but it has a problem at the <strong>boundary timesteps</strong>:</p>
 
     <ul>
       <li>At $t \approx 0$: the image is barely noised. The noise component is tiny, so the loss signal for predicting it is weak and the gradient updates are small.</li>
       <li>At $t \approx T$: the image is almost pure noise. The model has almost no signal from the original image to work with.</li>
     </ul>
 
-    <p>The prediction difficulty is <em>uneven</em> across timesteps &mdash; too easy in the middle, unstable at the extremes.</p>
+    <p>The prediction difficulty is <em>uneven</em> across timesteps: too easy in the middle, unstable at the extremes.</p>
 
     <h3 id="v-prediction-partial-fix">v-Prediction: The Right Idea, the Wrong Framework</h3>
 
@@ -96,7 +96,7 @@
 
     $$v = \sqrt{\bar{\alpha}_t} \cdot \epsilon - \sqrt{1 - \bar{\alpha}_t} \cdot x_0$$
 
-    <p>This was a real improvement. The prediction target balances the difficulty across all timesteps &mdash; no more extreme behavior at the boundaries. Imagen and Stable Diffusion 2.x adopted v-prediction for exactly this reason.</p>
+    <p>This was a real improvement. The prediction target balances the difficulty across all timesteps, with no more extreme behavior at the boundaries. Imagen and Stable Diffusion 2.x adopted v-prediction for exactly this reason.</p>
 
     <p>But here's what v-prediction <em>didn't</em> fix:</p>
 
@@ -123,7 +123,7 @@
 
     <p>We have two distributions: a data distribution $p_{\text{data}}$ (images of digits, faces, whatever) and a noise distribution $\mathcal{N}(0, I)$ (easy to sample from). We want to learn a mapping from one to the other.</p>
 
-    <p>Imagine each sample as a <strong>particle</strong>. Generation means moving particles from their starting positions (noise) to their destinations (data). Each particle follows a path through space, and at every point along that path, it has a <strong>velocity</strong> &mdash; a direction and speed.</p>
+    <p>Imagine each sample as a <strong>particle</strong>. Generation means moving particles from their starting positions (noise) to their destinations (data). Each particle follows a path through space, and at every point along that path, it has a <strong>velocity</strong>, a direction and speed.</p>
 
     <p>A <strong>velocity field</strong> $v(x, t)$ tells each particle which direction to move at each moment in time. If we know the velocity field, generating a sample is just solving an ordinary differential equation:</p>
 
@@ -166,7 +166,7 @@
 
     $$\frac{dx}{dt} = x_1 - x_0$$
 
-    <p>That's a <strong>constant velocity</strong> &mdash; it doesn't depend on $t$ at all. Each particle just moves in a straight line from data to noise at uniform speed.</p>
+    <p>That's a <strong>constant velocity</strong>; it doesn't depend on $t$ at all. Each particle just moves in a straight line from data to noise at uniform speed.</p>
 
     <div class="callout note">
       <div class="callout-label">Convention Warning</div>
@@ -220,7 +220,7 @@ x_t = sqrt_alpha_bar * x_0 + sqrt_one_minus * noise <span class="comment"># weig
 x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that's it</span>
     </div>
 
-    <p>DDPM's interpolation coefficients ($\sqrt{\bar{\alpha}_t}$ and $\sqrt{1 - \bar{\alpha}_t}$) are nonlinear functions of the noise schedule, precomputed and stored in dictionaries. Flow matching's coefficients are $(1 - t)$ and $t$ &mdash; literally just the time variable.</p>
+    <p>DDPM's interpolation coefficients ($\sqrt{\bar{\alpha}_t}$ and $\sqrt{1 - \bar{\alpha}_t}$) are nonlinear functions of the noise schedule, precomputed and stored in dictionaries. Flow matching's coefficients are $(1 - t)$ and $t$, literally just the time variable.</p>
 
     <!-- Section 13.5 -->
     <h2 id="sampling">Sampling via ODE Integration</h2>
@@ -248,7 +248,7 @@ x_t = (1 - t) * x_0 + t * noise                    <span class="comment"># that'
 
     <h3 id="better-solvers">Better ODE Solvers</h3>
 
-    <p>Euler's method works but is first-order &mdash; errors accumulate, and you need many steps for accuracy. Better options include:</p>
+    <p>Euler's method works but is first-order; errors accumulate, and you need many steps for accuracy. Better options include:</p>
 
     <ul>
       <li><strong>Heun's method</strong> (2nd-order) &mdash; takes a trial step, evaluates the velocity at the new position, then averages. Roughly halves the steps needed for the same quality.</li>
