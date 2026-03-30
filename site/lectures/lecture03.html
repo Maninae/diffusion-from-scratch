@@ -78,7 +78,8 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      <p>The intractability comes from $q(x_0 \mid x_t)$&mdash;knowing which clean images could have produced a given noisy image. If we <em>did</em> know $x_0$, the reverse step becomes tractable. This observation is the foundation of the entire derivation.</p>
+      <p>The intractability comes from $q(x_0 \mid x_t)$&mdash;the probability that some particular clean image $x_0$ was the original source of our current noisy image $x_t$. There are infinitely many clean images that could have produced any given noisy observation, and we'd need to consider all of them.</p>
+      <p>But if we <em>did</em> know which $x_0$ produced $x_t$, the reverse step becomes tractable. This observation is the foundation of the entire derivation.</p>
     </div>
 
     <!-- Section 3.3 -->
