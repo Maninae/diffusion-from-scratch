@@ -57,6 +57,15 @@
 
     <p class="lecture-roadmap">A diffusion model needs a neural network that takes a noisy image and outputs a noise prediction of the <em>exact same shape</em>. That rules out standard classifiers, which compress spatial detail away. We'll build the U-Net from scratch: an encoder that captures <em>what's</em> in the image, a decoder that recovers <em>where</em> things are, and skip connections that carry fine detail across the gap.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to understand why diffusion models use U-Nets: the encoder-decoder structure, skip connections, and how spatial detail flows through the network</li>
+        <li>You know what convolutions and feature maps are, or have taken an introductory deep learning course</li>
+        <li>You want to trace exact tensor shapes from a 28&times;28 input through every stage of the architecture</li>
+      </ul>
+    </div>
     <!-- Section 1: The Architecture Problem -->
     <h2 id="architecture-problem"><span class="section-number">4.1</span> The Architecture Problem</h2>
 

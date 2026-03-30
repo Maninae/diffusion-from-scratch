@@ -58,6 +58,15 @@
 
     <p class="lecture-roadmap">Training taught the model to predict noise. Now we run the process in reverse to generate images from scratch. We'll implement DDPM's full 1000-step stochastic sampler, then see how DDIM reformulates the same model as a deterministic ODE, cutting the step count dramatically while unlocking smooth interpolation and the probability flow perspective that connects diffusion to continuous dynamics.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You have a trained diffusion model and want to generate images from it: the DDPM reverse process, step by step</li>
+        <li>You want to understand DDIM and how it cuts sampling from 1000 steps to 50 with no retraining</li>
+        <li>You are curious about the connection between diffusion sampling and ordinary differential equations</li>
+      </ul>
+    </div>
     <!-- Section 0: Dependencies & Setup -->
     <h2 id="setup"><span class="section-number">7.1</span> Loading the Trained Model</h2>
 

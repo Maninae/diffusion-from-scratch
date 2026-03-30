@@ -43,6 +43,7 @@
   --green: #4ade80;
   --purple: #a78bfa;
   --amber: #fbbf24;
+  --rose: #f472b6;
 }
 
 html { scroll-behavior: smooth; }
@@ -900,6 +901,12 @@ body::before {
   border-color: var(--text-muted);
 }
 .callout.note .callout-label { color: var(--text-muted); }
+
+.callout.prereq {
+  background: rgba(244, 114, 182, 0.06);
+  border-color: var(--rose);
+}
+.callout.prereq .callout-label { color: var(--rose); }
 
 /* ── Algorithm blocks ── */
 .algorithm {

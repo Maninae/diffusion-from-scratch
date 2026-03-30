@@ -57,6 +57,15 @@
 
     <p class="lecture-roadmap">Our U-Net can denoise, but it doesn't know <em>how much</em> noise it's looking at. Denoising at $t = 10$ and $t = 990$ are fundamentally different tasks, yet the network treats them identically. We'll fix that with sinusoidal timestep embeddings borrowed from transformers, inject them into every ResBlock, and then add self-attention so the network can coordinate distant spatial regions &mdash; completing the architecture.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to understand how the U-Net knows what noise level it is denoising: sinusoidal timestep embeddings and time injection into ResBlocks</li>
+        <li>You want to see how self-attention gives the network a global receptive field, and why it is placed only at low resolutions</li>
+        <li>You are familiar with the transformer attention mechanism, or willing to learn it here</li>
+      </ul>
+    </div>
     <!-- Section 1: Why t matters -->
     <h2 id="why-time-matters"><span class="section-number">5.1</span> Why the Network Needs to Know <em>t</em></h2>
 

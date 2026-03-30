@@ -58,6 +58,15 @@
 
     <p class="lecture-roadmap">We have the math and the architecture. Now we make them work. The gap between Algorithm 1 on paper and a model that generates recognizable digits is filled with practical engineering: data normalization, optimizer choices, EMA weight averaging, gradient clipping, and checkpointing. Get any one of these wrong, and the model quietly produces noise instead of images.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You are ready to implement a working training pipeline: data loading, normalization, the DDPM training loop, and checkpointing</li>
+        <li>You want to understand the practical details that separate a model that generates digits from one that generates noise: EMA, gradient clipping, learning rate warmup</li>
+        <li>You have the U-Net from Lectures 4&ndash;5 and the loss from Lecture 3, and want to wire them together</li>
+      </ul>
+    </div>
     <!-- Section 1: From Math to Working Code -->
     <h2 id="from-math-to-code"><span class="section-number">6.1</span> From Math to Working Code</h2>
 

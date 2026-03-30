@@ -47,6 +47,15 @@
 
     <p class="lecture-roadmap">Diffusion starts with destruction. We'll define the forward noising process step-by-step, then discover the key mathematical shortcut &mdash; cumulative products $\bar{\alpha}_t$ &mdash; that lets us jump to <em>any</em> noise level in a single operation. Along the way, we'll build intuition for noise schedules, signal-to-noise ratios, and why these choices quietly shape everything the model learns.</p>
 
+
+    <div class="callout prereq">
+      <div class="callout-label">This Lecture Is For You If</div>
+      <ul>
+        <li>You want to understand the forward noising process: how clean images become Gaussian noise over 1000 steps</li>
+        <li>You want to learn the closed-form shortcut that makes training efficient, and what noise schedules (linear, cosine, sigmoid) control</li>
+        <li>You are comfortable with basic probability and Gaussian distributions</li>
+      </ul>
+    </div>
     <!-- Section 2.1 -->
     <h2 id="forward-chain"><span class="section-number">2.1</span> The Forward Markov Chain</h2>
 
