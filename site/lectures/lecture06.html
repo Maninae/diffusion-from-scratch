@@ -173,13 +173,13 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
       <li><strong>Mid $t$:</strong> the hardest range. The signal is partially visible but heavily corrupted. The model has to work hard to separate signal from noise. These timesteps produce the most informative gradients.</li>
     </ul>
 
-    <p>Uniform sampling wastes half its compute on easy timesteps at the extremes.</p>
+    <p>Sampling the timesteps uniformly will spend a large fraction of training time compute learning from uninformative timesteps at the extremes.</p>
 
     <h3 id="importance-weighting">Importance Weighting (P2)</h3>
 
     <p><strong>P2 weighting</strong> (Perception Prioritized, <a href="https://arxiv.org/abs/2204.00227" target="_blank">Choi et al. 2022</a>) reweights the loss by $1/(1 + \text{SNR}(t))$, which upweights mid-noise timesteps where the gradients are most useful. This improves <a href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance" target="_blank">FID</a> scores, especially on complex datasets like CIFAR-10 and ImageNet.</p>
 
-    <p><strong>Practical advice:</strong> start with uniform sampling. It's simpler and works well for MNIST. Switch to importance weighting if you're training on harder datasets and want to squeeze out better FID.</p>
+    <p><strong>Practical advice:</strong> start with uniform sampling. It's simpler and works well in practice. Switch to importance weighting if you're training on harder datasets and want to squeeze out better FID.</p>
 
     <!-- Section 5: Gradient Clipping -->
     <h2 id="gradient-clipping"><span class="section-number">6.4</span> Gradient Clipping</h2>
@@ -199,6 +199,50 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
       Gradient clipping doesn't change the direction of the optimization step; it only prevents catastrophically large steps. Think of it as a speed limit: the optimizer can go anywhere, but it can't go there too fast. This is standard practice in essentially all modern diffusion training.
     </div>
 
+    <!-- Gradient clipping visualization -->
+    <div style="margin: 32px 0; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
+      <svg id="gradClip-svg" viewBox="0 0 560 280" style="width: 100%; height: auto; display: block;">
+        <!-- Background grid -->
+        <line x1="280" y1="20" x2="280" y2="260" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        <line x1="40" y1="140" x2="520" y2="140" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+        <!-- max_norm circle -->
+        <circle cx="280" cy="140" r="90" fill="none" stroke="rgba(45,212,191,0.25)" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="280" y="42" text-anchor="middle" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="11">max_norm = 1.0</text>
+
+        <!-- Original gradient (too large) -->
+        <line x1="280" y1="140" x2="436" y2="52" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <polygon points="436,52 424,62 430,56" fill="#f97316" opacity="0.35"/>
+        <text x="442" y="50" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="11" opacity="0.5">‖g‖ = 1.8</text>
+
+        <!-- Dashed projection line -->
+        <line x1="280" y1="140" x2="436" y2="52" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="3,5"/>
+
+        <!-- Clipped gradient (same direction, within circle) -->
+        <line x1="280" y1="140" x2="358" y2="91" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round"/>
+        <polygon points="358,91 345,98 350,93" fill="#2dd4bf"/>
+        <text x="364" y="88" fill="#2dd4bf" font-family="'IBM Plex Mono', monospace" font-size="11">‖g‖ = 1.0</text>
+
+        <!-- Second example: gradient within norm (no clipping needed) -->
+        <line x1="280" y1="140" x2="224" y2="188" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+        <polygon points="224,188 234,179 230,184" fill="#2dd4bf" opacity="0.6"/>
+        <text x="188" y="206" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="11">‖g‖ = 0.7</text>
+        <text x="188" y="220" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">(unchanged)</text>
+
+        <!-- Origin dot -->
+        <circle cx="280" cy="140" r="3" fill="#e8dcc8"/>
+
+        <!-- Legend -->
+        <line x1="40" y1="262" x2="56" y2="262" stroke="#f97316" stroke-width="2" opacity="0.5"/>
+        <text x="62" y="266" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">original gradient</text>
+        <line x1="200" y1="262" x2="216" y2="262" stroke="#2dd4bf" stroke-width="2"/>
+        <text x="222" y="266" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">after clipping</text>
+      </svg>
+      <div style="text-align: center; margin-top: 8px;">
+        <span style="color: #6b7280; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">Gradient clipping rescales vectors that exceed max_norm, preserving direction</span>
+      </div>
+    </div>
+
     <!-- Section 6: EMA -->
     <h2 id="ema"><span class="section-number">6.5</span> EMA &mdash; Exponential Moving Average</h2>
 
@@ -213,6 +257,116 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     $$\theta_{\text{ema}} = \lambda \cdot \theta_{\text{ema}} + (1 - \lambda) \cdot \theta$$
 
     <p>With $\lambda = 0.9999$ (the standard decay), the EMA model changes <em>very</em> slowly. Each training step nudges it by just 0.01% toward the current weights. This heavy smoothing is what makes EMA so effective.</p>
+
+    <!-- EMA visualization -->
+    <div style="margin: 32px 0; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
+      <canvas id="ema-canvas" style="width: 100%; height: 220px; display: block;"></canvas>
+      <div style="display: flex; justify-content: center; gap: 24px; margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">
+        <span><span style="display: inline-block; width: 16px; height: 2px; background: rgba(249,115,22,0.5); vertical-align: middle; margin-right: 6px;"></span><span style="color: #6b7280;">training weights θ</span></span>
+        <span><span style="display: inline-block; width: 16px; height: 2px; background: #2dd4bf; vertical-align: middle; margin-right: 6px;"></span><span style="color: #6b7280;">EMA weights θ<sub>ema</sub></span></span>
+        <span><span style="display: inline-block; width: 16px; height: 1px; background: rgba(255,255,255,0.15); vertical-align: middle; margin-right: 6px; border-top: 1px dashed rgba(255,255,255,0.15);"></span><span style="color: #6b7280;">optimum</span></span>
+      </div>
+    </div>
+    <script>
+    (function() {
+      const canvas = document.getElementById('ema-canvas');
+      const ctx = canvas.getContext('2d');
+
+      function resize() {
+        const container = canvas.parentElement;
+        const w = container.clientWidth - 48;
+        const dpr = window.devicePixelRatio || 1;
+        const h = 220;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function draw() {
+        const w = parseFloat(canvas.style.width);
+        const h = parseFloat(canvas.style.height);
+        ctx.clearRect(0, 0, w, h);
+
+        const padL = 40, padR = 20, padT = 20, padB = 30;
+        const plotW = w - padL - padR;
+        const plotH = h - padT - padB;
+        const N = 200;
+
+        // Generate training weights: oscillating, converging toward optimum
+        const optimum = 0.5;
+        const trainWeights = [];
+        const emaWeights = [];
+        let ema = 0.1; // start far from optimum
+
+        for (let i = 0; i < N; i++) {
+          const t = i / N;
+          // Decaying oscillation around optimum
+          const envelope = 0.35 * Math.exp(-2.5 * t);
+          const osc = Math.sin(t * 45 + 1.2) * envelope;
+          const noise = (Math.sin(t * 127.3) * 0.3 + Math.sin(t * 73.7) * 0.2) * envelope * 0.6;
+          const drift = optimum + (0.1 - optimum) * Math.exp(-4 * t);
+          const train = drift + osc + noise;
+          trainWeights.push(train);
+
+          // EMA with decay 0.95 (exaggerated for visibility — real 0.9999 would be even smoother)
+          ema = 0.95 * ema + 0.05 * train;
+          emaWeights.push(ema);
+        }
+
+        // Y range
+        const allVals = trainWeights.concat(emaWeights);
+        const yMin = Math.min(...allVals) - 0.05;
+        const yMax = Math.max(...allVals) + 0.05;
+
+        function toX(i) { return padL + (i / (N - 1)) * plotW; }
+        function toY(v) { return padT + plotH - ((v - yMin) / (yMax - yMin)) * plotH; }
+
+        // Optimum line (dashed)
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padL, toY(optimum));
+        ctx.lineTo(padL + plotW, toY(optimum));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Axis labels
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '11px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('training step', padL + plotW / 2, h - 4);
+        ctx.textAlign = 'right';
+        ctx.fillText('optimum', padL - 6, toY(optimum) + 4);
+
+        // Training weights line (jagged, orange, semi-transparent)
+        ctx.strokeStyle = 'rgba(249, 115, 22, 0.45)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const x = toX(i), y = toY(trainWeights[i]);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // EMA weights line (smooth, teal, solid)
+        ctx.strokeStyle = '#2dd4bf';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const x = toX(i), y = toY(emaWeights[i]);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      resize();
+      draw();
+      window.addEventListener('resize', function() { resize(); draw(); });
+    })();
+    </script>
 
     <h3 id="ema-implementation">Implementation</h3>
 
