@@ -326,15 +326,15 @@
         const rows = 2;
         const circleTop = 32;
         const circleArea = h - circleTop - 16;
-        const cellW = rightW / cols;
-        const cellH = circleArea / rows;
-        const radius = Math.min(cellW, cellH) * 0.33;
+        const pCellW = rightW / cols;
+        const pCellH = circleArea / rows;
+        const radius = Math.min(pCellW, pCellH) * 0.33;
 
         for (let p = 0; p < PHASOR_COUNT; p++) {
           const col = p % cols;
           const row = Math.floor(p / cols);
-          const cx = rightX + cellW * (col + 0.5);
-          const cy = circleTop + cellH * (row + 0.5);
+          const cx = rightX + pCellW * (col + 0.5);
+          const cy = circleTop + pCellH * (row + 0.5);
           const freqIdx = PHASOR_INDICES[p];
 
           const freq = 1.0 / Math.pow(10000, (2 * freqIdx) / DIM);
