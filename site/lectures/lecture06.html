@@ -71,11 +71,9 @@
 
     <h3 id="normalize-to-minus-one">Normalize to [&minus;1, 1], Not [0, 1]</h3>
 
-    <p>Your model predicts noise $\epsilon \sim \mathcal{N}(0, I)$: mean-zero values, symmetric around the origin.</p>
+    <p>The model we've described so far predicts noise $\epsilon \sim \mathcal{N}(0, I)$, which is mean-zero and symmetric around the origin. Images in $[0, 1]$ are strictly positive, so the model has to simultaneously learn the signal's offset and the noise pattern. Therefore, a common strategy is to normalize images to $[-1, 1]$, centering the data around zero to match the noise distribution's symmetry.</p>
 
-    <p>If your images live in $[0, 1]$, there's a mismatch: the model has to learn to predict symmetric noise from an asymmetric signal. This makes optimization harder than it needs to be.</p>
-
-    <p>Normalizing images to $[-1, 1]$ fixes the mismatch. The transform pipeline is:</p>
+    <p>The transform pipeline is:</p>
 
     <div class="pseudocode">
 transform = <span class="type">Compose</span>([
@@ -145,7 +143,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <span class="keyword">return</span> loss.<span class="function">item</span>()
     </div>
 
-    <p>A critical implementation detail: the schedule tensors (<code>sqrt_alphas_cumprod</code>, etc.) must live on the same device as your model. Use <code>prepare_schedule()</code> from <code>utils/schedule.py</code> to move everything at once.</p>
+    <p>Recall from Lecture 3 that the full ELBO objective contains $T$ weighted KL divergence terms, one per timestep. Ho et al. showed that dropping the per-timestep weighting and using a flat MSE between predicted and actual noise works better in practice. That simplified objective is exactly what step 5 in the code above computes.</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
@@ -186,7 +184,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <!-- Section 5: Gradient Clipping -->
     <h2 id="gradient-clipping"><span class="section-number">6.4</span> Gradient Clipping</h2>
 
-    <p>Diffusion training loss can spike, especially in the first few hundred steps when the model is still learning basic structure, or when an unlucky batch happens to contain all high-noise timesteps. Without protection, a single bad batch can produce enormous gradients that blow up your model weights.</p>
+    <p>Diffusion training loss can spike, especially in the first few hundred steps when the model is still learning basic structure, or when an unlucky batch happens to contain all high-noise timesteps. Without protection, a single bad batch can produce enormous gradients that blow up the model weights.</p>
 
     <p>The fix is <a href="https://en.wikipedia.org/wiki/Gradient_clipping" target="_blank">gradient clipping</a>:</p>
 
@@ -269,7 +267,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p><strong>Symptom:</strong> Loss stays flat for the first 100&ndash;1,000 steps. <strong>Cause:</strong> Totally normal. The model is building basic representations. Don't panic, don't restart.</p>
 
     <h3 id="color-shift">Color Shift in Samples</h3>
-    <p><strong>Symptom:</strong> Generated images have a gray or washed-out appearance. <strong>Cause:</strong> Normalization mismatch: data is in $[0, 1]$ but the model expects $[-1, 1]$, or your denormalization is wrong. <strong>Fix:</strong> Double-check the entire normalization pipeline: training data, sampling output, display code.</p>
+    <p><strong>Symptom:</strong> Generated images have a gray or washed-out appearance. <strong>Cause:</strong> Normalization mismatch: data is in $[0, 1]$ but the model expects $[-1, 1]$, or the denormalization step is wrong. <strong>Fix:</strong> Double-check the entire normalization pipeline: training data, sampling output, display code.</p>
 
     <h3 id="nan-loss">NaN Loss</h3>
     <p><strong>Symptom:</strong> Loss becomes <code>NaN</code> and never recovers. <strong>Cause:</strong> Usually overflow in sinusoidal time embeddings or divide-by-zero in the noise schedule. <strong>Fix:</strong> Ensure everything is in <code>float32</code>. Check schedule values at the boundaries ($t = 0$ and $t = T$).</p>
