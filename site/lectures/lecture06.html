@@ -201,42 +201,59 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <!-- Gradient clipping visualization -->
     <div style="max-width: 70%; margin: 32px auto; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
-      <svg id="gradClip-svg" viewBox="0 0 560 280" style="width: 100%; height: auto; display: block;">
-        <!-- Background grid -->
-        <line x1="280" y1="20" x2="280" y2="260" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
-        <line x1="40" y1="140" x2="520" y2="140" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+      <svg id="gradClip-svg" viewBox="0 0 560 300" style="width: 100%; height: auto; display: block;">
+        <defs>
+          <marker id="ah-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#2dd4bf"/></marker>
+          <marker id="ah-teal-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#2dd4bf" opacity="0.55"/></marker>
+          <marker id="ah-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#f97316" opacity="0.35"/></marker>
+        </defs>
 
-        <!-- max_norm circle -->
-        <circle cx="280" cy="140" r="90" fill="none" stroke="rgba(45,212,191,0.25)" stroke-width="1.5" stroke-dasharray="6,4"/>
-        <text x="280" y="42" text-anchor="middle" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="11">max_norm = 1.0</text>
+        <!-- Background crosshairs -->
+        <line x1="280" y1="20" x2="280" y2="270" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+        <line x1="30" y1="150" x2="530" y2="150" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
 
-        <!-- Original gradient (too large) -->
-        <line x1="280" y1="140" x2="436" y2="52" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
-        <polygon points="436,52 424,62 430,56" fill="#f97316" opacity="0.35"/>
-        <text x="442" y="50" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="11" opacity="0.5">‖g‖ = 1.8</text>
+        <!-- max_norm circle (radius 90 = norm 1.0) -->
+        <circle cx="280" cy="150" r="90" fill="none" stroke="rgba(45,212,191,0.25)" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="280" y="50" text-anchor="middle" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="11">max_norm = 1.0</text>
 
-        <!-- Dashed projection line -->
-        <line x1="280" y1="140" x2="436" y2="52" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="3,5"/>
+        <!-- V1: ‖g‖=0.3, angle 250° (lower-left, short) — no clipping -->
+        <line x1="280" y1="150" x2="271" y2="175" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" opacity="0.55" marker-end="url(#ah-teal-dim)"/>
+        <text x="252" y="192" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">0.3</text>
 
-        <!-- Clipped gradient (same direction, within circle) -->
-        <line x1="280" y1="140" x2="358" y2="91" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round"/>
-        <polygon points="358,91 345,98 350,93" fill="#2dd4bf"/>
-        <text x="364" y="88" fill="#2dd4bf" font-family="'IBM Plex Mono', monospace" font-size="11">‖g‖ = 1.0</text>
+        <!-- V2: ‖g‖=0.6, angle 325° (lower-right, medium) — no clipping -->
+        <line x1="280" y1="150" x2="324" y2="181" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" opacity="0.55" marker-end="url(#ah-teal-dim)"/>
+        <text x="328" y="196" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">0.6</text>
 
-        <!-- Second example: gradient within norm (no clipping needed) -->
-        <line x1="280" y1="140" x2="224" y2="188" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
-        <polygon points="224,188 234,179 230,184" fill="#2dd4bf" opacity="0.6"/>
-        <text x="188" y="206" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="11">‖g‖ = 0.7</text>
-        <text x="188" y="220" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">(unchanged)</text>
+        <!-- V3: ‖g‖=0.9, angle 105° (up-left, close to boundary) — no clipping -->
+        <line x1="280" y1="150" x2="259" y2="72" stroke="#2dd4bf" stroke-width="2" stroke-linecap="round" opacity="0.55" marker-end="url(#ah-teal-dim)"/>
+        <text x="234" y="66" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">0.9</text>
+
+        <!-- V4: ‖g‖=1.5 → 1.0, angle 25° (upper-right, mild clip) -->
+        <!-- Original (faded orange) -->
+        <line x1="280" y1="150" x2="402" y2="93" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.3" marker-end="url(#ah-orange)"/>
+        <text x="406" y="88" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="10" opacity="0.5">1.5</text>
+        <!-- Clipped (teal) -->
+        <line x1="280" y1="150" x2="362" y2="112" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round" marker-end="url(#ah-teal)"/>
+        <text x="366" y="108" fill="#2dd4bf" font-family="'IBM Plex Mono', monospace" font-size="10">→ 1.0</text>
+
+        <!-- V5: ‖g‖=3.0 → 1.0, angle 155° (upper-left, extreme clip) -->
+        <!-- Original (faded orange, very long) -->
+        <line x1="280" y1="150" x2="35" y2="36" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.3" marker-end="url(#ah-orange)"/>
+        <text x="38" y="30" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="10" opacity="0.5">3.0</text>
+        <!-- Clipped (teal) -->
+        <line x1="280" y1="150" x2="198" y2="112" stroke="#2dd4bf" stroke-width="2.5" stroke-linecap="round" marker-end="url(#ah-teal)"/>
+        <text x="172" y="108" fill="#2dd4bf" font-family="'IBM Plex Mono', monospace" font-size="10">→ 1.0</text>
 
         <!-- Origin dot -->
-        <circle cx="280" cy="140" r="3" fill="#e8dcc8"/>
+        <circle cx="280" cy="150" r="3" fill="#e8dcc8"/>
 
         <!-- Legend -->
-        <line x1="40" y1="262" x2="56" y2="262" stroke="#f97316" stroke-width="2" opacity="0.5"/>
-        <text x="62" y="266" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">original gradient</text>
-        <line x1="200" y1="262" x2="216" y2="262" stroke="#2dd4bf" stroke-width="2"/>
-        <text x="222" y="266" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">after clipping</text>
+        <line x1="100" y1="284" x2="116" y2="284" stroke="#2dd4bf" stroke-width="2" opacity="0.55"/>
+        <text x="122" y="288" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">within budget</text>
+        <line x1="248" y1="284" x2="264" y2="284" stroke="#f97316" stroke-width="2" opacity="0.35"/>
+        <text x="270" y="288" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">original</text>
+        <line x1="340" y1="284" x2="356" y2="284" stroke="#2dd4bf" stroke-width="2.5"/>
+        <text x="362" y="288" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">clipped</text>
       </svg>
       <div style="text-align: center; margin-top: 8px;">
         <span style="color: #6b7280; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">Gradient clipping rescales vectors that exceed max_norm, preserving direction</span>
@@ -400,7 +417,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>EMA (Exponential Moving Average).</strong> A shadow copy of model parameters, updated after each training step as $\theta_{\text{ema}} \leftarrow \htmlData{tip=Keep 99.99% of the old shadow weights and blend in 0.01% of the current training weights}{0.9999 \cdot \theta_{\text{ema}} + 0.0001 \cdot \theta}$. Use EMA weights for sampling and evaluation. Use regular weights for gradient computation and optimizer updates. Never compute gradients through the EMA model.
+      <strong>EMA (Exponential Moving Average).</strong> A shadow copy of model parameters, updated after each training step as $\theta_{\text{ema}} \leftarrow \htmlData{tip=Keep 99.99 percent of the old shadow weights and blend in 0.01 percent of the current training weights}{0.9999 \cdot \theta_{\text{ema}} + 0.0001 \cdot \theta}$. Use EMA weights for sampling and evaluation. Use regular weights for gradient computation and optimizer updates. Never compute gradients through the EMA model.
     </div>
 
     <!-- Section 7: Learning Rate Schedule -->
