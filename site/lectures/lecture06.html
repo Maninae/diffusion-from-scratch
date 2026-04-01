@@ -149,7 +149,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
       <div class="callout-label">Definition</div>
       <strong>The training loss.</strong> The simplified DDPM objective is:
 
-      $$L_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}}\left[ \left\| \boldsymbol{\epsilon} - \htmlData{tip=The neural network (with weights θ) predicting what noise was added}{\boldsymbol{\epsilon}_\theta\!\left(\htmlData{tip=The noisy image at timestep t, constructed from the clean image and sampled noise}{\sqrt{\bar{\alpha}_t}\, \mathbf{x}_0 + \sqrt{1-\bar{\alpha}_t}\, \boldsymbol{\epsilon}},\; t\right)} \right\|^2 \right]$$
+      $$L_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}}\left[ \left\| \boldsymbol{\epsilon} - \htmlData{tip=The neural network with learned weights θ, predicting what noise was added}{\boldsymbol{\epsilon}_\theta}\!\left(\htmlData{tip=The noisy image at timestep t — constructed from the clean image and sampled noise}{\sqrt{\bar{\alpha}_t}\, \mathbf{x}_0 + \sqrt{1-\bar{\alpha}_t}\, \boldsymbol{\epsilon}},\; t\right) \right\|^2 \right]$$
 
       In words: sample a clean image, add noise at a random timestep, predict the noise, and minimize the squared error between the predicted and actual noise.
     </div>
