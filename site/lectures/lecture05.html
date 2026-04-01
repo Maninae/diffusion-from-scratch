@@ -283,16 +283,27 @@
 
         ctx.font = fontSize + 'px "IBM Plex Mono", monospace';
 
-        // Draw opening bracket [
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = 'bold ' + Math.min(120, gridBottom - gridTop) + 'px "IBM Plex Mono", monospace';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('[', leftX, (gridTop + gridBottom) / 2);
+        // Draw thin mathematical brackets [ ]
+        var bPad = 4;
+        var bSerif = 6;
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1.5;
 
-        // Draw closing bracket ]
-        ctx.textAlign = 'right';
-        ctx.fillText(']', leftX + leftW, (gridTop + gridBottom) / 2);
+        // Opening bracket [
+        ctx.beginPath();
+        ctx.moveTo(leftX + bSerif + bPad, gridTop - bPad);
+        ctx.lineTo(leftX + bPad, gridTop - bPad);
+        ctx.lineTo(leftX + bPad, gridBottom + bPad);
+        ctx.lineTo(leftX + bSerif + bPad, gridBottom + bPad);
+        ctx.stroke();
+
+        // Closing bracket ]
+        ctx.beginPath();
+        ctx.moveTo(leftX + leftW - bSerif - bPad, gridTop - bPad);
+        ctx.lineTo(leftX + leftW - bPad, gridTop - bPad);
+        ctx.lineTo(leftX + leftW - bPad, gridBottom + bPad);
+        ctx.lineTo(leftX + leftW - bSerif - bPad, gridBottom + bPad);
+        ctx.stroke();
 
         // Draw numeric values
         ctx.font = fontSize + 'px "IBM Plex Mono", monospace';
