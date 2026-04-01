@@ -149,7 +149,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
       <div class="callout-label">Definition</div>
       <strong>The training loss.</strong> The simplified DDPM objective is:
 
-      $$L_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}}\left[ \left\| \boldsymbol{\epsilon} - \boldsymbol{\epsilon}_\theta\!\left(\sqrt{\bar{\alpha}_t}\, \mathbf{x}_0 + \sqrt{1-\bar{\alpha}_t}\, \boldsymbol{\epsilon},\; t\right) \right\|^2 \right]$$
+      $$L_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}}\left[ \left\| \boldsymbol{\epsilon} - \htmlData{tip=The neural network (with weights θ) predicting what noise was added}{\boldsymbol{\epsilon}_\theta\!\left(\htmlData{tip=The noisy image at timestep t, constructed from the clean image and sampled noise}{\sqrt{\bar{\alpha}_t}\, \mathbf{x}_0 + \sqrt{1-\bar{\alpha}_t}\, \boldsymbol{\epsilon}},\; t\right)} \right\|^2 \right]$$
 
       In words: sample a clean image, add noise at a random timestep, predict the noise, and minimize the squared error between the predicted and actual noise.
     </div>
@@ -233,7 +233,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>EMA (Exponential Moving Average).</strong> A shadow copy of model parameters, updated after each training step as $\theta_{\text{ema}} \leftarrow 0.9999 \cdot \theta_{\text{ema}} + 0.0001 \cdot \theta$. Use EMA weights for sampling and evaluation. Use regular weights for gradient computation and optimizer updates. Never compute gradients through the EMA model.
+      <strong>EMA (Exponential Moving Average).</strong> A shadow copy of model parameters, updated after each training step as $\theta_{\text{ema}} \leftarrow \htmlData{tip=Keep 99.99% of the old shadow weights and blend in 0.01% of the current training weights}{0.9999 \cdot \theta_{\text{ema}} + 0.0001 \cdot \theta}$. Use EMA weights for sampling and evaluation. Use regular weights for gradient computation and optimizer updates. Never compute gradients through the EMA model.
     </div>
 
     <!-- Section 7: Learning Rate Schedule -->

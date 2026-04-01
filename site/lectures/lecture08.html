@@ -173,7 +173,7 @@
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>Classifier Guidance.</strong> Train a separate classifier $p_\phi(y \mid x_t)$ on noisy images at all noise levels. During sampling, use its gradients to steer the denoising process toward the desired class.
+      <strong>Classifier Guidance.</strong> Train a separate classifier $\htmlData{tip=A separately trained classifier predicting the probability of class y from noisy image x_t}{p_\phi(y \mid x_t)}$ on noisy images at all noise levels. During sampling, use its gradients to steer the denoising process toward the desired class.
     </div>
 
     <h3 id="classifier-guidance-how">How It Works</h3>
