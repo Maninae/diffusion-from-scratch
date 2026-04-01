@@ -200,7 +200,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     </div>
 
     <!-- Gradient clipping visualization -->
-    <div style="margin: 32px 0; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
+    <div style="max-width: 70%; margin: 32px auto; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
       <svg id="gradClip-svg" viewBox="0 0 560 280" style="width: 100%; height: auto; display: block;">
         <!-- Background grid -->
         <line x1="280" y1="20" x2="280" y2="260" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
@@ -259,7 +259,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p>With $\lambda = 0.9999$ (the standard decay), the EMA model changes <em>very</em> slowly. Each training step nudges it by just 0.01% toward the current weights. This heavy smoothing is what makes EMA so effective.</p>
 
     <!-- EMA visualization -->
-    <div style="margin: 32px 0; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
+    <div style="max-width: 70%; margin: 32px auto; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
       <canvas id="ema-canvas" style="width: 100%; height: 220px; display: block;"></canvas>
       <div style="display: flex; justify-content: center; gap: 24px; margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">
         <span><span style="display: inline-block; width: 16px; height: 2px; background: rgba(249,115,22,0.5); vertical-align: middle; margin-right: 6px;"></span><span style="color: #6b7280;">training weights θ</span></span>
@@ -294,7 +294,15 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
         const plotH = h - padT - padB;
         const N = 200;
 
-        // Generate training weights: oscillating, converging toward optimum
+        // Seeded PRNG for deterministic "random" noise
+        let seed = 42;
+        function rand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
+        function randNorm() { // Box-Muller for Gaussian-like noise
+          const u1 = rand(), u2 = rand();
+          return Math.sqrt(-2 * Math.log(u1 + 1e-10)) * Math.cos(2 * Math.PI * u2);
+        }
+
+        // Generate training weights: noisy, spiky, like a real TensorBoard curve
         const optimum = 0.5;
         const trainWeights = [];
         const emaWeights = [];
@@ -302,12 +310,17 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
         for (let i = 0; i < N; i++) {
           const t = i / N;
-          // Decaying oscillation around optimum
-          const envelope = 0.35 * Math.exp(-2.5 * t);
-          const osc = Math.sin(t * 45 + 1.2) * envelope;
-          const noise = (Math.sin(t * 127.3) * 0.3 + Math.sin(t * 73.7) * 0.2) * envelope * 0.6;
+          // Underlying trend: converge toward optimum
           const drift = optimum + (0.1 - optimum) * Math.exp(-4 * t);
-          const train = drift + osc + noise;
+          // Decaying envelope for noise amplitude
+          const envelope = 0.28 * Math.exp(-2.0 * t) + 0.04;
+          // High-frequency random noise (spiky, erratic)
+          const hiFreqNoise = randNorm() * envelope;
+          // Occasional sharp spikes (5% chance of a 2-3x jump)
+          const spike = (rand() < 0.05) ? randNorm() * envelope * 2.5 : 0;
+          // Slower oscillation for drift character
+          const slowOsc = Math.sin(t * 18 + 1.2) * envelope * 0.3;
+          const train = drift + hiFreqNoise + spike + slowOsc;
           trainWeights.push(train);
 
           // EMA with decay 0.95 (exaggerated for visibility — real 0.9999 would be even smoother)
