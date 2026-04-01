@@ -157,7 +157,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
     <!-- Section 4: Timestep Sampling -->
     <h2 id="timestep-sampling"><span class="section-number">6.3</span> Timestep Sampling Strategies</h2>
 
-    <p>Algorithm 1 says "sample $t$ uniformly." This is the standard approach and works well, but it's worth understanding why it's suboptimal, and what alternatives exist.</p>
+    <p>In the training loop above, step 1 samples timestep $t$ uniformly from $1$ to $T$, so the model sees every noise level equally often. This works well in practice, but not all timesteps contribute equally to learning: intermediate noise levels tend to carry more signal than the extremes. That asymmetry opens the door to smarter sampling strategies.</p>
 
     <h3 id="uniform-sampling">Uniform Sampling</h3>
 
@@ -165,7 +165,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
 
     <h3 id="why-uniform-is-suboptimal">Why Uniform Is Suboptimal</h3>
 
-    <p>Not all timesteps are equally informative. Consider what the model sees at different noise levels:</p>
+    <p>Not all timesteps are equally valuable for the model to learn from. Consider what the model sees at different noise levels:</p>
 
     <ul>
       <li><strong>Low $t$ (little noise):</strong> the image is nearly clean. Predicting the (small amount of) noise is easy; the model barely needs to do anything. Loss is small, gradients are uninformative.</li>
@@ -202,7 +202,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <!-- Section 6: EMA -->
     <h2 id="ema"><span class="section-number">6.5</span> EMA &mdash; Exponential Moving Average</h2>
 
-    <p>This may seem counterintuitive, but the best weights for <em>generating samples</em> are not the current training weights. They're a smoothed average of all recent training weights.</p>
+    <p>With gradient clipping keeping training stable, we can turn to a subtler question: which weights should we actually use for generation? Counterintuitively, the best weights for <em>generating samples</em> are not the current training weights. They're a smoothed average of all recent training weights.</p>
 
     <h3 id="why-ema">Why EMA Helps</h3>
 
