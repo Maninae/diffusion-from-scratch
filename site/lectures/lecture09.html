@@ -107,7 +107,7 @@
     <!-- Section 9.2 -->
     <h2 id="the-guidance-formula"><span class="section-number">9.2</span> The Guidance Formula</h2>
 
-    <p>At inference time, for each denoising step, we run the model <em>twice</em>: once with the class label, once with the null token. Then we extrapolate in the direction of the conditioning signal:</p>
+    <p>Now that training has given the model both conditional and unconditional skills, here's how we exploit them at inference. For each denoising step, we run the model <em>twice</em>: once with the class label, once with the null token. Then we extrapolate in the direction of the conditioning signal:</p>
 
     $$\hat{\epsilon} = \epsilon_\text{uncond} + s \cdot (\epsilon_\text{cond} - \epsilon_\text{uncond})$$
 

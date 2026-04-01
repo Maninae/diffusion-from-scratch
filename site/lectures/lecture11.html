@@ -82,7 +82,7 @@
     <!-- Section 2: Three Parameterizations -->
     <h2 id="three-parameterizations"><span class="section-number">11.2</span> Three Prediction Parameterizations</h2>
 
-    <p>All three approaches below are <strong>mathematically equivalent</strong>; you can convert freely between them given $(x_t, t)$. They differ in <em>numerical stability</em> and <em>gradient behavior</em> across timesteps.</p>
+    <p>With that uneven behavior of $\varepsilon$-prediction in mind, let's look at the alternatives. All three approaches below are <strong>mathematically equivalent</strong>; you can convert freely between them given $(x_t, t)$. They differ in <em>numerical stability</em> and <em>gradient behavior</em> across timesteps.</p>
 
     <h3 id="epsilon-prediction">&epsilon;-Prediction (DDPM Standard)</h3>
 
@@ -190,6 +190,8 @@
 
     <!-- Section 4: When to Use Which -->
     <h2 id="when-to-use-which"><span class="section-number">11.4</span> When to Use Which Parameterization</h2>
+
+    <p>Since any parameterization can be converted to any other, the choice comes down to training dynamics and practical considerations.</p>
 
     <ul>
       <li><strong>$\varepsilon$-prediction:</strong> the safe default. Use when following DDPM tutorials, starting a new project, or when simplicity matters more than peak performance. This is what we've used throughout the course.</li>
