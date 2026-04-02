@@ -44,7 +44,7 @@
       <span class="lecture-tag">Training Loop</span>
       <span class="lecture-tag">EMA</span>
       <span class="lecture-tag">Gradient Clipping</span>
-      <span class="lecture-tag">MNIST</span>
+      <span class="lecture-tag">Implementation</span>
       <span class="lecture-tag">Checkpointing</span>
     </div>
   </div>
@@ -80,7 +80,7 @@ transform = <span class="type">Compose</span>([
     <span class="function">ToTensor</span>(),                    <span class="comment"># [0, 255] &rarr; [0, 1]</span>
     <span class="function">Normalize</span>([<span class="number">0.5</span>], [<span class="number">0.5</span>]),       <span class="comment"># [0, 1] &rarr; [-1, 1]</span>
 ])
-dataset = <span class="function">MNIST</span>(root=<span class="string">'./data'</span>, train=<span class="keyword">True</span>, transform=transform)
+dataset = <span class="function">load_dataset</span>(<span class="string">'./data'</span>, train=<span class="keyword">True</span>, transform=transform)  <span class="comment"># e.g., MNIST, CIFAR-10, etc.</span>
 dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span class="number">64</span>, shuffle=<span class="keyword">True</span>)
     </div>
 

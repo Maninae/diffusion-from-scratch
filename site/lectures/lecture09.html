@@ -84,7 +84,7 @@
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      The training change is minimal: no new loss function, architecture, or second model. You randomly drop labels during training. The null token at index <code>num_classes</code> (e.g., index 10 for MNIST digits 0&ndash;9) is what tells the model "there is no class; predict noise unconditionally."
+      The training change is minimal: no new loss function, architecture, or second model. You randomly drop labels during training. The null token at index <code>num_classes</code> (e.g., index 10 for 10 classes labeled 0&ndash;9) is what tells the model "there is no class; predict noise unconditionally."
     </div>
 
     <div class="pseudocode">

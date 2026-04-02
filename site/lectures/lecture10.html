@@ -68,18 +68,18 @@
     <!-- Section 1: The Resolution Bottleneck -->
     <h2 id="resolution-bottleneck"><span class="section-number">10.1</span> The Resolution Bottleneck</h2>
 
-    <p>Everything we've built so far works well on small images like 28&times;28 MNIST. But real-world image generation happens at 512&times;512 or higher. Let's see why that's a problem.</p>
+    <p>Everything we've built so far works well on small images like 28&times;28 grayscale. But real-world image generation happens at 512&times;512 or higher. Let's see why that's a problem.</p>
 
     <p>The pixel count at different resolutions tells the story:</p>
 
     <ul>
-      <li><strong>28&times;28&times;1</strong> (MNIST): 784 values</li>
+      <li><strong>28&times;28&times;1</strong> (grayscale): 784 values</li>
       <li><strong>32&times;32&times;3</strong> (CIFAR-10): 3,072 values</li>
       <li><strong>256&times;256&times;3</strong>: 196,608 values</li>
       <li><strong>512&times;512&times;3</strong>: 786,432 values</li>
     </ul>
 
-    <p>A U-Net handling 784 values (28&times;28 MNIST) runs comfortably. But at 512&times;512, it's processing <strong>786K pixel values per denoising step</strong>, and we need hundreds of steps. The model size isn't the bottleneck; it's the <em>feature map sizes</em> flowing through the network.</p>
+    <p>A U-Net handling 784 values (28&times;28) runs comfortably. But at 512&times;512, it's processing <strong>786K pixel values per denoising step</strong>, and we need hundreds of steps. The model size isn't the bottleneck; it's the <em>feature map sizes</em> flowing through the network.</p>
 
     <h3 id="attention-cost">The Attention Problem</h3>
 
@@ -213,7 +213,7 @@ z_0 = <span class="function">ddim_sample</span>(diffusion_model, z_T, schedule, 
 images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># decode back to pixel space: (B, 3, 512, 512)</span>
     </div>
 
-    <p>Notice how little changes from the MNIST pipeline in Lectures 3&ndash;7. The forward process, training loop, and sampling algorithm are <em>identical</em>; we've just swapped the data from pixels to latents.</p>
+    <p>Notice how little changes from the pixel-space pipeline in Lectures 3&ndash;7. The forward process, training loop, and sampling algorithm are <em>identical</em>; we've just swapped the data from pixels to latents.</p>
 
     <!-- Section 4: Stable Diffusion Architecture -->
     <h2 id="stable-diffusion"><span class="section-number">10.4</span> The Stable Diffusion Architecture</h2>

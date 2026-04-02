@@ -69,7 +69,7 @@
     <!-- Section 0: Dependencies & Setup -->
     <h2 id="setup"><span class="section-number">7.1</span> Loading the Trained Model</h2>
 
-    <p>This lecture picks up exactly where Lecture 6 left off. We trained a diffusion model on MNIST digits and saved a checkpoint containing both the training weights and the smoothed EMA weights. Now we load that checkpoint and use the model to actually <em>generate</em> images.</p>
+    <p>This lecture picks up exactly where Lecture 6 left off. We trained a diffusion model and saved a checkpoint containing both the training weights and the smoothed EMA weights. Now we load that checkpoint and use the model to actually <em>generate</em> images.</p>
 
     <p><strong>Dependencies:</strong> You'll need concepts from <strong>Lecture 3</strong> (the posterior mean formula $\mu_\theta$ from Section 3.5) and the trained checkpoint from <strong>Lecture 6</strong>.</p>
 
@@ -150,7 +150,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <div class="callout example">
       <div class="callout-label">Example</div>
-      <strong>Concrete numbers for MNIST.</strong> With $T = 1000$ and a cosine schedule, the model runs 1,000 sequential forward passes through the U-Net. On an M1 MacBook (MPS), this takes about 15&ndash;30 seconds per batch of 16 images. On a GPU, it's 2&ndash;5 seconds. This is why accelerated sampling (Section 7.4) matters.
+      <strong>Typical timing.</strong> With $T = 1000$ and a cosine schedule, the model runs 1,000 sequential forward passes through the U-Net. On an M1 MacBook (MPS), this takes about 15&ndash;30 seconds per batch of 16 images. On a GPU, it's 2&ndash;5 seconds. This is why accelerated sampling (Section 7.4) matters.
     </div>
 
     <!-- Section 2: Why Add Noise During Sampling? -->
@@ -309,7 +309,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </ol>
 
     <div class="pseudocode">
-<span class="comment"># Generate 16 MNIST digits with DDIM (50 steps)</span>
+<span class="comment"># Generate 16 images with DDIM (50 steps)</span>
 <span class="keyword">with</span> torch.<span class="function">no_grad</span>():
     samples = <span class="function">ddim_sample</span>(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule, num_steps=<span class="number">50</span>)
     samples = samples.<span class="function">clamp</span>(-<span class="number">1</span>, <span class="number">1</span>)

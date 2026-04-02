@@ -101,8 +101,8 @@
     <p>We then add <strong>2D positional encodings</strong> (learnable or sinusoidal) so each token knows where in the image it came from. Without these, the transformer has no concept of spatial layout; it just sees an unordered bag of tokens.</p>
 
     <div class="callout note">
-      <div class="callout-label">MNIST Note</div>
-      MNIST images are $28 \times 28$, which is not evenly divisible by patch size 8. You have several options: use $p = 2$ (giving $14 \times 14 = 196$ patches), $p = 4$ (giving $7 \times 7 = 49$ patches), $p = 7$ (giving $4 \times 4 = 16$ patches), or pad to $32 \times 32$ first. This is a practical detail you'll hit immediately if you try to implement DiT on MNIST.
+      <div class="callout-label">Small Image Note</div>
+      Small images like $28 \times 28$ are not evenly divisible by patch size 8. You have several options: use $p = 2$ (giving $14 \times 14 = 196$ patches), $p = 4$ (giving $7 \times 7 = 49$ patches), $p = 7$ (giving $4 \times 4 = 16$ patches), or pad to $32 \times 32$ first. This is a practical detail you'll hit immediately when applying DiT to small-resolution datasets.
     </div>
 
     <h3 id="transformer-blocks">Transformer Blocks</h3>
@@ -226,7 +226,7 @@
 
     <h3 id="dit-scaling-results">Scaling Results</h3>
 
-    <p><a href="https://arxiv.org/abs/2212.09748" target="_blank">Peebles and Xie</a> demonstrated clean scaling on <strong>ImageNet 256&times;256</strong> (not MNIST &mdash; these are large-scale results):</p>
+    <p><a href="https://arxiv.org/abs/2212.09748" target="_blank">Peebles and Xie</a> demonstrated clean scaling on <strong>ImageNet 256&times;256</strong>:</p>
 
     <div class="algorithm">
       <div class="algorithm-title">DiT Scaling (ImageNet 256&times;256, Classifier-Free Guidance)</div>
