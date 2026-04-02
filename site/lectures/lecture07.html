@@ -178,6 +178,11 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
       <li>$0 < \eta < 1$: interpolation between the two</li>
     </ul>
 
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
+      DDPM takes 1,000 tiny random steps from noise to image. DDIM realizes that at each step, the model can estimate the final clean image and compute exactly where it should be at the next timestep to stay on track. Since this mapping is deterministic, steps can be skipped: the trajectory is smooth rather than a random walk. The tradeoff is that DDPM's randomness gives diversity (same starting noise, different images), while DDIM's determinism gives speed (50 steps instead of 1,000) and reproducibility (same starting noise, same image every time).
+    </div>
+
     <h3 id="ddim-update">The DDIM Update Rule</h3>
 
     <p>Instead of computing a posterior mean and adding noise, DDIM takes a different approach. At each step:</p>
