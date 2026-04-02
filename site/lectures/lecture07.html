@@ -119,7 +119,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>We are trying to <em>remove</em> noise, so why add <em>more</em> at each step? Three reasons:</p>
 
     <ul>
-      <li><strong>Error correction.</strong> The model's noise prediction at each step is an approximation. Without injected noise, small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. Fresh noise at each step lets the model re-randomize and correct its trajectory.</li>
+      <li><strong>Error correction.</strong> The model's noise prediction at each step is an approximation. Without injected noise, small mispredictions compound, gradually steering the sample away from the data distribution. Fresh noise at each step lets the model re-randomize and correct its trajectory.</li>
       <li><strong>Diversity.</strong> Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. This stochasticity is what makes the model a proper generative model rather than a fixed mapping.</li>
       <li><strong>The deterministic alternative.</strong> Setting $\sigma_t = 0$ removes all noise, producing a deterministic mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$. This loses diversity but gains reproducibility and interpolation, and it also enables step-skipping.</li>
     </ul>
