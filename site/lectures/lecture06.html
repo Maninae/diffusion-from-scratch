@@ -499,59 +499,8 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
       Why save <em>both</em> model and EMA weights? The model weights are what the optimizer updates; you need them to resume training. The EMA weights are the smoothed copy; they produce better samples and are what Lecture 7 loads for generation. Two copies, two purposes.
     </div>
 
-    <!-- Section 11: Putting It All Together -->
-    <h2 id="full-training-script"><span class="section-number">6.9</span> Putting It All Together</h2>
-
-    <p>Here's the complete training pipeline, combining everything from this lecture. This is the script that, given 20 minutes on a GPU (or an hour on CPU), produces a model that generates recognizable images.</p>
-
-    <div class="pseudocode">
-<span class="comment"># Setup</span>
-model = <span class="function">UNet</span>(image_channels=<span class="number">1</span>, base_channels=<span class="number">64</span>, ...).<span class="function">to</span>(device)
-schedule = <span class="function">prepare_schedule</span>(<span class="function">cosine_schedule</span>(T=<span class="number">1000</span>), device)
-optimizer = <span class="function">AdamW</span>(model.<span class="function">parameters</span>(), lr=<span class="number">2e-4</span>)
-ema = <span class="function">EMA</span>(model, decay=<span class="number">0.9999</span>)
-
-<span class="comment"># Training loop</span>
-<span class="keyword">for</span> step <span class="keyword">in</span> <span class="function">range</span>(num_steps):
-    x_0, _ = <span class="function">next</span>(dataloader)           <span class="comment"># (B, 1, 28, 28) in [-1, 1]</span>
-    x_0 = x_0.<span class="function">to</span>(device)
-
-    loss = <span class="function">train_step</span>(model, x_0, optimizer, schedule, device)
-    ema.<span class="function">update</span>(model)
-
-    <span class="keyword">if</span> step % <span class="number">1000</span> == <span class="number">0</span>:
-        <span class="comment"># Generate samples with EMA model for monitoring</span>
-        ema.<span class="function">apply_to</span>(model)
-        samples = <span class="function">ddpm_sample</span>(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule, device)
-        <span class="function">show_images</span>(samples)
-        ema.<span class="function">restore</span>(model)
-        <span class="function">print</span>(f"Step {step}, Loss: {loss:.4f}")
-
-    <span class="keyword">if</span> step % <span class="number">5000</span> == <span class="number">0</span>:
-        <span class="function">save_checkpoint</span>(model, ema, optimizer, schedule, step)
-    </div>
-
-    <h3 id="pytorch-reference">PyTorch Reference Implementation</h3>
-
-    <p>The complete working code lives in the Module 6 notebook. It uses <code>q_sample()</code> from <code>utils.diffusion</code>, the U-Net from <code>utils.unet</code>, and <code>prepare_schedule()</code> from <code>utils.schedule</code>. The training step itself is available as <code>train_step()</code> in <code>utils.diffusion</code> for use in later modules.</p>
-
-    <div class="code-block">
-      <div class="code-block-label">PyTorch</div>
-<span class="keyword">from</span> utils.unet <span class="keyword">import</span> UNet
-<span class="keyword">from</span> utils.diffusion <span class="keyword">import</span> q_sample, train_step
-<span class="keyword">from</span> utils.schedule <span class="keyword">import</span> cosine_schedule, prepare_schedule
-<span class="keyword">from</span> utils.data <span class="keyword">import</span> get_mnist_dataloader, get_device
-<span class="keyword">from</span> utils.visualization <span class="keyword">import</span> show_images, plot_loss_curve
-
-device = get_device()
-model = UNet(image_channels=<span class="number">1</span>, base_channels=<span class="number">64</span>).to(device)
-schedule = prepare_schedule(cosine_schedule(T=<span class="number">1000</span>), device)
-optimizer = torch.optim.AdamW(model.parameters(), lr=<span class="number">2e-4</span>)
-dataloader = get_mnist_dataloader(batch_size=<span class="number">64</span>)
-    </div>
-
-    <!-- Section 12: Looking Ahead -->
-    <h2 id="looking-ahead"><span class="section-number">6.10</span> Looking Ahead</h2>
+    <!-- Section 11: Looking Ahead -->
+    <h2 id="looking-ahead"><span class="section-number">6.9</span> Looking Ahead</h2>
 
     <p>We now have a trained diffusion model and a saved checkpoint. The model can predict the noise in an image at any timestep, but we haven't actually <em>generated</em> any images yet. We've only trained the model; we haven't sampled from it.</p>
 
