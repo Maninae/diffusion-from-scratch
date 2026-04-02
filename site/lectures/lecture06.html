@@ -448,9 +448,13 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <p><strong>This is the most important monitoring tool.</strong> Every 1,000&ndash;5,000 steps, generate a grid of samples using the EMA model and look at them. If you see recognizable images, training is working. If you see blurry blobs, keep training. If you see the same image repeated, you have a bug.</p>
 
+    <p>Visual inspection carries more weight in generative modeling than in discriminative tasks like classification, where accuracy on a held-out set gives a clear signal. The qualities that matter for generated images, such as realism, diversity, and coherence, are inherently subjective and difficult to capture in a single number. Automated metrics like FID measure part of the picture, but what counts as "good" depends on the specific use case, which is why looking at samples remains central to diffusion model development.</p>
+
     <h3 id="loss-curve">The Loss Curve</h3>
 
     <p>The diffusion loss curve is characteristically <strong>noisy and slowly decreasing</strong>. Don't expect a smooth exponential decay like you'd see in classification. Use a moving average (window of 100 steps) to see the trend. The loss is not perfectly correlated with sample quality; a model at loss 0.05 might generate better images than one at loss 0.04. Visual inspection remains the most reliable indicator.</p>
+
+    <p>In practice, the $L_2$ pixel-space loss on a diverse dataset tends to stay jagged and spiky throughout training, never reaching the clean convergence pattern familiar from classification or regression. Yet periodic sample grids will show realism and coherence improving steadily behind that noise. This disconnect between loss value and output quality is one of the more counterintuitive aspects of diffusion training, and it reinforces why visual inspection carries so much weight.</p>
 
     <h3 id="fid">FID &mdash; The Standard Metric</h3>
 
