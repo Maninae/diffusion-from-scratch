@@ -121,7 +121,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
       <li><strong>$\sigma_t^2 = \tilde{\beta}_t = \frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t} \cdot \beta_t$</strong> &mdash; the true posterior variance. Often produces slightly better samples.</li>
     </ul>
 
-    <p>Both are valid. The difference is subtle for MNIST; it matters more for higher-resolution images.</p>
+    <p>Both are valid. The difference is subtle for simple grayscale images; it matters more for higher-resolution datasets.</p>
 
     <h3 id="ddpm-pseudocode">Pseudocode</h3>
 
@@ -293,7 +293,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <p><strong>Dynamic thresholding</strong> (<a href="https://arxiv.org/abs/2205.11487" target="_blank">Saharia et al., 2022</a>) is smarter. At each step, compute the $p$-th percentile of $|\hat{\mathbf{x}}_0|$ (typically $p = 99.5$). If that percentile exceeds 1, clip to that value and rescale to $[-1, 1]$. This allows higher guidance scales without saturation artifacts.</p>
 
-    <p>For MNIST with standard DDPM/DDIM (no guidance), static clipping is perfectly fine. Dynamic thresholding becomes important in Lecture 9 when we add classifier-free guidance.</p>
+    <p>For simple datasets with standard DDPM/DDIM (no guidance), static clipping is perfectly fine. Dynamic thresholding becomes important in Lecture 9 when we add classifier-free guidance.</p>
 
     <!-- Section 6: Full Sampling Pipeline -->
     <h2 id="full-pipeline"><span class="section-number">7.7</span> The Full Sampling Pipeline</h2>

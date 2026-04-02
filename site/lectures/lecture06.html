@@ -423,11 +423,11 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <!-- Section 7: Learning Rate Schedule -->
     <h2 id="learning-rate"><span class="section-number">6.6</span> Learning Rate Schedule</h2>
 
-    <p>The learning rate controls how big each optimizer step is. Getting this right has a significant effect on training stability and convergence speed.</p>
+    <p>Learning rate scheduling affects training stability and convergence speed in any deep learning model, and diffusion models are no exception. The most common strategy combines a gradual warmup phase with a long decay.</p>
 
     <h3 id="warmup">Linear Warmup</h3>
 
-    <p>For the first 1,000 steps, linearly increase the learning rate from 0 to the target value (e.g., $2 \times 10^{-4}$). In the first few steps, the model knows nothing, and its predictions are random noise. Large learning rates at this point cause wild parameter swings. Warmup lets the model establish basic structure before the optimizer starts making aggressive updates.</p>
+    <p>During an initial warmup period, the learning rate increases linearly from 0 to the target value (e.g., $2 \times 10^{-4}$). Early in training the model's predictions are essentially random, so large learning rates cause wild parameter swings. Warmup lets the model establish basic structure before the optimizer starts making aggressive updates.</p>
 
     <h3 id="cosine-decay">Cosine Decay</h3>
 
@@ -435,7 +435,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <h3 id="practical-recipe">The Practical Recipe</h3>
 
-    <p>For MNIST, the simplest approach works fine: <strong><a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent#Adam" target="_blank">Adam</a> with a constant learning rate of $2 \times 10^{-4}$</strong>. This is what the original DDPM paper used, and for a small dataset like MNIST it's all you need.</p>
+    <p>For small, simple datasets, the simplest approach works fine: <strong><a href="https://en.wikipedia.org/wiki/Stochastic_gradient_descent#Adam" target="_blank">Adam</a> with a constant learning rate of $2 \times 10^{-4}$</strong>. This is what the original DDPM paper used, and for grayscale digits it's all you need.</p>
 
     <p>For more complex datasets (CIFAR-10, ImageNet), the full recipe is: <strong>AdamW</strong> with $\text{lr} = 2 \times 10^{-4}$, linear warmup for 1,000 steps, cosine decay to 0. AdamW adds decoupled weight decay regularization, which is modern best practice.</p>
 
