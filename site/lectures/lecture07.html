@@ -184,7 +184,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      DDPM takes 1,000 tiny random steps from noise to image. DDIM realizes that at each step, the model can estimate the final clean image and compute exactly where it should be at the next timestep to stay on track. Since this mapping is deterministic, steps can be skipped: the trajectory is smooth rather than a random walk. The tradeoff is that DDPM's randomness gives diversity (same starting noise, different images), while DDIM's determinism gives speed (50 steps instead of 1,000) and reproducibility (same starting noise, same image every time).
+      DDPM's posterior is locked to adjacent timesteps, so every one of the 1,000 steps must be taken in sequence. DDIM reformulates the reverse process around a direct estimate of $\hat{\mathbf{x}}_0$, which lets it jump between any pair of timesteps. This is what enables step-skipping (e.g., 50 steps instead of 1,000). The noise parameter $\eta$ then controls stochasticity independently: $\eta = 0$ gives a fully deterministic mapping (reproducible, interpolatable), $\eta = 1$ recovers DDPM's stochastic sampling, and values in between trade off diversity against consistency.
     </div>
 
     <h3 id="ddim-update">The DDIM Update Rule</h3>
