@@ -149,7 +149,7 @@ dataloader = <span class="type">DataLoader</span>(dataset, batch_size=<span clas
       <div class="callout-label">Definition</div>
       <strong>The training loss.</strong> The simplified DDPM objective is:
 
-      $$L_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}}\left[ \left\| \boldsymbol{\epsilon} - \htmlData{tip=The neural network with learned weights θ, predicting what noise was added}{\boldsymbol{\epsilon}_\theta}\!\left(\htmlData{tip=The noisy image at timestep t — constructed from the clean image and sampled noise}{\sqrt{\bar{\alpha}_t}\, \mathbf{x}_0 + \sqrt{1-\bar{\alpha}_t}\, \boldsymbol{\epsilon}},\; t\right) \right\|^2 \right]$$
+      $$L_{\text{simple}} = \mathbb{E}_{t, \mathbf{x}_0, \boldsymbol{\epsilon}}\left[ \left\| \boldsymbol{\epsilon} - \htmlData{tip=The neural network with learned weights theta predicting what noise was added}{\boldsymbol{\epsilon}_\theta}\!\left(\htmlData{tip=The noisy image at timestep t constructed from the clean image and sampled noise}{\sqrt{\bar{\alpha}_t}\, \mathbf{x}_0 + \sqrt{1-\bar{\alpha}_t}\, \boldsymbol{\epsilon}},\; t\right) \right\|^2 \right]$$
 
       In words: sample a clean image, add noise at a random timestep, predict the noise, and minimize the squared error between the predicted and actual noise.
     </div>
@@ -461,6 +461,10 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p><strong>Frchet Inception Distance (FID)</strong> is the standard quantitative metric for generative quality. It compares the distribution of real images to generated images using features from a pretrained InceptionV3 network. Lower is better. DDPM on CIFAR-10 achieves FID $\approx 3.17$.</p>
 
     <p>FID is too expensive to compute during training (it requires thousands of generated samples per evaluation). For this course, visual inspection plus the loss curve is sufficient.</p>
+
+    <h3 id="perceptual-losses">Beyond pixel-space losses</h3>
+
+    <p>The $L_2$ pixel loss we have used so far measures per-pixel error, which does not always correlate with perceptual quality. An alternative family of <strong>perceptual losses</strong> compares feature representations from a pretrained network rather than raw pixels, capturing structural and semantic similarity more effectively. This is an active area of research that we will revisit in later lectures.</p>
 
     <!-- Section 10: Saving Checkpoints -->
     <h2 id="saving-checkpoints"><span class="section-number">6.8</span> Saving Checkpoints</h2>
