@@ -439,28 +439,8 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
 
     <p>For more complex datasets (CIFAR-10, ImageNet), the full recipe is: <strong>AdamW</strong> with $\text{lr} = 2 \times 10^{-4}$, linear warmup for 1,000 steps, cosine decay to 0. AdamW adds decoupled weight decay regularization, which is modern best practice.</p>
 
-    <!-- Section 8: Common Pitfalls -->
-    <h2 id="common-pitfalls"><span class="section-number">6.7</span> Common Training Pitfalls</h2>
-
-    <p>Diffusion models fail in predictable ways. The most common failure modes and their fixes.</p>
-
-    <h3 id="loss-spikes">Loss Spikes</h3>
-    <p><strong>Symptom:</strong> Loss suddenly jumps to 10&times; its normal value, then (hopefully) recovers. <strong>Cause:</strong> Gradient explosion from an unlucky batch. <strong>Fix:</strong> Gradient clipping with <code>max_norm=1.0</code>. If spikes persist, reduce the learning rate.</p>
-
-    <h3 id="loss-plateau">Loss Plateau at Start</h3>
-    <p><strong>Symptom:</strong> Loss stays flat for the first 100&ndash;1,000 steps. <strong>Cause:</strong> Totally normal. The model is building basic representations. Don't panic, don't restart.</p>
-
-    <h3 id="color-shift">Color Shift in Samples</h3>
-    <p><strong>Symptom:</strong> Generated images have a gray or washed-out appearance. <strong>Cause:</strong> Normalization mismatch: data is in $[0, 1]$ but the model expects $[-1, 1]$, or the denormalization step is wrong. <strong>Fix:</strong> Double-check the entire normalization pipeline: training data, sampling output, display code.</p>
-
-    <h3 id="nan-loss">NaN Loss</h3>
-    <p><strong>Symptom:</strong> Loss becomes <code>NaN</code> and never recovers. <strong>Cause:</strong> Usually overflow in sinusoidal time embeddings or divide-by-zero in the noise schedule. <strong>Fix:</strong> Ensure everything is in <code>float32</code>. Check schedule values at the boundaries ($t = 0$ and $t = T$).</p>
-
-    <h3 id="slow-convergence">Slow Convergence</h3>
-    <p><strong>Symptom:</strong> Model still produces bad samples after many steps. <strong>Cause:</strong> Diffusion models are slow by nature. <strong>Benchmarks:</strong> ~5K steps for recognizable MNIST samples, 50K+ for CIFAR-10. If you're within that range, keep training.</p>
-
-    <!-- Section 9: Monitoring Training -->
-    <h2 id="monitoring"><span class="section-number">6.8</span> Monitoring Training</h2>
+    <!-- Section 8: Monitoring Training -->
+    <h2 id="monitoring"><span class="section-number">6.7</span> Monitoring Training</h2>
 
     <p>How do you know training is working? Two methods: look at the images, and look at the loss curve.</p>
 
@@ -479,7 +459,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     <p>FID is too expensive to compute during training (it requires thousands of generated samples per evaluation). For this course, visual inspection plus the loss curve is sufficient.</p>
 
     <!-- Section 10: Saving Checkpoints -->
-    <h2 id="saving-checkpoints"><span class="section-number">6.9</span> Saving Checkpoints</h2>
+    <h2 id="saving-checkpoints"><span class="section-number">6.8</span> Saving Checkpoints</h2>
 
     <p>This is the bridge between Lecture 6 and Lecture 7. We need to save our trained model so that the next lecture can load it for sampling, and Lectures 8&ndash;9 can use it for conditioning experiments.</p>
 
@@ -512,7 +492,7 @@ torch.nn.utils.<span class="function">clip_grad_norm_</span>(model.<span class="
     </div>
 
     <!-- Section 11: Putting It All Together -->
-    <h2 id="full-training-script"><span class="section-number">6.10</span> Putting It All Together</h2>
+    <h2 id="full-training-script"><span class="section-number">6.9</span> Putting It All Together</h2>
 
     <p>Here's the complete training pipeline, combining everything from this lecture. This is the script that, given 20 minutes on a GPU (or an hour on CPU), produces a model that generates recognizable images.</p>
 
@@ -563,7 +543,7 @@ dataloader = get_mnist_dataloader(batch_size=<span class="number">64</span>)
     </div>
 
     <!-- Section 12: Looking Ahead -->
-    <h2 id="looking-ahead"><span class="section-number">6.11</span> Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">6.10</span> Looking Ahead</h2>
 
     <p>We now have a trained diffusion model and a saved checkpoint. The model can predict the noise in an image at any timestep, but we haven't actually <em>generated</em> any images yet. We've only trained the model; we haven't sampled from it.</p>
 
