@@ -71,7 +71,7 @@
 
     <p>This lecture picks up exactly where Lecture 6 left off. We trained a diffusion model and saved a checkpoint containing both the training weights and the smoothed EMA weights. Now we load that checkpoint and use the model to actually <em>generate</em> images.</p>
 
-    <p><strong>Dependencies:</strong> You'll need concepts from <strong>Lecture 3</strong> (the posterior mean formula $\mu_\theta$ from Section 3.5) and the trained checkpoint from <strong>Lecture 6</strong>.</p>
+    <p>This builds on the posterior mean formula $\mu_\theta$ from <strong>Lecture 3</strong> (Section 3.5) and the trained checkpoint from <strong>Lecture 6</strong>.</p>
 
     <div class="pseudocode">
 <span class="comment"># Load the checkpoint from Lecture 6</span>
@@ -112,6 +112,8 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <p>This formula comes directly from Lecture 3 (Section 3.5). The mean tells us: "given the current noisy image and our noise prediction, here's the most likely slightly-less-noisy image." Then we add a controlled amount of fresh noise $\sigma_t \mathbf{z}$ and repeat.</p>
 
+    <p>This noise injection isn't arbitrary: the true reverse distribution $q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)$ is a Gaussian with nonzero variance, so injecting noise preserves this stochasticity. It allows the model to explore the full data distribution rather than collapsing to a single mode. This is what makes DDPM sampling stochastic, in contrast to DDIM, which removes this noise entirely for deterministic generation.</p>
+
     <h3 id="variance-choices">Two Variance Choices</h3>
 
     <p>The standard deviation $\sigma_t$ controls how much fresh noise we inject at each step. DDPM offers two options:</p>
@@ -150,36 +152,25 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <div class="callout example">
       <div class="callout-label">Example</div>
-      <strong>Typical timing.</strong> With $T = 1000$ and a cosine schedule, the model runs 1,000 sequential forward passes through the U-Net. On an M1 MacBook (MPS), this takes about 15&ndash;30 seconds per batch of 16 images. On a GPU, it's 2&ndash;5 seconds. This is why accelerated sampling (Section 7.4) matters.
+      <strong>How long does this take?</strong> With $T = 1000$ and a cosine schedule, the model runs 1,000 sequential forward passes through the U-Net. On an M1 MacBook (MPS), this takes about 15&ndash;30 seconds per batch of 16 images. On a GPU, it's 2&ndash;5 seconds. This is why accelerated sampling (Section 7.4) matters.
     </div>
 
-    <!-- Section 2: Why Add Noise During Sampling? -->
-    <h2 id="why-add-noise"><span class="section-number">7.3</span> Why We Add Noise During Sampling</h2>
+    <h3 id="why-add-noise">Why add noise during sampling?</h3>
 
-    <p>This is the most counterintuitive part of diffusion sampling. We're trying to <em>remove</em> noise, so why do we add <em>more</em> noise at each step?</p>
+    <p>We are trying to <em>remove</em> noise, so why add <em>more</em> at each step? Three reasons:</p>
 
-    <h3 id="error-correction">Stochastic Sampling as Error Correction</h3>
-
-    <p>The noise injection serves as a form of <strong>error correction</strong>. The model's noise prediction at each step isn't perfect; it's an approximation.</p>
-
-    <p>Without the injected noise, these small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. The fresh noise at each step gives the model a chance to "re-randomize" and correct its trajectory.</p>
-
-    <p>Think of it like this: if you're navigating through fog with a slightly miscalibrated compass, occasionally re-randomizing your direction (within a shrinking radius) keeps you closer to the target than blindly following the compass for 1,000 steps.</p>
-
-    <h3 id="diversity">Diversity</h3>
-
-    <p>The noise also produces <strong>sample diversity</strong>. Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. Run DDPM twice from the same starting noise and you'll get two different images. This stochasticity is what makes the model a proper generative model; it doesn't memorize a fixed mapping.</p>
-
-    <h3 id="deterministic-alternative">The Deterministic Alternative</h3>
-
-    <p>What happens if we set $\sigma_t = 0$ &mdash; no noise at all? We get a <strong>deterministic</strong> mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$. The same starting noise always produces the same image. This loses diversity but gains something valuable: <strong>reproducibility and interpolation</strong>. And as we'll see next, it also enables step-skipping.</p>
+    <ul>
+      <li><strong>Error correction.</strong> The model's noise prediction at each step is an approximation. Without injected noise, small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. Fresh noise at each step lets the model re-randomize and correct its trajectory.</li>
+      <li><strong>Diversity.</strong> Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. This stochasticity is what makes the model a proper generative model rather than a fixed mapping.</li>
+      <li><strong>The deterministic alternative.</strong> Setting $\sigma_t = 0$ removes all noise, producing a deterministic mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$. This loses diversity but gains reproducibility and interpolation, and it also enables step-skipping.</li>
+    </ul>
 
     <!-- Section 3: DDIM -->
-    <h2 id="ddim"><span class="section-number">7.4</span> DDIM &mdash; Deterministic Sampling</h2>
+    <h2 id="ddim"><span class="section-number">7.3</span> DDIM &mdash; Deterministic Sampling</h2>
 
-    <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps; the noise magnitudes would be wrong, and sample quality collapses.</p>
+    <p>DDPM sampling requires all $T = 1000$ steps because the noise injection at each step is calibrated for that specific schedule. You can't just skip steps; each step's denoising is calibrated to a specific noise level, so skipping ahead means the model encounters a noise level it wasn't expecting, and sample quality collapses.</p>
 
-    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, <a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>) solves this by reformulating the reverse process with a tunable noise parameter $\eta$:</p>
+    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, <a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>) solves this by rewriting the reverse process with a tunable noise parameter $\eta$:</p>
 
     <ul>
       <li>$\eta = 1$: equivalent to DDPM (full stochastic sampling)</li>
@@ -246,7 +237,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 4: Accelerated Sampling -->
-    <h2 id="fewer-steps"><span class="section-number">7.5</span> Fewer Steps &mdash; Accelerated Sampling</h2>
+    <h2 id="fewer-steps"><span class="section-number">7.4</span> Fewer Steps &mdash; Accelerated Sampling</h2>
 
     <p>This is where DDIM's design pays off. When $\eta = 0$, the sampling trajectory is a smooth, deterministic curve from $\mathbf{x}_T$ to $\mathbf{x}_0$. Smooth curves can be traversed at any resolution; you don't need to visit every one of 1,000 points along the way.</p>
 
@@ -281,7 +272,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 5: Dynamic Thresholding -->
-    <h2 id="dynamic-thresholding"><span class="section-number">7.6</span> Dynamic Thresholding</h2>
+    <h2 id="dynamic-thresholding"><span class="section-number">7.5</span> Dynamic Thresholding</h2>
 
     <p>At each DDIM step, we compute a prediction of $\hat{\mathbf{x}}_0$. Ideally this prediction stays in the $[-1, 1]$ range (since our training data was normalized there), but in practice it can overshoot, especially at high guidance scales (which we'll encounter in Lecture 9).</p>
 
@@ -296,7 +287,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>For simple datasets with standard DDPM/DDIM (no guidance), static clipping is perfectly fine. Dynamic thresholding becomes important in Lecture 9 when we add classifier-free guidance.</p>
 
     <!-- Section 6: Full Sampling Pipeline -->
-    <h2 id="full-pipeline"><span class="section-number">7.7</span> The Full Sampling Pipeline</h2>
+    <h2 id="full-pipeline"><span class="section-number">7.6</span> The Full Sampling Pipeline</h2>
 
     <p>Let's put the complete end-to-end pipeline together, from random noise to displayable images:</p>
 
@@ -329,7 +320,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     <p>This determinism is what makes DDIM useful beyond just speed. It enables <strong>latent space interpolation</strong>: smoothly blend between two starting noises $\mathbf{x}_T^{(1)}$ and $\mathbf{x}_T^{(2)}$ and the generated images smoothly morph between the two outputs.</p>
 
     <!-- Section 7: Probability Flow ODE -->
-    <h2 id="probability-flow-ode"><span class="section-number">7.8</span> The Probability Flow ODE <span class="lecture-tag optional" style="font-size: 11px; vertical-align: middle;">Optional / Advanced</span></h2>
+    <h2 id="probability-flow-ode"><span class="section-number">7.7</span> The Probability Flow ODE <span class="lecture-tag optional" style="font-size: 11px; vertical-align: middle;">Optional / Advanced</span></h2>
 
     <p>If you want to understand <em>why</em> DDIM works &mdash; and where the field is heading &mdash; this section provides the theoretical perspective. Feel free to skip it on a first reading.</p>
 
@@ -370,7 +361,7 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
     </div>
 
     <!-- Section 8: PyTorch Reference -->
-    <h2 id="pytorch-reference"><span class="section-number">7.9</span> PyTorch Reference</h2>
+    <h2 id="pytorch-reference"><span class="section-number">7.8</span> PyTorch Reference</h2>
 
     <p>The complete sampling implementations live in the Module 7 notebook and in <code>utils/diffusion.py</code>. The key functions:</p>
 
@@ -392,7 +383,7 @@ show_denoising_trajectory(model, schedule, shape=(<span class="number">1</span>,
     </div>
 
     <!-- Section 9: Looking Ahead -->
-    <h2 id="looking-ahead"><span class="section-number">7.10</span> Looking Ahead</h2>
+    <h2 id="looking-ahead"><span class="section-number">7.9</span> Looking Ahead</h2>
 
     <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> images, and we have no control over what it produces. There's no way to say "generate this specific class."</p>
 
