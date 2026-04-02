@@ -170,7 +170,9 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <p>DDPM's reverse step computes the posterior mean $\boldsymbol{\mu}_\theta(\mathbf{x}_t, t)$, which is derived from Bayes' rule on the forward process. That posterior, $q(\mathbf{x}_{t-1} \mid \mathbf{x}_t)$, is defined only between adjacent timesteps: it tells the model where to go exactly one step back, and nowhere else. Skipping a step invalidates the math, because the noise magnitudes no longer match what the posterior expects.</p>
 
-    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, <a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>) rethinks the target entirely. Instead of computing the posterior for one step back, DDIM first estimates the clean image $\hat{\mathbf{x}}_0$ from the current $\mathbf{x}_t$, then asks: given this predicted $\hat{\mathbf{x}}_0$, where should the sample be at any earlier timestep $t'$? This is a non-Markovian formulation: it is not derived from the forward process posterior, and it works for any pair of timesteps $(t, t')$, not just consecutive ones. That is why DDIM can skip steps and DDPM cannot.</p>
+    <p><strong>DDIM</strong> (Denoising Diffusion Implicit Models, <a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>) rethinks the target entirely. Instead of computing the posterior for one step back, DDIM first estimates the clean image $\hat{\mathbf{x}}_0$ from the current $\mathbf{x}_t$, then asks: <strong>given this predicted $\hat{\mathbf{x}}_0$, where should the sample be at any earlier timestep $t'$?</strong> </p>
+
+    <p>This is a non-Markovian formulation: it is not derived from the forward process posterior, and it works for any pair of timesteps $(t, t')$, not just consecutive ones. That is why DDIM can skip steps and DDPM cannot.</p>
 
     <p>DDIM also introduces a tunable noise parameter $\eta$ that controls the stochasticity of sampling:</p>
 
