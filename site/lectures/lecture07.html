@@ -114,6 +114,16 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
 
     <p>This noise injection isn't arbitrary: the true reverse distribution $q(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{x}_0)$ is a Gaussian with nonzero variance, so injecting noise preserves this stochasticity. It allows the model to explore the full data distribution rather than collapsing to a single mode. This is what makes DDPM sampling stochastic, in contrast to DDIM, which removes this noise entirely for deterministic generation.</p>
 
+    <h3 id="why-add-noise">Why add noise during sampling?</h3>
+
+    <p>We are trying to <em>remove</em> noise, so why add <em>more</em> at each step? Three reasons:</p>
+
+    <ul>
+      <li><strong>Error correction.</strong> The model's noise prediction at each step is an approximation. Without injected noise, small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. Fresh noise at each step lets the model re-randomize and correct its trajectory.</li>
+      <li><strong>Diversity.</strong> Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. This stochasticity is what makes the model a proper generative model rather than a fixed mapping.</li>
+      <li><strong>The deterministic alternative.</strong> Setting $\sigma_t = 0$ removes all noise, producing a deterministic mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$. This loses diversity but gains reproducibility and interpolation, and it also enables step-skipping.</li>
+    </ul>
+
     <h3 id="variance-choices">Two Variance Choices</h3>
 
     <p>The standard deviation $\sigma_t$ controls how much fresh noise we inject at each step. DDPM offers two options:</p>
@@ -154,16 +164,6 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
       <div class="callout-label">Example</div>
       <strong>How long does this take?</strong> With $T = 1000$ and a cosine schedule, the model runs 1,000 sequential forward passes through the U-Net. On an M1 MacBook (MPS), this takes about 15&ndash;30 seconds per batch of 16 images. On a GPU, it's 2&ndash;5 seconds. This is why accelerated sampling (Section 7.4) matters.
     </div>
-
-    <h3 id="why-add-noise">Why add noise during sampling?</h3>
-
-    <p>We are trying to <em>remove</em> noise, so why add <em>more</em> at each step? Three reasons:</p>
-
-    <ul>
-      <li><strong>Error correction.</strong> The model's noise prediction at each step is an approximation. Without injected noise, small errors compound across 1,000 steps, gradually steering the sample away from the data distribution. Fresh noise at each step lets the model re-randomize and correct its trajectory.</li>
-      <li><strong>Diversity.</strong> Starting from the same $\mathbf{x}_T$, different noise injections at each step lead to different final images. This stochasticity is what makes the model a proper generative model rather than a fixed mapping.</li>
-      <li><strong>The deterministic alternative.</strong> Setting $\sigma_t = 0$ removes all noise, producing a deterministic mapping from $\mathbf{x}_T$ to $\mathbf{x}_0$. This loses diversity but gains reproducibility and interpolation, and it also enables step-skipping.</li>
-    </ul>
 
     <!-- Section 3: DDIM -->
     <h2 id="ddim"><span class="section-number">7.3</span> DDIM &mdash; Deterministic Sampling</h2>
