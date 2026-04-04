@@ -206,10 +206,6 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
       </li>
     </ol>
 
-    <div class="callout definition">
-      <div class="callout-label">Definition</div>
-      <strong>DDIM (<a href="https://arxiv.org/abs/2010.02502" target="_blank">Song, Meng &amp; Ermon, 2020</a>).</strong> A non-Markovian sampling process that shares the same marginal distributions $q(\mathbf{x}_t | \mathbf{x}_0)$ as DDPM. Because the forward marginals are identical, a model trained with DDPM can be used directly for DDIM sampling with no retraining required. DDIM is a drop-in replacement for the DDPM sampler.
-    </div>
 
     <h3 id="ddim-pseudocode">Pseudocode</h3>
 
@@ -369,30 +365,8 @@ schedule = checkpoint[<span class="string">'schedule'</span>]
       The progression from DDPM &rarr; DDIM &rarr; DPM-Solver &rarr; flow matching is really a story about better ODE solvers. Each step realizes that the "reverse diffusion" process is an ODE, and applies increasingly sophisticated numerical methods to traverse it efficiently.
     </div>
 
-    <!-- Section 8: PyTorch Reference -->
-    <h2 id="pytorch-reference"><span class="section-number">7.8</span> PyTorch Reference</h2>
-
-    <p>The complete sampling implementations live in the Module 7 notebook and in <code>utils/diffusion.py</code>. The key functions:</p>
-
-    <div class="code-block">
-      <div class="code-block-label">PyTorch</div>
-<span class="keyword">from</span> utils.diffusion <span class="keyword">import</span> ddpm_sample, ddim_sample
-<span class="keyword">from</span> utils.visualization <span class="keyword">import</span> show_images, show_denoising_trajectory, denormalize
-
-<span class="comment"># DDPM: 1000 steps, stochastic, diverse samples</span>
-samples_ddpm = ddpm_sample(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule=schedule)
-show_images(denormalize(samples_ddpm), nrow=<span class="number">4</span>)
-
-<span class="comment"># DDIM: 50 steps, deterministic, 20x faster</span>
-samples_ddim = ddim_sample(model, shape=(<span class="number">16</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>), schedule=schedule, num_steps=<span class="number">50</span>)
-show_images(denormalize(samples_ddim), nrow=<span class="number">4</span>)
-
-<span class="comment"># Denoising trajectory: watch an image emerge from noise</span>
-show_denoising_trajectory(model, schedule, shape=(<span class="number">1</span>, <span class="number">1</span>, <span class="number">28</span>, <span class="number">28</span>))
-    </div>
-
-    <!-- Section 9: Looking Ahead -->
-    <h2 id="looking-ahead"><span class="section-number">7.9</span> Looking Ahead</h2>
+    <!-- Section 8: Looking Ahead -->
+    <h2 id="looking-ahead"><span class="section-number">7.8</span> Looking Ahead</h2>
 
     <p>We can now both train and sample from a diffusion model. But our model generates <em>random</em> images, and we have no control over what it produces. There's no way to say "generate this specific class."</p>
 
