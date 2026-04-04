@@ -55,7 +55,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">So far our model generates random images with no user control. To make it useful, we need conditioning, the ability to say "generate a 7." We'll embed class labels into the U-Net, then discover a more powerful idea: steering generation at <em>sampling time</em> using gradients from a trained classifier, trading diversity for fidelity with a single guidance scale parameter.</p>
+    <p class="lecture-roadmap">So far our model generates random images with no user control. To make it useful, we need conditioning, the ability to say "generate a cat sitting on the moon." We'll embed class labels into the U-Net, then discover a more powerful idea: steering generation at <em>sampling time</em> using gradients from a trained classifier, trading diversity for fidelity with a single guidance scale parameter.</p>
 
 
     <div class="callout prereq">
@@ -68,7 +68,7 @@
     <!-- Section 8.1 -->
     <h2 id="unconditional-to-conditional"><span class="section-number">8.1</span> From Unconditional to Conditional Generation</h2>
 
-    <p>Up to now, our diffusion model generates images, but we have no control over <em>what</em> it generates. We get random samples with no way to steer the output. For any practical application, we need to tell the model what to produce: "generate a 7" or "generate a cat."</p>
+    <p>Up to now, our diffusion model generates images, but we have no control over <em>what</em> it generates. We get random samples with no way to steer the output. For any practical application, we need to tell the model what to produce: "generate a cat sitting on the moon" or "generate a sunset over the ocean."</p>
 
     <p>The shift is surprisingly simple at the architectural level. Our unconditional model takes two inputs:</p>
 
@@ -78,7 +78,7 @@
 
     $$\epsilon_\theta(x_t, t, c)$$
 
-    <p>The condition $c$ can be almost anything: a class label (integer), a text prompt (sequence of embeddings), another image, even an audio clip. For this course, we'll focus on class-conditional generation with class labels, where $c \in \{0, 1, \ldots, K{-}1\}$ for $K$ classes.</p>
+    <p>The condition $c$ can be almost anything: a class label (integer), a text prompt (sequence of embeddings), another image, video, audio clip, or anything that you can represent as a tensor to feed into the model. For this course, we'll focus on class-conditional generation with class labels, where $c \in \{0, 1, \ldots, K{-}1\}$ for $K$ classes.</p>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
@@ -98,6 +98,8 @@
 
     <p>Given a class label $c$, the embedding layer returns a vector of shape $(\texttt{emb\_dim},)$. This vector is randomly initialized and <em>learned during training</em>. The network discovers what each class "means" in embedding space.</p>
 
+    <p>In principle, this embedding vector can come from anywhere: a CLIP encoder, a ResNet trained on ImageNet, a language model. Class labels are the simplest case, but the same injection mechanism generalizes to any conditioning signal that can be represented as a fixed-size vector.</p>
+
     <h3 id="injection-addition">Injection Method 1: Addition to Time Embedding</h3>
 
     <p>The simplest and most common approach: add the class embedding directly to the time embedding before the MLP. The network receives a single conditioning vector that encodes <em>both</em> when in the diffusion process we are and <em>what</em> class we're generating:</p>
@@ -111,11 +113,15 @@
     <ul>
       <li><strong>Separate injection:</strong> Process the class embedding through its own MLP, then add it to features at each ResBlock independently from the time embedding. More expressive, but more parameters.</li>
       <li><strong>Adaptive Group Normalization (AdaGN):</strong> Use the conditioning vector to predict per-channel scale and shift parameters for GroupNorm. This is the most expressive approach, used in DALL-E 2 and other advanced architectures.</li>
+      <li><strong>Cross-attention:</strong> For conditions richer than a single vector, such as text prompts (sequences of token embeddings) or image-shaped inputs, architectures like Stable Diffusion inject conditioning through cross-attention layers. The model attends to the conditioning sequence at every block, allowing it to extract spatial or semantic features on the fly.</li>
+      <li><strong>And more:</strong> Concatenation along the channel axis (DiT patchifies the noisy image and concatenates conditioning tokens directly into the input sequence), hypernetworks that generate layer weights from the condition, ControlNet-style parallel branches for spatial control. As long as the conditioning signal is a tensor, there is a way to feed it into the network. New injection methods continue to appear as the field evolves.</li>
     </ul>
 
     <h3 id="null-class-token">The Null Class Token</h3>
 
-    <p>One important detail: we allocate <em>one extra class</em> in our embedding table. If we have 10 digit classes (0&ndash;9), we create an embedding of size 11. Index 10 is the <strong>null class</strong> &mdash; it means "no conditioning." This will become critical in Lecture 9 when we implement classifier-free guidance, which requires the model to make predictions both <em>with</em> and <em>without</em> a class label.</p>
+    <p>One important detail: we allocate <em>one extra class</em> in our embedding table. If we have 10 digit classes (0&ndash;9), we create an embedding of size 11. Index 10 is the <strong>null class</strong> &mdash; it means "no conditioning": no additional information hinting at what to produce, as if conditioning were never applied.</p>
+
+    <p>This will become critical in Lecture 9 when we implement classifier-free guidance, which requires the model to make predictions both <em>with</em> and <em>without</em> a class label.</p>
 
     <div class="pseudocode">
 <strong>Conditional U-Net Architecture</strong>
@@ -140,13 +146,13 @@
     <!-- Section 8.3 -->
     <h2 id="training-conditional"><span class="section-number">8.3</span> Training the Conditional Model</h2>
 
-    <p>The good news: training is nearly identical to what we did in Lecture 6. Each training sample now includes a label alongside the image: $(x_0, c)$. The label gets embedded and added to the time embedding. The loss function is unchanged:</p>
+    <p>The good news: training is nearly identical to what we did in Lecture 6. Each training sample now includes a label alongside the image: $(x_0, c)$. The label gets embedded and integrated into the time embedding, such as by addition. The loss function is unchanged:</p>
 
     $$\mathcal{L} = \|\epsilon - \epsilon_\theta(x_t, t, c)\|^2$$
 
-    <p>The model learns to make <em>class-specific</em> noise predictions. When told "this is a 7 at noise level $t$," it predicts the noise differently than when told "this is a 3 at noise level $t$."</p>
+    <p>The model learns to make <em>class-specific</em> noise predictions. When told "this is class A at noise level $t$," it predicts the noise differently than when told "this is class B at noise level $t$."</p>
 
-    <p>The conditioning signal helps the model resolve ambiguity. At high noise levels, images from different classes can look very similar, and the class label provides the extra information needed to denoise accurately.</p>
+    <p>At high noise levels, images from different classes look nearly identical: mostly static. Without conditioning, the model has to guess which class it's denoising. The class label removes that guesswork, telling the model exactly what structure to recover from the noise.</p>
 
     <div class="pseudocode">
 <strong>Conditional Training Step</strong>
@@ -161,15 +167,15 @@
     optimizer.<span class="function">step</span>()
     </div>
 
-    <div class="callout example">
-      <div class="callout-label">Example</div>
+    <div class="callout insight">
+      <div class="callout-label">Key Insight</div>
       <strong>Minimal change from unconditional training.</strong> Compare this to the unconditional training step from Lecture 6 &mdash; the only difference is passing <code>class_label</code> to the model. The loss, the noise sampling, the forward diffusion process: all identical. The conditioning is handled entirely by the architecture change.
     </div>
 
     <!-- Section 8.4 -->
     <h2 id="classifier-guidance"><span class="section-number">8.4</span> Classifier Guidance (Historical Context)</h2>
 
-    <p>Can we amplify how much the model pays attention to its conditioning during sampling? <a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal &amp; Nichol (2021)</a> proposed <strong>classifier guidance</strong>&mdash;using gradients from a separately trained classifier to steer the denoising direction toward a target class. It was later superseded by the simpler classifier-free approach in Lecture 9, but understanding the original idea clarifies why CFG was such an improvement.</p>
+    <p>Can we amplify how much the model pays attention to its conditioning during sampling? <a href="https://arxiv.org/abs/2105.05233" target="_blank">Dhariwal &amp; Nichol (2021)</a> proposed <strong>classifier guidance</strong>&mdash;using gradients from a separately trained classifier to steer the denoising direction toward a target class. It was later superseded by the simpler classifier-free guidance (CFG) approach in Lecture 9, but understanding the original idea clarifies why CFG was such an improvement.</p>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
@@ -178,7 +184,9 @@
 
     <h3 id="classifier-guidance-how">How It Works</h3>
 
-    <p>The idea is intuitive: at each denoising step, we ask a classifier "which direction should I move $x_t$ to make it look more like class $y$?" That direction is the gradient $\nabla_{x_t} \log p_\phi(y \mid x_t)$. We then shift our noise prediction in that direction.</p>
+    <p>The idea is intuitive: at each denoising step, we ask a classifier "which direction should I move $x_t$ to make it look more like class $y$?"</p>
+
+    <p>The answer is a gradient computed with respect to the pixels of $x_t$: $\nabla_{x_t} \log p_\phi(y \mid x_t)$. This is a tensor the same shape as the image, where each entry tells us how to nudge each pixel to increase the classifier's confidence in class $y$. We then add this gradient into the model's noise prediction, effectively biasing the denoising step so that $x_{t-1}$ lands closer to the target class than a purely unconditional step would.</p>
 
     <p>Concretely, at each step of the reverse process:</p>
 
@@ -191,21 +199,21 @@
       <li>Use $\hat{\epsilon}$ for the standard DDPM denoising step</li>
     </ol>
 
-    <p>The parameter $s$ is the <strong>guidance scale</strong>. It controls how strongly the classifier steers:</p>
+    <p>The parameter $s$ is the <strong>guidance scale</strong>. It controls how strongly the classifier steers. In concrete terms, a larger $s$ means each denoising step takes a bigger detour toward whatever the classifier thinks class $y$ looks like, at the cost of ignoring other plausible image structures:</p>
 
     <ul>
-      <li>$s = 0$: no guidance &mdash; pure unconditional generation</li>
+      <li>$s = 0$: no guidance, pure unconditional generation</li>
       <li>$s = 1$: standard classifier guidance</li>
-      <li>$s > 1$: amplified guidance &mdash; sharper, more class-specific images, but less diversity</li>
+      <li>$s > 1$: amplified guidance, sharper and more class-specific images, but less diversity</li>
     </ul>
 
     <h3 id="implicit-distribution">What Distribution Are We Sampling From?</h3>
 
-    <p>Mathematically, classifier guidance causes us to sample from a sharpened distribution:</p>
+    <p>The gradient-based steering we just described has a clean interpretation in terms of probability distributions. Mathematically, classifier guidance causes us to sample from a sharpened distribution:</p>
 
     $$p_\text{guided}(x \mid y) \propto p(x) \cdot p(y \mid x)^s$$
 
-    <p>When $s = 1$, this is just <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a> &mdash; we get the standard conditional $p(x \mid y)$. When $s > 1$, we're raising the classifier likelihood to a power, which sharpens the distribution around images that the classifier confidently assigns to class $y$. Higher $s$ means sharper peaks but thinner tails &mdash; better fidelity, less diversity.</p>
+    <p>When $s = 1$, this is just <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a>, giving the standard conditional $p(x \mid y)$. When $s > 1$, we raise the classifier likelihood to a power, which sharpens the distribution around images that the classifier confidently assigns to class $y$. Think of it like adjusting the contrast on a probability landscape: at $s = 1$, the distribution has gentle hills and valleys across all plausible images of class $y$. Cranking $s$ to 5 or 10 turns those hills into narrow spikes, concentrating almost all probability mass on the few images the classifier is most confident about. The generated samples become crisper and more stereotypical, but the model loses the ability to produce unusual or creative variations. Higher $s$ means sharper peaks but thinner tails: better fidelity, less diversity.</p>
 
     <h3 id="classifier-guidance-pseudocode">Sampling with Classifier Guidance</h3>
 
@@ -237,18 +245,20 @@
     <!-- Section 8.5 -->
     <h2 id="classifier-guidance-limitations"><span class="section-number">8.5</span> Why Classifier Guidance Falls Short</h2>
 
-    <p>Classifier guidance works. It produces sharp, class-specific images. But it has significant practical drawbacks:</p>
+    <p>At this point, classifier guidance has delivered on its promise: we can steer a diffusion model toward a target class at sampling time, and the results are visibly sharper than unconditional generation.</p>
+
+    <p>So why not stop here? Because the machinery required to get those results introduces problems of its own.</p>
 
     <ul>
-      <li><strong>Extra model required.</strong> You must train a separate classifier on noisy images at <em>all</em> noise levels. This classifier needs to handle everything from nearly-clean images ($t \approx 0$) to pure noise ($t \approx T$). That's an expensive, non-trivial training task.</li>
-      <li><strong>Inflexible conditioning.</strong> Want to condition on text instead of class labels? You need to train an entirely new classifier. Each new conditioning modality requires a new external model.</li>
-      <li><strong>Slow sampling.</strong> At every denoising step, you must compute gradients through the classifier via backpropagation. This is significantly slower than a simple forward pass.</li>
-      <li><strong>Limited scalability.</strong> The approach doesn't naturally extend to rich conditioning signals like text prompts, which require understanding complex semantics rather than simple classification.</li>
+      <li><strong>You have to train a whole extra model.</strong> The classifier must handle noisy images at <em>all</em> noise levels, from nearly-clean ($t \approx 0$) to pure static ($t \approx T$). That is an expensive, non-trivial training task on its own.</li>
+      <li><strong>Every new condition type needs a new classifier.</strong> Want to condition on text instead of class labels? You need to train an entirely different classifier. Each new conditioning modality requires its own external model.</li>
+      <li><strong>Sampling gets slower.</strong> At every denoising step, you must compute gradients through the classifier via backpropagation. This is significantly slower than a simple forward pass.</li>
+      <li><strong>Rich conditioning is out of reach.</strong> The approach does not naturally extend to complex conditioning signals like text prompts, which require understanding semantics rather than simple classification.</li>
     </ul>
 
     <div class="callout insight">
       <div class="callout-label">Key Insight</div>
-      Classifier guidance proves that external signals can steer diffusion models during sampling. The limitation is practical: training a separate classifier for each conditioning type is expensive and inflexible. What if the guidance signal could come from the diffusion model itself? Classifier-free guidance achieves this by training a single model with random label dropout, so it learns both conditional and unconditional prediction&mdash;then extrapolating between them at inference, as we'll see in Lecture 9.
+      <p>Classifier guidance proved that external signals can steer diffusion models during sampling. The limitation is practical: training a separate classifier for every conditioning type is expensive and inflexible. What if the guidance signal could come from the diffusion model itself? That is exactly what classifier-free guidance achieves, as we will see in Lecture 9.</p>
     </div>
 
     <!-- Section 8.6: PyTorch Reference -->
@@ -312,6 +322,11 @@
 
     <span class="keyword">return</span> x
     </div>
+
+    <!-- Section 8.7 -->
+    <h2 id="looking-ahead"><span class="section-number">8.7</span> Looking Ahead</h2>
+
+    <p>We can now condition a diffusion model on class labels and steer it with classifier guidance. The next lecture introduces classifier-free guidance: a single training trick that lets the model guide itself, no external classifier needed.</p>
 
   </article>
 
