@@ -69,11 +69,11 @@
     <!-- Section 9.1 -->
     <h2 id="the-training-trick"><span class="section-number">9.1</span> The Training Trick: Random Label Dropout</h2>
 
-    <p>Classifier guidance (Lecture 8) works, but it requires training a separate classifier on noisy images at every noise level. Want to condition on text? Train another classifier. Want to adjust guidance strength? Still need that extra model. The approach is expensive and inflexible.</p>
-
-    <p>What if we could get guidance without any classifier at all? The key insight, from <a href="https://arxiv.org/abs/2207.12598" target="_blank">Ho &amp; Salimans (2022)</a>, is straightforward: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
+    <p>What if we could get guidance without any classifier at all? The key idea from classifier-free guidance, or CFG (<a href="https://arxiv.org/abs/2207.12598" target="_blank">Ho &amp; Salimans, 2022</a>), is straightforward: train a <strong>single model</strong> that can make both conditional and unconditional predictions.</p>
 
     <p>During training, with probability $p_\text{uncond}$ (typically 10&ndash;20%), we replace the class label with a special <strong>null token</strong>, the extra embedding at index <code>num_classes</code> that we set up in Lecture 8. The rest of the time, we train normally with the real class label.</p>
+
+    <p>When the model receives the null token, it still sees a training image from some class, but it has no idea which one. It has to learn a general-purpose noise prediction that works across all classes, with no bias toward any particular output. This unconditional prediction becomes the baseline that CFG extrapolates away from at sampling time.</p>
 
     <p>With this dropout, the same network learns two skills:</p>
 
@@ -122,6 +122,86 @@
     </ul>
 
     <p>Typical values: $s = 2$&ndash;$4$ for class labels, $s = 7.5$&ndash;$15$ for text-to-image (Stable Diffusion defaults to $s = 7.5$).</p>
+
+    <!-- CFG vector geometry visualization -->
+    <div style="max-width: 70%; margin: 32px auto; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
+      <svg viewBox="0 0 720 440" style="width: 100%; height: auto; display: block;">
+        <defs>
+          <!-- Arrowheads -->
+          <marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#9ca3af"/></marker>
+          <marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#60a5fa"/></marker>
+          <marker id="ah-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#4ade80"/></marker>
+          <marker id="ah-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#a78bfa"/></marker>
+          <marker id="ah-amber-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#fbbf24" opacity="0.6"/></marker>
+          <marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#f97316"/></marker>
+        </defs>
+
+        <!-- Origin point: x_t -->
+        <circle cx="120" cy="230" r="5" fill="#e8dcc8"/>
+        <text x="108" y="260" text-anchor="middle" fill="#e8dcc8" font-family="'IBM Plex Mono', monospace" font-size="13" font-weight="600">x&#x209C;</text>
+
+        <!-- Unconditional prediction: prominent, straight right -->
+        <line x1="120" y1="230" x2="370" y2="230" stroke="#9ca3af" stroke-width="3.5" stroke-linecap="round" marker-end="url(#ah-muted)"/>
+        <text x="240" y="222" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="11">&#x03B5;(x&#x209C;, t, &#x2205;)</text>
+        <text x="240" y="256" fill="#9ca3af" font-family="'Source Sans 3', sans-serif" font-size="11" font-style="italic">unconditional</text>
+
+        <!-- Class-conditional: "cat" — blue, upper-right (steep upward) -->
+        <line x1="120" y1="230" x2="360" y2="120" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" marker-end="url(#ah-blue)"/>
+        <text x="368" y="118" fill="#60a5fa" font-family="'IBM Plex Mono', monospace" font-size="11">"cat"</text>
+
+        <!-- Class-conditional: "dog" — green, slightly below horizontal -->
+        <line x1="120" y1="230" x2="375" y2="260" stroke="#4ade80" stroke-width="2" stroke-linecap="round" marker-end="url(#ah-green)"/>
+        <text x="383" y="264" fill="#4ade80" font-family="'IBM Plex Mono', monospace" font-size="11">"dog"</text>
+
+        <!-- Class-conditional: "car" — purple, lower-right (steep downward) -->
+        <line x1="120" y1="230" x2="340" y2="330" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" marker-end="url(#ah-purple)"/>
+        <text x="348" y="336" fill="#a78bfa" font-family="'IBM Plex Mono', monospace" font-size="11">"car"</text>
+
+        <!-- Difference vectors (dashed amber): uncond tip → each conditional tip -->
+        <!-- Δε cat: (370,230) → (360,120) -->
+        <line x1="370" y1="230" x2="360" y2="120" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="5,3" marker-end="url(#ah-amber-dim)"/>
+        <text x="378" y="168" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.8">&#x0394;&#x03B5; cat</text>
+
+        <!-- Δε dog: (370,230) → (375,260) -->
+        <line x1="370" y1="230" x2="375" y2="260" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="5,3" marker-end="url(#ah-amber-dim)"/>
+        <text x="383" y="248" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.8">&#x0394;&#x03B5; dog</text>
+
+        <!-- Δε car: (370,230) → (340,330) -->
+        <line x1="370" y1="230" x2="340" y2="330" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="5,3" marker-end="url(#ah-amber-dim)"/>
+        <text x="345" y="296" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.8">&#x0394;&#x03B5; car</text>
+
+        <!-- Guided prediction for "cat" with s=3 -->
+        <!-- uncond tip = (370,230), delta_cat = (360-370, 120-230) = (-10, -110). Scaled by 3: (-30, -330). Guided = origin + uncond_vec + 3*delta = (120+250-30, 230+0-330) = (340, -100) — clamp to viewBox -->
+        <!-- Better: guided = uncond + s*(cond - uncond) = (370,230) + 3*(-10,-110) = (340,-100). As arrow from origin: -->
+        <!-- Actually guided_pred = uncond_pred + s*(cond_pred - uncond_pred). In vector from x_t: uncond_vec + s*delta -->
+        <!-- uncond_vec from origin: (250, 0). delta: (-10, -110). s*delta: (-30, -330). guided from origin: (120+250-30, 230+0-330) = (340, -100). Clamp y to 28. -->
+        <line x1="120" y1="230" x2="580" y2="28" stroke="#f97316" stroke-width="3" stroke-linecap="round" marker-end="url(#ah-accent)"/>
+        <text x="588" y="28" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="11" font-weight="600">guided (s=3)</text>
+        <text x="588" y="44" fill="#f97316" font-family="'Source Sans 3', sans-serif" font-size="10" opacity="0.7">extrapolated "cat"</text>
+
+        <!-- Dashed extension line from conditional "cat" tip to guided tip -->
+        <line x1="360" y1="120" x2="580" y2="28" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="6,4" opacity="0.4"/>
+
+        <!-- Annotation: s × Δε along extrapolation -->
+        <text x="478" y="64" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.65" transform="rotate(-22, 478, 64)">s &#x00D7; &#x0394;&#x03B5;</text>
+
+        <!-- Legend -->
+        <line x1="50" y1="410" x2="70" y2="410" stroke="#9ca3af" stroke-width="3.5"/>
+        <text x="76" y="414" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="10">unconditional</text>
+
+        <line x1="190" y1="410" x2="210" y2="410" stroke="#60a5fa" stroke-width="2"/>
+        <text x="216" y="414" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">conditional</text>
+
+        <line x1="310" y1="410" x2="330" y2="410" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="336" y="414" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">&#x0394;&#x03B5; = cond &#x2212; uncond</text>
+
+        <line x1="520" y1="410" x2="540" y2="410" stroke="#f97316" stroke-width="3"/>
+        <text x="546" y="414" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">guided (s &gt; 1)</text>
+      </svg>
+      <div style="text-align: center; margin-top: 8px;">
+        <span style="color: #6b7280; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">CFG extrapolates beyond the conditional prediction along the difference direction</span>
+      </div>
+    </div>
 
     <h3 id="algebraic-equivalence">Two Forms of the Same Formula</h3>
 
@@ -206,6 +286,179 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
       <strong>The temperature analogy.</strong> The guidance scale $s$ acts like inverse temperature on the conditional distribution. At $s = 1$, we sample from the standard conditional. At $s > 1$, the distribution sharpens: peaks become taller, tails shrink. As $s \to \infty$, we converge to the single most likely image for that class. This is why higher guidance produces sharper but less diverse outputs.
     </div>
 
+    <!-- Guidance scale interactive visualization -->
+    <div style="max-width: 70%; margin: 32px auto; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
+      <canvas id="guidance-canvas" style="width: 100%; height: 280px; display: block;"></canvas>
+      <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px; padding: 0 8px;">
+        <label for="guidance-slider" style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #b8ad98; white-space: nowrap;">Guidance Scale <em>s</em></label>
+        <input type="range" id="guidance-slider" min="0.1" max="10" step="0.1" value="1" style="flex: 1; accent-color: #2dd4bf; cursor: pointer;">
+        <span id="guidance-value" style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #2dd4bf; min-width: 48px; text-align: right;">s = 1.0</span>
+      </div>
+      <p id="guidance-annotation" style="font-family: 'Source Sans 3', sans-serif; font-size: 14px; color: #6b7280; text-align: center; margin-top: 10px;">Standard conditional distribution</p>
+      <p style="font-family: 'Source Sans 3', sans-serif; font-size: 13px; color: #6b7280; text-align: center; margin-top: 12px; line-height: 1.5; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">Simplified illustration: the guidance scale <em>s</em> acts as inverse temperature on the conditional distribution. Higher <em>s</em> sharpens peaks, trading diversity for fidelity. Real distributions are high-dimensional, but the intuition is the same.</p>
+    </div>
+    <script>
+    (function() {
+      const canvas = document.getElementById('guidance-canvas');
+      const ctx = canvas.getContext('2d');
+      const slider = document.getElementById('guidance-slider');
+      const valueDisplay = document.getElementById('guidance-value');
+      const annotation = document.getElementById('guidance-annotation');
+
+      // Discrete class probabilities and Gaussian positions
+      const classes = [
+        { center: 0.15, baseSigma: 0.045, prob: 0.40, label: 'cat' },
+        { center: 0.38, baseSigma: 0.05,  prob: 0.25, label: 'dog' },
+        { center: 0.62, baseSigma: 0.04,  prob: 0.20, label: 'bird' },
+        { center: 0.85, baseSigma: 0.05,  prob: 0.15, label: 'car' }
+      ];
+
+      // Gentle sharpening: p_i^(cbrt(s)) keeps minor classes visible even at s=10
+      function sharpenWeights(s) {
+        const exponent = Math.cbrt(s);
+        const raw = classes.map(c => Math.pow(c.prob, exponent));
+        const sum = raw.reduce((a, b) => a + b, 0);
+        return raw.map(v => v / sum);
+      }
+
+      // Build the mixture curve: sum of weighted Gaussians
+      // sigma scales as baseSigma / s, so s=0.1 gives 10x wider, s=10 gives 10x narrower
+      function computeDistribution(s, N) {
+        const weights = sharpenWeights(s);
+        const vals = new Float64Array(N);
+        let maxVal = 0;
+        for (let i = 0; i < N; i++) {
+          const x = i / (N - 1);
+          let val = 0;
+          for (let k = 0; k < classes.length; k++) {
+            const c = classes[k];
+            const sigma = c.baseSigma / s;
+            const dx = (x - c.center) / sigma;
+            val += weights[k] * Math.exp(-0.5 * dx * dx);
+          }
+          vals[i] = val;
+          if (val > maxVal) maxVal = val;
+        }
+        // Normalize so tallest peak fills ~80% of plot height
+        if (maxVal > 0) {
+          for (let i = 0; i < N; i++) vals[i] /= maxVal;
+        }
+        return vals;
+      }
+
+      function resize() {
+        const container = canvas.parentElement;
+        const w = container.clientWidth - 48;
+        const dpr = window.devicePixelRatio || 1;
+        const h = 280;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function draw() {
+        const w = parseFloat(canvas.style.width);
+        const h = parseFloat(canvas.style.height);
+        ctx.clearRect(0, 0, w, h);
+
+        const s = parseFloat(slider.value);
+        const padL = 20, padR = 20, padT = 30, padB = 40;
+        const plotW = w - padL - padR;
+        const plotH = h - padT - padB;
+        const N = 400;
+
+        const vals = computeDistribution(s, N);
+
+        // Draw filled area
+        ctx.beginPath();
+        ctx.moveTo(padL, padT + plotH);
+        for (let i = 0; i < N; i++) {
+          const x = padL + (i / (N - 1)) * plotW;
+          const y = padT + plotH - vals[i] * plotH * 0.8;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(padL + plotW, padT + plotH);
+        ctx.closePath();
+
+        // Gradient fill
+        const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+        grad.addColorStop(0, 'rgba(45, 212, 191, 0.25)');
+        grad.addColorStop(1, 'rgba(45, 212, 191, 0.02)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Stroke the curve
+        ctx.beginPath();
+        for (let i = 0; i < N; i++) {
+          const x = padL + (i / (N - 1)) * plotW;
+          const y = padT + plotH - vals[i] * plotH * 0.8;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#2dd4bf';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        // Baseline
+        ctx.beginPath();
+        ctx.moveTo(padL, padT + plotH);
+        ctx.lineTo(padL + plotW, padT + plotH);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Label peaks
+        ctx.font = '12px "IBM Plex Mono", monospace';
+        ctx.textAlign = 'center';
+        for (const c of classes) {
+          const px = padL + c.center * plotW;
+          const idx = Math.round(c.center * (N - 1));
+          const peakY = padT + plotH - vals[idx] * plotH * 0.9;
+          // Vertical dashed line from peak to baseline
+          ctx.setLineDash([3, 4]);
+          ctx.beginPath();
+          ctx.moveTo(px, peakY - 4);
+          ctx.lineTo(px, padT + plotH);
+          ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.setLineDash([]);
+          // Label above peak
+          ctx.fillStyle = '#b8ad98';
+          ctx.fillText(c.label, px, peakY - 10);
+        }
+
+        // X-axis label
+        ctx.font = '11px "Source Sans 3", sans-serif';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+        ctx.fillText('class', padL + plotW / 2, padT + plotH + 28);
+      }
+
+      function updateAnnotation() {
+        const s = parseFloat(slider.value);
+        let text;
+        if (s < 0.3) text = 'Nearly uniform \u2014 model ignores conditioning';
+        else if (s < 0.7) text = 'Flattened \u2014 weak conditioning signal';
+        else if (s <= 1.3) text = 'Standard conditional distribution';
+        else if (s <= 4) text = 'Sharpened \u2014 peaks narrow, valleys deepen';
+        else text = 'Strong sharpening \u2014 narrow spikes, all classes still visible';
+        annotation.textContent = text;
+      }
+
+      slider.addEventListener('input', function() {
+        valueDisplay.textContent = 's = ' + parseFloat(slider.value).toFixed(1);
+        updateAnnotation();
+        draw();
+      });
+
+      resize();
+      draw();
+      window.addEventListener('resize', function() { resize(); draw(); });
+    })();
+    </script>
+
     <h3 id="diversity-fidelity">The Diversity-Fidelity Tradeoff</h3>
 
     <ul>
@@ -262,7 +515,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
       <strong>Practical use.</strong> Positive prompt: "sharp photo of a cat in sunlight." Negative prompt: "blurry, low quality, watermark." The model computes three predictions &mdash; positive, negative, and (optionally) unconditional &mdash; and amplifies the difference between positive and negative. The result: images that are both <em>more like</em> the positive and <em>less like</em> the negative.
     </div>
 
-    <p>Mechanically, this requires a third forward pass (or a 3&times; batched pass) per step. In practice, most implementations batch all three predictions together for efficiency.</p>
+    <p>Since the negative prompt replaces the unconditional prediction, this still requires only two forward passes per step: one for the positive prompt and one for the negative prompt. Some implementations add the unconditional prediction as a third pass for more fine-grained control, but the standard approach is a simple two-pass substitution.</p>
 
     <!-- Section 9.6 -->
     <h2 id="complete-pipeline"><span class="section-number">9.6</span> The Complete CFG Sampling Pipeline</h2>
