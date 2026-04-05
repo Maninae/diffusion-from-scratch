@@ -36,7 +36,9 @@ class SaveHandler(BaseHTTPRequestHandler):
 
         length = int(self.headers.get("Content-Length", 0))
         body = json.loads(self.rfile.read(length))
-        page_path: str = body["path"]   # e.g. "/lectures/lecture09.html"
+        page_path: str = body["path"]   # e.g. "/site/lectures/lecture09.html"
+        # Strip leading /site/ prefix if serving from repo root
+        page_path = re.sub(r"^/site/", "", page_path.lstrip("/"))
         new_html: str = body["html"]
 
         # Resolve to a file under SITE_ROOT
