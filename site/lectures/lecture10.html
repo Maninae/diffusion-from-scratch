@@ -198,235 +198,337 @@
 
     <p style="position: relative;">This last property is exactly why the VAE latent space is a good place to run diffusion. The diffusion model's job at the end of sampling is to produce a clean latent code <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">z_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.5806em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.044em;">z</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3011em;"><span class="" style="top: -2.55em; margin-left: -0.044em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span>, and the VAE decoder can turn any reasonable latent code into a good image.</p>
 
-    <div style="margin: 2rem 0; text-align: center;">
-      <canvas id="latentSpaceViz"></canvas>
+    <div style="margin: 2.5rem 0; position: relative;">
+      <canvas id="latent-space-canvas" style="width: 100%; border-radius: 12px; display: block;"></canvas>
+      <p style="margin: 12px 0 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5; text-align: center; font-style: italic; position: relative;">
+        A simplified 2D cross-section of latent space. Real latent spaces are much higher-dimensional (typically 4&times;64&times;64 for Stable Diffusion), but the principle holds: VAE training creates smooth, overlapping regions where nearby points decode to semantically similar images.
+      </p>
     </div>
+
     <script>
     (function() {
-      const canvas = document.getElementById('latentSpaceViz');
-      const ctx = canvas.getContext('2d');
-      const container = canvas.parentElement;
+      function initLatentSpaceViz() {
+        var canvas = document.getElementById('latent-space-canvas');
+        if (!canvas) return;
+        var container = canvas.parentElement;
+        var ctx = canvas.getContext('2d');
 
-      // Responsive sizing with retina support
-      const W = Math.min(container.clientWidth, 700);
-      const H = W * 0.65;
-      canvas.width = W * 2;
-      canvas.height = H * 2;
-      canvas.style.width = W + 'px';
-      canvas.style.height = H + 'px';
-      ctx.scale(2, 2);
+        // Responsive sizing
+        var containerWidth = container.offsetWidth;
+        var W = Math.min(containerWidth, 900);
+        var H = Math.round(W * 0.65);
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.scale(dpr, dpr);
 
-      // Read CSS custom properties
-      const style = getComputedStyle(document.documentElement);
-      const bgDeep = style.getPropertyValue('--bg-deep').trim() || '#0a0e17';
-      const bgSurface = style.getPropertyValue('--bg-surface').trim() || '#111827';
-      const teal = style.getPropertyValue('--teal').trim() || '#2dd4bf';
-      const accent = style.getPropertyValue('--accent').trim() || '#f97316';
-      const green = style.getPropertyValue('--green').trim() || '#4ade80';
-      const textPrimary = style.getPropertyValue('--text-primary').trim() || '#e8dcc8';
+        // Read CSS custom properties
+        var rootStyle = getComputedStyle(document.documentElement);
+        var bgDeep = rootStyle.getPropertyValue('--bg-deep').trim() || '#0a0e17';
+        var teal = rootStyle.getPropertyValue('--teal').trim() || '#2dd4bf';
+        var accentColor = rootStyle.getPropertyValue('--accent').trim() || '#f97316';
+        var blue = rootStyle.getPropertyValue('--blue').trim() || '#60a5fa';
+        var green = rootStyle.getPropertyValue('--green').trim() || '#4ade80';
+        var amber = rootStyle.getPropertyValue('--amber').trim() || '#fbbf24';
+        var textSecondary = rootStyle.getPropertyValue('--text-secondary').trim() || '#b8ad98';
 
-      // Gaussian peaks: [cx, cy, sigma, height]
-      const peaks = [
-        { cx: 0.25, cy: 0.72, sigma: 0.09, h: 1.0, label: 'Tomato Plant' },
-        { cx: 0.52, cy: 0.78, sigma: 0.10, h: 1.1, label: 'Forest' },
-        { cx: 0.62, cy: 0.35, sigma: 0.09, h: 1.0, label: 'Tiger' },
-        { cx: 0.55, cy: 0.25, sigma: 0.08, h: 0.9, label: 'Cat' },
-      ];
+        // Fill background
+        ctx.fillStyle = bgDeep;
+        ctx.fillRect(0, 0, W, H);
 
-      // Interpolation point (not its own peak)
-      const interp = { cx: 0.57, cy: 0.56, label: 'tiger in the jungle' };
+        // Isometric projection parameters
+        var centerX = W * 0.50;
+        var centerY = H * 0.52;
+        var sX = W * 0.30;
+        var sY = H * 0.28;
+        var tiltFactor = 0.45;
 
-      const GRID = 80;
-
-      // Compute height at a point from all Gaussians
-      function heightAt(x, y) {
-        let h = 0;
-        for (const p of peaks) {
-          const dx = x - p.cx;
-          const dy = y - p.cy;
-          const dist2 = dx * dx + dy * dy;
-          h += p.h * Math.exp(-dist2 / (2 * p.sigma * p.sigma));
+        function project(x, y, z) {
+          var angle = -0.52;
+          var cosA = Math.cos(angle);
+          var sinA = Math.sin(angle);
+          var rx = x * cosA - y * sinA;
+          var ry = x * sinA + y * cosA;
+          return [centerX + rx * sX, centerY + ry * sY * tiltFactor - z * sY * 1.1];
         }
-        return h;
-      }
 
-      // Isometric projection parameters
-      const angle = 0.46;
-      const cosA = Math.cos(angle);
-      const sinA = Math.sin(angle);
-      const scaleX = W * 0.52;
-      const scaleY = W * 0.28;
-      const heightScale = W * 0.18;
-      const offsetX = W * 0.5;
-      const offsetY = H * 0.78;
+        // Gaussian peaks with organic placement
+        var peaks = [
+          { x: -0.50, y: -0.55, h: 1.0,  sigma: 0.32, color: teal,        label: 'Tomato Plant' },
+          { x:  0.25, y: -0.48, h: 0.92, sigma: 0.30, color: green,       label: 'Forest' },
+          { x:  0.45, y:  0.42, h: 0.88, sigma: 0.28, color: accentColor, label: 'Tiger' },
+          { x:  0.28, y:  0.55, h: 0.80, sigma: 0.26, color: amber,       label: 'Cat' }
+        ];
 
-      function project(gx, gy, gz) {
-        // gx, gy in [0,1], gz is height
-        const x = gx - 0.5;
-        const y = gy - 0.5;
-        const sx = (x - y) * cosA * scaleX + offsetX;
-        const sy = (x + y) * sinA * scaleY - gz * heightScale + offsetY;
-        return [sx, sy];
-      }
+        // Interpolation point between Forest and Tiger
+        var interpX = 0.37;
+        var interpY = 0.02;
 
-      // Color interpolation based on height
-      function heightColor(h, maxH) {
-        const t = Math.min(h / (maxH * 0.85), 1);
-        // dark navy -> teal -> bright green
-        const r = Math.round(10 + t * 25);
-        const g = Math.round(14 + t * 190);
-        const b = Math.round(30 + t * 140);
-        return `rgb(${r},${g},${b})`;
-      }
-
-      function heightEdgeColor(h, maxH) {
-        const t = Math.min(h / (maxH * 0.85), 1);
-        const r = Math.round(8 + t * 20);
-        const g = Math.round(12 + t * 160);
-        const b = Math.round(25 + t * 120);
-        return `rgba(${r},${g},${b},0.4)`;
-      }
-
-      // Precompute heights
-      const heights = [];
-      let maxH = 0;
-      for (let i = 0; i <= GRID; i++) {
-        heights[i] = [];
-        for (let j = 0; j <= GRID; j++) {
-          const gx = i / GRID;
-          const gy = j / GRID;
-          const h = heightAt(gx, gy);
-          heights[i][j] = h;
-          if (h > maxH) maxH = h;
+        function heightAt(px, py) {
+          var h = 0;
+          for (var i = 0; i < peaks.length; i++) {
+            var p = peaks[i];
+            var dx = px - p.x;
+            var dy = py - p.y;
+            h += p.h * Math.exp(-(dx * dx + dy * dy) / (2 * p.sigma * p.sigma));
+          }
+          return h;
         }
-      }
 
-      // Clear canvas
-      ctx.fillStyle = bgDeep;
-      ctx.fillRect(0, 0, W, H);
-
-      // Draw floor grid lines (subtle)
-      ctx.strokeStyle = 'rgba(45, 212, 191, 0.07)';
-      ctx.lineWidth = 0.5;
-      const gridStep = 8;
-      for (let i = 0; i <= GRID; i += gridStep) {
-        ctx.beginPath();
-        const [x0, y0] = project(i / GRID, 0, 0);
-        const [x1, y1] = project(i / GRID, 1, 0);
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
-
-        ctx.beginPath();
-        const [x2, y2] = project(0, i / GRID, 0);
-        const [x3, y3] = project(1, i / GRID, 0);
-        ctx.moveTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.stroke();
-      }
-
-      // Collect quads for painter's algorithm (back-to-front)
-      const quads = [];
-      for (let i = 0; i < GRID; i++) {
-        for (let j = 0; j < GRID; j++) {
-          const gx = (i + 0.5) / GRID;
-          const gy = (j + 0.5) / GRID;
-          const avgH = (heights[i][j] + heights[i+1][j] + heights[i+1][j+1] + heights[i][j+1]) / 4;
-          // Sort key: depth = x + y (back-to-front in isometric)
-          quads.push({ i, j, depth: gx + gy, avgH });
+        function hexToRgb(hex) {
+          return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
         }
+
+        function rgbToHex(r, g, b) {
+          return '#' + ((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1);
+        }
+
+        function colorAt(px, py, totalH) {
+          if (totalH < 0.01) return bgDeep;
+          var r = 0, g = 0, b = 0;
+          var bg = hexToRgb(bgDeep);
+          for (var i = 0; i < peaks.length; i++) {
+            var p = peaks[i];
+            var dx = px - p.x;
+            var dy = py - p.y;
+            var contrib = p.h * Math.exp(-(dx * dx + dy * dy) / (2 * p.sigma * p.sigma));
+            var w = contrib / totalH;
+            var c = hexToRgb(p.color);
+            r += c[0] * w; g += c[1] * w; b += c[2] * w;
+          }
+          var brightness = Math.pow(Math.min(totalH / 1.0, 1.0), 0.7);
+          brightness = Math.min(brightness + Math.pow(Math.min(totalH, 1.0), 2.0) * 0.3, 1.0);
+          r = bg[0] * (1 - brightness) + r * brightness;
+          g = bg[1] * (1 - brightness) + g * brightness;
+          b = bg[2] * (1 - brightness) + b * brightness;
+          return rgbToHex(r, g, b);
+        }
+
+        // Grid resolution
+        var gridN = 80;
+        var gridMin = -1.1;
+        var gridMax = 1.1;
+        var gridStep = (gridMax - gridMin) / gridN;
+
+        // Draw floor grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.lineWidth = 0.5;
+        var floorStep = 0.2;
+        for (var gx = -1.0; gx <= 1.01; gx += floorStep) {
+          ctx.beginPath();
+          var fa = project(gx, -1.0, 0);
+          var fb = project(gx, 1.0, 0);
+          ctx.moveTo(fa[0], fa[1]);
+          ctx.lineTo(fb[0], fb[1]);
+          ctx.stroke();
+        }
+        for (var gy = -1.0; gy <= 1.01; gy += floorStep) {
+          ctx.beginPath();
+          var fa = project(-1.0, gy, 0);
+          var fb = project(1.0, gy, 0);
+          ctx.moveTo(fa[0], fa[1]);
+          ctx.lineTo(fb[0], fb[1]);
+          ctx.stroke();
+        }
+
+        // Build and sort quads (painter's algorithm)
+        var quads = [];
+        for (var i = 0; i < gridN; i++) {
+          for (var j = 0; j < gridN; j++) {
+            var x0 = gridMin + i * gridStep;
+            var y0 = gridMin + j * gridStep;
+            var x1 = x0 + gridStep;
+            var y1 = y0 + gridStep;
+            var mx = (x0 + x1) / 2;
+            var my = (y0 + y1) / 2;
+
+            var h00 = heightAt(x0, y0);
+            var h10 = heightAt(x1, y0);
+            var h11 = heightAt(x1, y1);
+            var h01 = heightAt(x0, y1);
+            var hAvg = (h00 + h10 + h11 + h01) / 4;
+
+            var p00 = project(x0, y0, h00);
+            var p10 = project(x1, y0, h10);
+            var p11 = project(x1, y1, h11);
+            var p01 = project(x0, y1, h01);
+
+            var pCenter = project(mx, my, 0);
+            quads.push({
+              pts: [p00, p10, p11, p01],
+              color: colorAt(mx, my, hAvg),
+              depth: pCenter[1],
+              height: hAvg
+            });
+          }
+        }
+
+        quads.sort(function(a, b) { return a.depth - b.depth; });
+
+        // Draw surface
+        for (var q = 0; q < quads.length; q++) {
+          var quad = quads[q];
+          ctx.beginPath();
+          ctx.moveTo(quad.pts[0][0], quad.pts[0][1]);
+          ctx.lineTo(quad.pts[1][0], quad.pts[1][1]);
+          ctx.lineTo(quad.pts[2][0], quad.pts[2][1]);
+          ctx.lineTo(quad.pts[3][0], quad.pts[3][1]);
+          ctx.closePath();
+          ctx.fillStyle = quad.color;
+          ctx.fill();
+          if (quad.height > 0.15) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+            ctx.lineWidth = 0.3;
+            ctx.stroke();
+          }
+        }
+
+        // Contour lines for depth cues
+        ctx.lineWidth = 0.8;
+        var contourLevels = [0.15, 0.35, 0.55, 0.75];
+        for (var cl = 0; cl < contourLevels.length; cl++) {
+          var level = contourLevels[cl];
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.04 + cl * 0.02) + ')';
+          for (var ci = 0; ci < gridN; ci++) {
+            for (var cj = 0; cj < gridN; cj++) {
+              var cx0 = gridMin + ci * gridStep;
+              var cy0 = gridMin + cj * gridStep;
+              var cx1 = cx0 + gridStep;
+              var ch0 = heightAt(cx0, cy0);
+              var ch1 = heightAt(cx1, cy0);
+              if ((ch0 - level) * (ch1 - level) < 0) {
+                var t = (level - ch0) / (ch1 - ch0);
+                var contourX = cx0 + t * gridStep;
+                var cpt = project(contourX, cy0, level);
+                ctx.beginPath();
+                ctx.arc(cpt[0], cpt[1], 0.5, 0, Math.PI * 2);
+                ctx.stroke();
+              }
+            }
+          }
+        }
+
+        // Marker and label helpers
+        function drawMarker(wx, wy, color, isDashed) {
+          var mh = heightAt(wx, wy);
+          var mpt = project(wx, wy, mh);
+          if (isDashed) {
+            ctx.beginPath();
+            ctx.arc(mpt[0], mpt[1], 6, 0, Math.PI * 2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([2, 2]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(mpt[0], mpt[1], 2, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+          } else {
+            var grad = ctx.createRadialGradient(mpt[0], mpt[1], 0, mpt[0], mpt[1], 8);
+            grad.addColorStop(0, color + 'aa');
+            grad.addColorStop(1, color + '00');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(mpt[0], mpt[1], 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(mpt[0], mpt[1], 3, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+          }
+        }
+
+        function drawLabel(text, wx, wy, wz, color, fontSize, isInterp) {
+          var lpt = project(wx, wy, wz + 0.18);
+          ctx.font = (isInterp ? 'italic ' : '') + '600 ' + fontSize + 'px "Source Sans 3", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.shadowColor = 'rgba(0,0,0,0.8)';
+          ctx.shadowBlur = 8;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 2;
+
+          var metrics = ctx.measureText(text);
+          var tw = metrics.width + 16;
+          var th = fontSize + 10;
+          var lrx = lpt[0] - tw / 2;
+          var lry = lpt[1] - th - 2;
+          var rad = 6;
+
+          ctx.fillStyle = 'rgba(10, 14, 23, 0.75)';
+          ctx.beginPath();
+          ctx.moveTo(lrx + rad, lry);
+          ctx.lineTo(lrx + tw - rad, lry);
+          ctx.quadraticCurveTo(lrx + tw, lry, lrx + tw, lry + rad);
+          ctx.lineTo(lrx + tw, lry + th - rad);
+          ctx.quadraticCurveTo(lrx + tw, lry + th, lrx + tw - rad, lry + th);
+          ctx.lineTo(lrx + rad, lry + th);
+          ctx.quadraticCurveTo(lrx, lry + th, lrx, lry + th - rad);
+          ctx.lineTo(lrx, lry + rad);
+          ctx.quadraticCurveTo(lrx, lry, lrx + rad, lry);
+          ctx.closePath();
+          ctx.fill();
+
+          if (isInterp) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          } else {
+            ctx.strokeStyle = color + '55';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = color;
+          ctx.fillText(text, lpt[0], lpt[1] - 4);
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+        }
+
+        // Draw markers
+        for (var mi = 0; mi < peaks.length; mi++) {
+          drawMarker(peaks[mi].x, peaks[mi].y, peaks[mi].color, false);
+        }
+        drawMarker(interpX, interpY, blue, true);
+
+        // Draw labels
+        var labelSize = Math.max(11, Math.min(14, W / 65));
+        drawLabel('Tomato Plant', peaks[0].x, peaks[0].y, peaks[0].h, teal, labelSize, false);
+        drawLabel('Forest', peaks[1].x, peaks[1].y, peaks[1].h, green, labelSize, false);
+        drawLabel('Tiger', peaks[2].x, peaks[2].y, peaks[2].h, accentColor, labelSize, false);
+        drawLabel('Cat', peaks[3].x, peaks[3].y, peaks[3].h, amber, labelSize, false);
+        drawLabel('\u201ctiger in the jungle\u201d', interpX, interpY, heightAt(interpX, interpY), blue, labelSize - 1, true);
+
+        // Axis labels
+        ctx.font = '500 ' + Math.max(10, labelSize - 2) + 'px "IBM Plex Mono", monospace';
+        ctx.fillStyle = textSecondary + '66';
+        ctx.textAlign = 'center';
+        var ax1 = project(1.15, 0, 0);
+        ctx.fillText('z\u2081', ax1[0], ax1[1]);
+        var ax2 = project(0, 1.15, 0);
+        ctx.fillText('z\u2082', ax2[0], ax2[1]);
       }
-      quads.sort((a, b) => a.depth - b.depth);
 
-      // Draw quads
-      for (const q of quads) {
-        const { i, j, avgH } = q;
-        const p0 = project(i / GRID, j / GRID, heights[i][j]);
-        const p1 = project((i+1) / GRID, j / GRID, heights[i+1][j]);
-        const p2 = project((i+1) / GRID, (j+1) / GRID, heights[i+1][j+1]);
-        const p3 = project(i / GRID, (j+1) / GRID, heights[i][j+1]);
-
-        ctx.beginPath();
-        ctx.moveTo(p0[0], p0[1]);
-        ctx.lineTo(p1[0], p1[1]);
-        ctx.lineTo(p2[0], p2[1]);
-        ctx.lineTo(p3[0], p3[1]);
-        ctx.closePath();
-
-        ctx.fillStyle = heightColor(avgH, maxH);
-        ctx.fill();
-
-        ctx.strokeStyle = heightEdgeColor(avgH, maxH);
-        ctx.lineWidth = 0.3;
-        ctx.stroke();
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLatentSpaceViz);
+      } else {
+        initLatentSpaceViz();
       }
 
-      // Draw labels for peaks
-      const fontSize = Math.max(11, W * 0.018);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-
-      for (const p of peaks) {
-        const h = heightAt(p.cx, p.cy);
-        const [sx, sy] = project(p.cx, p.cy, h);
-
-        // Dot on the peak
-        ctx.beginPath();
-        ctx.arc(sx, sy, 3, 0, Math.PI * 2);
-        ctx.fillStyle = textPrimary;
-        ctx.fill();
-
-        // Label
-        ctx.font = `600 ${fontSize}px "Source Sans 3", sans-serif`;
-        ctx.fillStyle = textPrimary;
-        ctx.shadowColor = 'rgba(0,0,0,0.8)';
-        ctx.shadowBlur = 6;
-        ctx.fillText(p.label, sx, sy - 10);
-        ctx.shadowBlur = 0;
-      }
-
-      // Draw interpolation point
-      const interpH = heightAt(interp.cx, interp.cy);
-      const [ix, iy] = project(interp.cx, interp.cy, interpH);
-
-      // Dashed circle marker
-      ctx.beginPath();
-      ctx.setLineDash([3, 3]);
-      ctx.arc(ix, iy, 6, 0, Math.PI * 2);
-      ctx.strokeStyle = accent;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Star marker (small)
-      ctx.fillStyle = accent;
-      ctx.beginPath();
-      for (let k = 0; k < 5; k++) {
-        const a = (k * 4 * Math.PI / 5) - Math.PI / 2;
-        const r = k === 0 ? 4 : 4;
-        const outerR = 4;
-        const innerR = 1.8;
-        const outerAngle = (k * 2 * Math.PI / 5) - Math.PI / 2;
-        const innerAngle = outerAngle + Math.PI / 5;
-        if (k === 0) ctx.moveTo(ix + outerR * Math.cos(outerAngle), iy + outerR * Math.sin(outerAngle));
-        else ctx.lineTo(ix + outerR * Math.cos(outerAngle), iy + outerR * Math.sin(outerAngle));
-        ctx.lineTo(ix + innerR * Math.cos(innerAngle), iy + innerR * Math.sin(innerAngle));
-      }
-      ctx.closePath();
-      ctx.fill();
-
-      // Interpolation label
-      ctx.font = `italic 600 ${fontSize}px "Source Sans 3", sans-serif`;
-      ctx.fillStyle = accent;
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 6;
-      ctx.fillText('tiger in the jungle', ix, iy - 14);
-      ctx.shadowBlur = 0;
+      var resizeTimer;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(initLatentSpaceViz, 200);
+      });
     })();
     </script>
-    <p style="text-align: center; font-size: 0.88rem; color: var(--text-muted); margin-top: 0.5rem; max-width: 620px; margin-left: auto; margin-right: auto; line-height: 1.5;">
-      A simplified 2D cross-section of latent space. Real latent spaces are much higher-dimensional (typically 4&times;64&times;64 for Stable Diffusion), but the principle holds: VAE training creates smooth, overlapping regions where nearby points decode to semantically similar images.
-    </p>
 
     <!-- Section 3: Latent Diffusion -->
     <h2 id="latent-diffusion" style="position: relative;"><span class="section-number">10.3</span> Latent Diffusion — The Key Insight</h2>
