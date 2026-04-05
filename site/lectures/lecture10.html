@@ -198,8 +198,8 @@
 
     <p style="position: relative;">This last property is exactly why the VAE latent space is a good place to run diffusion. The diffusion model's job at the end of sampling is to produce a clean latent code <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>z</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">z_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.5806em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.044em;">z</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3011em;"><span class="" style="top: -2.55em; margin-left: -0.044em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span>, and the VAE decoder can turn any reasonable latent code into a good image.</p>
 
-    <div style="margin: 2.5rem 0; position: relative;">
-      <canvas id="latent-space-canvas" style="width: 100%; border-radius: 12px; display: block;"></canvas>
+    <div style="margin: 2.5rem 0; position: relative; overflow: hidden; border-radius: 12px;">
+      <canvas id="latent-space-canvas" style="width: 100%; display: block; margin-top: -6%; margin-bottom: -14%;"></canvas>
       <p style="margin: 12px 0 0; font-size: 13px; color: var(--text-secondary); line-height: 1.5; text-align: center; font-style: italic; position: relative;">
         A simplified 2D cross-section of latent space. Real latent spaces are much higher-dimensional (typically 4&times;64&times;64 for Stable Diffusion), but the principle holds: VAE training creates smooth, overlapping regions where nearby points decode to semantically similar images.
       </p>
@@ -216,7 +216,7 @@
         // Responsive sizing
         var containerWidth = container.offsetWidth;
         var W = Math.min(containerWidth, 900);
-        var H = Math.round(W * 0.45);
+        var H = Math.round(W * 0.65);
         var dpr = window.devicePixelRatio || 1;
         canvas.width = W * dpr;
         canvas.height = H * dpr;
@@ -239,8 +239,8 @@
         ctx.fillRect(0, 0, W, H);
 
         // Isometric projection parameters
-        var centerX = W * 0.50;
-        var centerY = H * 0.48;
+        var centerX = W * 0.46;
+        var centerY = H * 0.52;
         var sX = W * 0.30;
         var sY = H * 0.28;
         var tiltFactor = 0.68;
