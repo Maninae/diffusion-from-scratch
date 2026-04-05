@@ -243,7 +243,7 @@
         var centerY = H * 0.52;
         var sX = W * 0.30;
         var sY = H * 0.28;
-        var tiltFactor = 0.45;
+        var tiltFactor = 0.68;
 
         function project(x, y, z) {
           var angle = -0.52;
@@ -251,7 +251,7 @@
           var sinA = Math.sin(angle);
           var rx = x * cosA - y * sinA;
           var ry = x * sinA + y * cosA;
-          return [centerX + rx * sX, centerY + ry * sY * tiltFactor - z * sY * 1.1];
+          return [centerX + rx * sX, centerY + ry * sY * tiltFactor - z * sY * 0.55];
         }
 
         // Gaussian peaks with organic placement
@@ -259,12 +259,12 @@
           { x: -0.50, y: -0.55, h: 1.0,  sigma: 0.32, color: teal,        label: 'Tomato Plant' },
           { x:  0.25, y: -0.48, h: 0.92, sigma: 0.30, color: green,       label: 'Forest' },
           { x:  0.45, y:  0.42, h: 0.88, sigma: 0.28, color: accentColor, label: 'Tiger' },
-          { x:  0.28, y:  0.55, h: 0.80, sigma: 0.26, color: amber,       label: 'Cat' }
+          { x:  0.10, y:  0.78, h: 0.80, sigma: 0.26, color: amber,       label: 'Cat' }
         ];
 
         // Interpolation point between Forest and Tiger
-        var interpX = 0.37;
-        var interpY = 0.02;
+        var interpX = 0.35;
+        var interpY = -0.03;
 
         function heightAt(px, py) {
           var h = 0;
@@ -286,7 +286,7 @@
         }
 
         function colorAt(px, py, totalH) {
-          if (totalH < 0.01) return bgDeep;
+          if (totalH < 0.01) return 'rgba(10,14,23,0.0)';
           var r = 0, g = 0, b = 0;
           var bg = hexToRgb(bgDeep);
           for (var i = 0; i < peaks.length; i++) {
@@ -303,7 +303,8 @@
           r = bg[0] * (1 - brightness) + r * brightness;
           g = bg[1] * (1 - brightness) + g * brightness;
           b = bg[2] * (1 - brightness) + b * brightness;
-          return rgbToHex(r, g, b);
+          var alpha = Math.min(0.3 + brightness * 0.4, 0.75);
+          return 'rgba(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ',' + alpha.toFixed(2) + ')';
         }
 
         // Grid resolution
