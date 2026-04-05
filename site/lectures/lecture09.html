@@ -364,7 +364,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
         ctx.clearRect(0, 0, w, h);
 
         const s = parseFloat(slider.value);
-        const padL = 20, padR = 20, padT = 30, padB = 40;
+        const padL = 50, padR = 20, padT = 30, padB = 40;
         const plotW = w - padL - padR;
         const plotH = h - padT - padB;
         const N = 400;
@@ -407,6 +407,24 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
         ctx.strokeStyle = 'rgba(255,255,255,0.1)';
         ctx.lineWidth = 1;
         ctx.stroke();
+
+        // Y-axis line
+        ctx.beginPath();
+        ctx.moveTo(padL, padT);
+        ctx.lineTo(padL, padT + plotH);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Y-axis label (rotated)
+        ctx.save();
+        ctx.translate(16, padT + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.font = '11px "Source Sans 3", sans-serif';
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+        ctx.fillText('relative probability', 0, 0);
+        ctx.restore();
 
         // Label peaks
         ctx.font = '12px "IBM Plex Mono", monospace';
