@@ -276,4 +276,12 @@ document.addEventListener('DOMContentLoaded', function() {
   renderMath();
   updateProgress();
   initMathTooltips();
+
+  // Load dev editor on localhost (no-ops in production)
+  const h = window.location.hostname;
+  if (h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0') {
+    const s = document.createElement('script');
+    s.src = '../scripts/dev-editor.js';
+    document.body.appendChild(s);
+  }
 });
