@@ -65,7 +65,9 @@ class SaveHandler(BaseHTTPRequestHandler):
             self._respond(400, "No <article> tag found in file")
             return
 
-        updated = pattern.sub(rf"\1\n{new_html}\n\3", original, count=1)
+        def replacer(m):
+            return m.group(1) + "\n" + new_html + "\n" + m.group(3)
+        updated = pattern.sub(replacer, original, count=1)
         file_path.write_text(updated, encoding="utf-8")
 
         self._respond(200, "OK")
