@@ -49,6 +49,33 @@
     #dev-editor-toggle:hover {
       transform: scale(1.05);
     }
+    .dev-delete-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      background: #ef4444;
+      color: #fff;
+      font-size: 12px;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      z-index: 9998;
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+      padding: 0;
+    }
+    [contenteditable="true"]:hover {
+      position: relative;
+    }
+    [contenteditable="true"]:hover > .dev-delete-btn {
+      opacity: 1;
+      pointer-events: auto;
+    }
     #dev-editor-saved {
       position: fixed;
       bottom: 72px;
@@ -94,8 +121,27 @@
     els.forEach(function (el) {
       if (on) {
         el.setAttribute('contenteditable', 'true');
+        // Add delete button
+        if (!el.querySelector('.dev-delete-btn')) {
+          el.style.position = 'relative';
+          const del = document.createElement('button');
+          del.className = 'dev-delete-btn';
+          del.textContent = '×';
+          del.title = 'Delete this block';
+          del.addEventListener('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            if (confirm('Delete this block?')) {
+              el.remove();
+            }
+          });
+          el.appendChild(del);
+        }
       } else {
         el.removeAttribute('contenteditable');
+        // Remove delete buttons
+        const del = el.querySelector('.dev-delete-btn');
+        if (del) del.remove();
       }
     });
   }
