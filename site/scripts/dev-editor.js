@@ -76,6 +76,51 @@
       opacity: 1;
       pointer-events: auto;
     }
+    .dev-add-btn {
+      display: block;
+      width: 100%;
+      height: 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      position: relative;
+      margin: 0;
+      padding: 8px 0;
+      transition: background 0.15s;
+    }
+    body.dev-editing .dev-add-btn:hover {
+      background: transparent;
+    }
+    body.dev-editing .dev-add-btn::after {
+      content: '+';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--teal, #2dd4bf);
+      color: var(--bg-deep, #0a0e17);
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 22px;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    body.dev-editing .dev-add-btn:hover::after {
+      opacity: 1;
+    }
+    body.dev-editing .dev-add-btn:hover::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 2px;
+      background: rgba(45, 212, 191, 0.3);
+    }
     #dev-editor-saved {
       position: fixed;
       bottom: 72px;
@@ -114,36 +159,82 @@
     return document.querySelector('.lecture-article') || document.querySelector('article');
   }
 
+  function createAddBtn(refEl) {
+    const btn = document.createElement('button');
+    btn.className = 'dev-add-btn';
+    btn.title = 'Insert paragraph';
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      const p = document.createElement('p');
+      p.setAttribute('contenteditable', 'true');
+      p.style.position = 'relative';
+      p.textContent = 'New paragraph — click to edit';
+      // Insert after this add button
+      btn.parentNode.insertBefore(p, btn.nextSibling);
+      // Add delete button to the new paragraph
+      attachDeleteBtn(p);
+      // Add another add button after the new paragraph
+      const newAdd = createAddBtn(p);
+      p.parentNode.insertBefore(newAdd, p.nextSibling);
+      // Focus the new paragraph
+      p.focus();
+      // Select all text for easy replacement
+      const range = document.createRange();
+      range.selectNodeContents(p);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      dirty = true;
+    });
+    return btn;
+  }
+
+  function attachDeleteBtn(el) {
+    if (el.querySelector('.dev-delete-btn')) return;
+    el.style.position = 'relative';
+    const del = document.createElement('button');
+    del.className = 'dev-delete-btn';
+    del.textContent = '×';
+    del.title = 'Delete this block';
+    del.addEventListener('click', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (confirm('Delete this block?')) {
+        // Also remove the adjacent add button
+        const nextSib = el.nextElementSibling;
+        if (nextSib && nextSib.classList.contains('dev-add-btn')) nextSib.remove();
+        el.remove();
+        dirty = true;
+      }
+    });
+    el.appendChild(del);
+  }
+
   function setEditable(on) {
     const article = getArticle();
     if (!article) return;
     const els = article.querySelectorAll(EDITABLE_SELECTORS);
-    els.forEach(function (el) {
-      if (on) {
+    if (on) {
+      els.forEach(function (el) {
         el.setAttribute('contenteditable', 'true');
-        // Add delete button
-        if (!el.querySelector('.dev-delete-btn')) {
-          el.style.position = 'relative';
-          const del = document.createElement('button');
-          del.className = 'dev-delete-btn';
-          del.textContent = '×';
-          del.title = 'Delete this block';
-          del.addEventListener('click', function (e) {
-            e.stopPropagation();
-            e.preventDefault();
-            if (confirm('Delete this block?')) {
-              el.remove();
-            }
-          });
-          el.appendChild(del);
+        attachDeleteBtn(el);
+      });
+      // Add "+" buttons between blocks
+      els.forEach(function (el) {
+        if (!el.nextElementSibling || !el.nextElementSibling.classList.contains('dev-add-btn')) {
+          const addBtn = createAddBtn(el);
+          el.parentNode.insertBefore(addBtn, el.nextSibling);
         }
-      } else {
+      });
+    } else {
+      els.forEach(function (el) {
         el.removeAttribute('contenteditable');
-        // Remove delete buttons
         const del = el.querySelector('.dev-delete-btn');
         if (del) del.remove();
-      }
-    });
+      });
+      // Remove all add buttons
+      article.querySelectorAll('.dev-add-btn').forEach(function (b) { b.remove(); });
+    }
   }
 
   // Strip any stale contenteditable on load
@@ -183,7 +274,11 @@
     const article = getArticle();
     if (!article) return;
 
-    const html = article.innerHTML;
+    // Clone article and strip editor UI before saving
+    const clone = article.cloneNode(true);
+    clone.querySelectorAll('.dev-add-btn, .dev-delete-btn').forEach(function (el) { el.remove(); });
+    clone.querySelectorAll('[contenteditable]').forEach(function (el) { el.removeAttribute('contenteditable'); });
+    const html = clone.innerHTML;
     const pagePath = window.location.pathname;
 
     btn.textContent = 'Saving...';
