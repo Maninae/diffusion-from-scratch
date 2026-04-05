@@ -472,7 +472,7 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <!-- Section 9.4 -->
     <h2 id="text-conditioning"><span class="section-number">9.4</span> Beyond Class Labels</h2>
 
-    <p>Everything we've covered so far uses class labels, a single integer per image. But the real power of CFG emerges when the conditioning signal grows richer: text prompts, segmentation maps for spatial control, keypoints for pose conditioning, depth maps, edge sketches. CFG doesn't care what the condition is, only that the model can make predictions with and without it. Text-to-image is the most prominent example, and it's how Stable Diffusion, DALL-E, and Imagen work.</p>
+    <p>Everything we've covered so far uses class labels, a single integer per image. But the real power of CFG emerges when the conditioning signal grows richer: text prompts, segmentation maps for spatial control, keypoints for pose conditioning, depth maps, edge sketches. CFG doesn't care what the condition is, only that the model can make predictions with and without it. The real power comes from control: you can steer the model toward desirable conditions and away from undesirable ones, and you choose both. Text-to-image is the most prominent example, and it's how Stable Diffusion, DALL-E, and Imagen work.</p>
 
     <h3 id="text-to-image-pipeline">Example: The Text-to-Image Pipeline</h3>
 
