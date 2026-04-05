@@ -41,7 +41,7 @@
   // --- Inject editable outline style ---
   const style = document.createElement('style');
   style.textContent = `
-    [contenteditable="true"] {
+    body.dev-editing [contenteditable="true"] {
       outline: 2px solid rgba(96, 165, 250, 0.45) !important;
       outline-offset: 2px;
       border-radius: 3px;
@@ -146,11 +146,37 @@
     });
   }
 
+  // Strip any stale contenteditable on load
+  (function cleanup() {
+    const article = getArticle();
+    if (!article) return;
+    article.querySelectorAll('[contenteditable]').forEach(function (el) {
+      el.removeAttribute('contenteditable');
+    });
+    document.body.classList.remove('dev-editing');
+  })();
+
+  // Track unsaved changes
+  let dirty = false;
+  window.addEventListener('beforeunload', function (e) {
+    if (editing && dirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  function markDirty() { dirty = true; }
+
   function enterEditMode() {
     editing = true;
+    dirty = false;
+    document.body.classList.add('dev-editing');
     setEditable(true);
     btn.textContent = 'Save';
     btn.style.background = 'var(--accent, #f97316)';
+    // Listen for edits
+    const article = getArticle();
+    if (article) article.addEventListener('input', markDirty);
   }
 
   function save() {
@@ -172,6 +198,10 @@
         if (!res.ok) throw new Error('Server returned ' + res.status);
         setEditable(false);
         editing = false;
+        dirty = false;
+        document.body.classList.remove('dev-editing');
+        var article = getArticle();
+        if (article) article.removeEventListener('input', markDirty);
         btn.textContent = 'Edit';
         btn.style.background = 'var(--teal, #2dd4bf)';
         btn.disabled = false;
