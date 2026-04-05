@@ -470,9 +470,9 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
     <p>This tradeoff is fundamental. Nearly all state-of-the-art results use $s > 1$ because users generally prefer sharp, coherent outputs over diversity. Finding the right $s$ is often a matter of taste and application.</p>
 
     <!-- Section 9.4 -->
-    <h2 id="text-conditioning"><span class="section-number">9.4</span> Text Conditioning via Cross-Attention</h2>
+    <h2 id="text-conditioning"><span class="section-number">9.4</span> Beyond Class Labels</h2>
 
-    <p>Everything we've covered so far uses class labels, a single integer per image. But the real power of CFG emerges when the conditioning signal is a <strong>text prompt</strong>. This is how Stable Diffusion, DALL-E, and Imagen work.</p>
+    <p>Everything we've covered so far uses class labels, a single integer per image. But the real power of CFG emerges when the conditioning signal grows richer: text prompts, segmentation maps for spatial control, keypoints for pose conditioning, depth maps, edge sketches. CFG doesn't care what the condition is, only that the model can make predictions with and without it. Text-to-image is the most prominent example, and it's how Stable Diffusion, DALL-E, and Imagen work.</p>
 
     <h3 id="text-to-image-pipeline">The Text-to-Image Pipeline</h3>
 
