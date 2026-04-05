@@ -18,10 +18,10 @@ from PIL import Image, ImageDraw, ImageFont
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-MODEL_ID = "stabilityai/sd-turbo"
+MODEL_ID = "runwayml/stable-diffusion-v1-5"
 PROMPT = "a photograph of a cat sitting in sunlight"
-GUIDANCE_SCALES = [0.1, 0.5, 1.0, 2.0, 4.0]
-NUM_STEPS = 25
+GUIDANCE_SCALES = [1.0, 2.0, 4.0, 8.0, 15.0]
+NUM_STEPS = 30
 SEED = 42
 DEVICE = "mps"
 DTYPE = torch.float16

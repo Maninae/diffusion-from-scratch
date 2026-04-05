@@ -476,24 +476,25 @@ eps_guided = eps_uncond + guidance_scale * (eps_cond - eps_uncond)
 
     <h3 id="text-to-image-pipeline">The Text-to-Image Pipeline</h3>
 
+    <p>The path from text prompt to generated image has three stages:</p>
+
     <ol>
-      <li><strong>Encode the text:</strong> A pretrained text encoder (<a href="https://openai.com/research/clip" target="_blank">CLIP</a> or <a href="https://en.wikipedia.org/wiki/T5_(language_model)" target="_blank">T5</a>) maps the prompt to a sequence of embeddings with shape $(\text{seq\_len}, d_\text{text})$. "A photo of a cat on a beach" becomes a matrix of token embeddings.</li>
-      <li><strong>Inject via cross-attention:</strong> In the U-Net, at each attention layer:
-        <ul>
-          <li><strong>Q</strong> comes from the image features (spatial tokens)</li>
-          <li><strong>K, V</strong> come from the text embeddings</li>
-          <li>Each spatial position in the image attends to all text tokens</li>
-        </ul>
-      </li>
-      <li><strong>Apply CFG:</strong> During training, randomly drop the text conditioning (replace with an empty string embedding). During sampling, use the same CFG formula with text-conditioned and unconditional predictions.</li>
+      <li><strong>Encode the text.</strong> A pretrained text encoder (<a href="https://openai.com/research/clip" target="_blank">CLIP</a> or <a href="https://en.wikipedia.org/wiki/T5_(language_model)" target="_blank">T5</a>) converts the prompt into a sequence of embedding vectors. "A cat sitting in sunlight" becomes a small matrix of shape $(\text{seq\_len}, d_\text{text})$, one vector per token.</li>
+      <li><strong>Inject via cross-attention.</strong> Inside the U-Net, each spatial position in the image attends to every token in the text sequence. Queries come from the image features, keys and values come from the text embeddings. This is how each region of the image learns which words matter to it.</li>
+      <li><strong>Apply CFG.</strong> During training, randomly replace the text embedding with an empty-string embedding. During sampling, combine text-conditioned and unconditional predictions using the same CFG formula from Section 9.2.</li>
     </ol>
 
     <div class="callout definition">
       <div class="callout-label">Definition</div>
-      <strong>Cross-Attention.</strong> The same mechanism as the self-attention from Lecture 5, but Q comes from one source (image features) and K, V come from another (text embeddings). This allows the image to "query" the text: each pixel asks "which words in the prompt are relevant to what I should look like?"
+      <strong>Cross-Attention.</strong> Same mechanism as self-attention (Lecture 5), but Q comes from one modality (image features) and K, V come from another (text embeddings). Each pixel effectively asks: "which words in the prompt should influence what I look like?"
     </div>
 
-    <p>We won't implement text conditioning in this course (it requires pretrained text encoders), but understanding the architecture is important. The <em>guidance mechanism</em> is identical; CFG doesn't care whether the conditioning is a class integer or a text embedding. You still train with random dropout and combine conditional + unconditional predictions at inference.</p>
+    <div style="max-width: 90%; margin: 2em auto; text-align: center;">
+      <img src="../images/cfg_comparison.png" alt="CFG guidance scale comparison: the same prompt at w=1, 2, 4, 8, 15" style="width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+      <p style="font-family: 'Source Sans 3', sans-serif; font-size: 13px; color: #6b7280; text-align: center; margin-top: 12px; line-height: 1.5;">"A photograph of a cat sitting in sunlight" generated with Stable Diffusion v1.5 at guidance scales w = 1, 2, 4, 8, and 15. At w = 1 (no amplification), the image is soft and unfocused. The sweet spot around w = 4–8 produces sharp, vivid results. At w = 15, colors oversaturate and artifacts appear.</p>
+    </div>
+
+    <p>We won't implement text conditioning in this course (it requires pretrained text encoders), but understanding the architecture is important. The <em>guidance mechanism</em> is identical: CFG doesn't care whether the conditioning is a class integer or a text embedding. The same random-dropout training and conditional/unconditional combination at inference applies either way.</p>
 
     <!-- Section 9.5 -->
     <h2 id="negative-prompts"><span class="section-number">9.5</span> Negative Prompts</h2>
