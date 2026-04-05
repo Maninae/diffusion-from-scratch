@@ -216,7 +216,7 @@
         // Responsive sizing
         var containerWidth = container.offsetWidth;
         var W = Math.min(containerWidth, 900);
-        var H = Math.round(W * 0.65);
+        var H = Math.round(W * 0.45);
         var dpr = window.devicePixelRatio || 1;
         canvas.width = W * dpr;
         canvas.height = H * dpr;
@@ -240,7 +240,7 @@
 
         // Isometric projection parameters
         var centerX = W * 0.50;
-        var centerY = H * 0.52;
+        var centerY = H * 0.48;
         var sX = W * 0.30;
         var sY = H * 0.28;
         var tiltFactor = 0.68;
