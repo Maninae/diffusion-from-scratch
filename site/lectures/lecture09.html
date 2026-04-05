@@ -124,79 +124,51 @@
     <p>Typical values: $s = 2$&ndash;$4$ for class labels, $s = 7.5$&ndash;$15$ for text-to-image (Stable Diffusion defaults to $s = 7.5$).</p>
 
     <!-- CFG vector geometry visualization -->
-    <div style="max-width: 70%; margin: 32px auto; background: #0f1621; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
-      <svg viewBox="0 0 720 440" style="width: 100%; height: auto; display: block;">
+    <div style="max-width: 70%; margin: 32px auto; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 24px 24px 16px; overflow: hidden;">
+      <svg viewBox="0 0 600 400" style="width: 100%; height: auto; display: block;">
         <defs>
-          <!-- Arrowheads -->
-          <marker id="ah-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#9ca3af"/></marker>
-          <marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#60a5fa"/></marker>
-          <marker id="ah-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#4ade80"/></marker>
-          <marker id="ah-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#a78bfa"/></marker>
-          <marker id="ah-amber-dim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#fbbf24" opacity="0.6"/></marker>
-          <marker id="ah-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#f97316"/></marker>
+          <marker id="ah-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#9ca3af"/></marker>
+          <marker id="ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#60a5fa"/></marker>
+          <marker id="ah-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#f97316"/></marker>
         </defs>
 
-        <!-- Origin point: x_t -->
-        <circle cx="120" cy="230" r="5" fill="#e8dcc8"/>
-        <text x="108" y="260" text-anchor="middle" fill="#e8dcc8" font-family="'IBM Plex Mono', monospace" font-size="13" font-weight="600">x&#x209C;</text>
+        <!-- Origin point -->
+        <circle cx="300" cy="350" r="5" fill="#e8dcc8"/>
+        <text x="300" y="372" text-anchor="middle" fill="#e8dcc8" font-family="'IBM Plex Mono', monospace" font-size="13" font-weight="600">x&#x209C;</text>
 
-        <!-- Unconditional prediction: prominent, straight right -->
-        <line x1="120" y1="230" x2="370" y2="230" stroke="#9ca3af" stroke-width="3.5" stroke-linecap="round" marker-end="url(#ah-muted)"/>
-        <text x="240" y="222" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="11">&#x03B5;(x&#x209C;, t, &#x2205;)</text>
-        <text x="240" y="256" fill="#9ca3af" font-family="'Source Sans 3', sans-serif" font-size="11" font-style="italic">unconditional</text>
+        <!-- 1. Unconditional vector: gray, toward upper-left -->
+        <line x1="300" y1="350" x2="180" y2="260" stroke="#9ca3af" stroke-width="3" stroke-linecap="round" marker-end="url(#ah-gray)"/>
+        <text x="196" y="252" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="12">&#x03B5;(x&#x209C;, t, &#x2205;)</text>
+        <text x="196" y="268" fill="#9ca3af" font-family="'Source Sans 3', sans-serif" font-size="11" font-style="italic">unconditional</text>
 
-        <!-- Class-conditional: "cat" — blue, upper-right (steep upward) -->
-        <line x1="120" y1="230" x2="360" y2="120" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" marker-end="url(#ah-blue)"/>
-        <text x="368" y="118" fill="#60a5fa" font-family="'IBM Plex Mono', monospace" font-size="11">"cat"</text>
+        <!-- 2. Conditional "cat" vector: blue, toward upper-right -->
+        <line x1="300" y1="350" x2="370" y2="170" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" marker-end="url(#ah-blue)"/>
+        <text x="378" y="168" fill="#60a5fa" font-family="'IBM Plex Mono', monospace" font-size="12">&#x03B5;(x&#x209C;, t, cat)</text>
 
-        <!-- Class-conditional: "dog" — green, slightly below horizontal -->
-        <line x1="120" y1="230" x2="375" y2="260" stroke="#4ade80" stroke-width="2" stroke-linecap="round" marker-end="url(#ah-green)"/>
-        <text x="383" y="264" fill="#4ade80" font-family="'IBM Plex Mono', monospace" font-size="11">"dog"</text>
+        <!-- 3. Guided extrapolation vector: orange, bold -->
+        <line x1="300" y1="350" x2="520" y2="80" stroke="#f97316" stroke-width="4" stroke-linecap="round" marker-end="url(#ah-orange)"/>
+        <text x="528" y="78" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="600">guided (s=3)</text>
 
-        <!-- Class-conditional: "car" — purple, lower-right (steep downward) -->
-        <line x1="120" y1="230" x2="340" y2="330" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" marker-end="url(#ah-purple)"/>
-        <text x="348" y="336" fill="#a78bfa" font-family="'IBM Plex Mono', monospace" font-size="11">"car"</text>
+        <!-- Dashed line: unconditional tip → conditional tip (Δε) -->
+        <line x1="180" y1="260" x2="370" y2="170" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="6,4" opacity="0.8"/>
+        <text x="262" y="200" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="12" opacity="0.9">&#x0394;&#x03B5;</text>
 
-        <!-- Difference vectors (dashed amber): uncond tip → each conditional tip -->
-        <!-- Δε cat: (370,230) → (360,120) -->
-        <line x1="370" y1="230" x2="360" y2="120" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="5,3" marker-end="url(#ah-amber-dim)"/>
-        <text x="378" y="168" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.8">&#x0394;&#x03B5; cat</text>
-
-        <!-- Δε dog: (370,230) → (375,260) -->
-        <line x1="370" y1="230" x2="375" y2="260" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="5,3" marker-end="url(#ah-amber-dim)"/>
-        <text x="383" y="248" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.8">&#x0394;&#x03B5; dog</text>
-
-        <!-- Δε car: (370,230) → (340,330) -->
-        <line x1="370" y1="230" x2="340" y2="330" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="5,3" marker-end="url(#ah-amber-dim)"/>
-        <text x="345" y="296" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.8">&#x0394;&#x03B5; car</text>
-
-        <!-- Guided prediction for "cat" with s=3 -->
-        <!-- uncond tip = (370,230), delta_cat = (360-370, 120-230) = (-10, -110). Scaled by 3: (-30, -330). Guided = origin + uncond_vec + 3*delta = (120+250-30, 230+0-330) = (340, -100) — clamp to viewBox -->
-        <!-- Better: guided = uncond + s*(cond - uncond) = (370,230) + 3*(-10,-110) = (340,-100). As arrow from origin: -->
-        <!-- Actually guided_pred = uncond_pred + s*(cond_pred - uncond_pred). In vector from x_t: uncond_vec + s*delta -->
-        <!-- uncond_vec from origin: (250, 0). delta: (-10, -110). s*delta: (-30, -330). guided from origin: (120+250-30, 230+0-330) = (340, -100). Clamp y to 28. -->
-        <line x1="120" y1="230" x2="580" y2="28" stroke="#f97316" stroke-width="3" stroke-linecap="round" marker-end="url(#ah-accent)"/>
-        <text x="588" y="28" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="11" font-weight="600">guided (s=3)</text>
-        <text x="588" y="44" fill="#f97316" font-family="'Source Sans 3', sans-serif" font-size="10" opacity="0.7">extrapolated "cat"</text>
-
-        <!-- Dashed extension line from conditional "cat" tip to guided tip -->
-        <line x1="360" y1="120" x2="580" y2="28" stroke="#f97316" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="6,4" opacity="0.4"/>
-
-        <!-- Annotation: s × Δε along extrapolation -->
-        <text x="478" y="64" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="9" opacity="0.65" transform="rotate(-22, 478, 64)">s &#x00D7; &#x0394;&#x03B5;</text>
+        <!-- Dashed line: conditional tip → guided tip (s × Δε) -->
+        <line x1="370" y1="170" x2="520" y2="80" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="6,4" opacity="0.6"/>
+        <text x="456" y="112" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="11" opacity="0.8">s &#x00D7; &#x0394;&#x03B5;</text>
 
         <!-- Legend -->
-        <line x1="50" y1="410" x2="70" y2="410" stroke="#9ca3af" stroke-width="3.5"/>
-        <text x="76" y="414" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="10">unconditional</text>
+        <line x1="40" y1="388" x2="60" y2="388" stroke="#9ca3af" stroke-width="3"/>
+        <text x="66" y="392" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="10">unconditional</text>
 
-        <line x1="190" y1="410" x2="210" y2="410" stroke="#60a5fa" stroke-width="2"/>
-        <text x="216" y="414" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">conditional</text>
+        <line x1="170" y1="388" x2="190" y2="388" stroke="#60a5fa" stroke-width="2.5"/>
+        <text x="196" y="392" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">conditional</text>
 
-        <line x1="310" y1="410" x2="330" y2="410" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3"/>
-        <text x="336" y="414" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">&#x0394;&#x03B5; = cond &#x2212; uncond</text>
+        <line x1="290" y1="388" x2="310" y2="388" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="316" y="392" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">&#x0394;&#x03B5;</text>
 
-        <line x1="520" y1="410" x2="540" y2="410" stroke="#f97316" stroke-width="3"/>
-        <text x="546" y="414" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">guided (s &gt; 1)</text>
+        <line x1="360" y1="388" x2="380" y2="388" stroke="#f97316" stroke-width="4"/>
+        <text x="386" y="392" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">guided (s &gt; 1)</text>
       </svg>
       <div style="text-align: center; margin-top: 8px;">
         <span style="color: #6b7280; font-family: 'IBM Plex Mono', monospace; font-size: 12px;">CFG extrapolates beyond the conditional prediction along the difference direction</span>
