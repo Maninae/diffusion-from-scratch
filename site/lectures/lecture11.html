@@ -687,7 +687,21 @@ noise = torch.<span class="function">randn_like</span>(x) + <span class="number"
 <span class="comment">#                             allowing dark/bright generation</span>
     </div>
 
-    <p style="position: relative;">The <code>randn(B, C, 1, 1)</code> term is a single random value per channel per sample, broadcast across all spatial positions. It shifts the entire channel up or down, teaching the model that brightness can change. The <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.1</mn></mrow><annotation encoding="application/x-tex">0.1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">0.1</span></span></span></span></span> scaling is a hyperparameter: too large and you distort the diffusion process, too small and the effect is negligible. For an excellent visual walkthrough of how this brightness bias manifests in practice, including side-by-side comparisons of generated outputs with and without offset noise, see <a href="https://www.crosslabs.org/blog/diffusion-with-offset-noise" target="_blank">CrossLabs' deep dive on the problem</a>.</p>
+    <p style="position: relative;">The <code>randn(B, C, 1, 1)</code> term is a single random value per channel per sample, broadcast across all spatial positions. It shifts the entire channel up or down, teaching the model that brightness can change. The <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.1</mn></mrow><annotation encoding="application/x-tex">0.1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">0.1</span></span></span></span></span> scaling is a hyperparameter: too large and you distort the diffusion process, too small and the effect is negligible.</p>
+
+    <div style="max-width: 800px; margin: 2rem auto;">
+      <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; justify-content: center;">
+        <div style="flex: 1; min-width: 280px;">
+          <p style="text-align: center; color: var(--text-secondary); font-size: 13px; font-weight: 600; margin-bottom: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; font-family: var(--mono);">Without offset noise</p>
+          <img src="https://cdn.prod.website-files.com/5e338abdcf951ffb0e1fadb1/63d4b445644ead435a37a928_1080x1080-4x4-grid-basemodel1.jpg" alt="Generated images without offset noise — dark alley and snow scenes appear washed out with medium brightness" style="width: 100%; border-radius: 8px; border: 1px solid var(--rule);">
+        </div>
+        <div style="flex: 1; min-width: 280px;">
+          <p style="text-align: center; color: var(--text-secondary); font-size: 13px; font-weight: 600; margin-bottom: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; font-family: var(--mono);">With offset noise</p>
+          <img src="https://cdn.prod.website-files.com/5e338abdcf951ffb0e1fadb1/63d4b4792108fe7f6b4ebe5c_1080x1080-4x4-grid-offset1.jpg" alt="Generated images with offset noise — dark alley is properly dark, snow scene is properly bright" style="width: 100%; border-radius: 8px; border: 1px solid var(--rule);">
+        </div>
+      </div>
+      <p style="text-align: center; color: var(--text-muted); font-size: 13px; font-style: italic; margin-top: 0.75rem; line-height: 1.5;">Without offset noise, the model can't produce truly dark or bright images: a dark alley comes out gray, and a snowy slope looks muted. With offset noise, the same prompts produce the full brightness range. Images from <a href="https://www.crosslabs.org/blog/diffusion-with-offset-noise" target="_blank" style="color: var(--text-muted);">CrossLabs</a>.</p>
+    </div>
 
     <h3 id="zero-terminal-snr" style="position: relative;">Zero Terminal SNR</h3>
 
