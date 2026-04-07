@@ -55,80 +55,81 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">The U-Net has been diffusion's workhorse, but it doesn't scale cleanly. You can't just make it bigger and reliably get better results. Transformers can. We'll replace the U-Net with a simpler architecture: patchify the image into tokens, process them with standard transformer blocks conditioned via adaLN-Zero, and unpatchify back. The result scales predictably with compute, and it's what powers Stable Diffusion 3 and DALL-E 3.</p>
+
+    <p class="lecture-roadmap" style="position: relative;">The U-Net has been diffusion's workhorse, but it doesn't scale cleanly. You can't just make it bigger and reliably get better results. Transformers can. We'll replace the U-Net with a simpler architecture: patchify the image into tokens, process them with standard transformer blocks conditioned via adaLN-Zero, and unpatchify back. The result scales predictably with compute, and it's what powers Stable Diffusion 3 and DALL-E 3.</p>
 
 
-    <div class="callout prereq">
-      <div class="callout-label">This Lecture Is For You If</div>
+    <div class="callout prereq" style="position: relative;">
+      <div class="callout-label" style="position: relative;">This Lecture Is For You If</div>
       <ul>
-        <li>You want to understand how transformers replace U-Nets in modern diffusion</li>
-        <li>You've seen Vision Transformers (ViT) or are comfortable with self-attention</li>
+        <li style="position: relative;">You want to understand how transformers replace U-Nets in modern diffusion</li>
+        <li style="position: relative;">You've seen Vision Transformers (ViT) or are comfortable with self-attention</li>
       </ul>
     </div>
     <!-- Section 12.1 -->
-    <h2 id="transformers-for-everything"><span class="section-number">12.1</span> The Trend: Transformers for Everything</h2>
+    <h2 id="transformers-for-everything" style="position: relative;"><span class="section-number">12.1</span> The Trend: Transformers for Everything</h2>
 
-    <p>We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020, and it works well.</p>
+    <p style="position: relative;">We've spent the last several lectures building and improving U-Nets for diffusion. The U-Net has been the workhorse architecture since the original DDPM paper in 2020, and it works well.</p>
 
-    <p>Consider what it asks of us: an encoder-decoder structure, skip connections at every resolution, attention blocks injected at specific layers, carefully tuned channel multipliers. It's a lot of bespoke engineering.</p>
+    <p style="position: relative;">Consider what it asks of us: an encoder-decoder structure, skip connections at every resolution, attention blocks injected at specific layers, carefully tuned channel multipliers. It's a lot of bespoke engineering.</p>
 
-    <p>Meanwhile, a different story has been unfolding across machine learning. Transformers have conquered NLP (2017), vision classification with <a href="https://en.wikipedia.org/wiki/Vision_transformer" target="_blank">ViT</a> (2020), protein structure prediction, code generation, and more.</p>
+    <p style="position: relative;">Meanwhile, a different story has been unfolding across machine learning. Transformers have conquered NLP (2017), vision classification with <a href="https://en.wikipedia.org/wiki/Vision_transformer" target="_blank">ViT</a> (2020), protein structure prediction, code generation, and more.</p>
 
-    <p>The recipe is always the same: take a simple, repeated building block (self-attention + feedforward), stack it deep, and throw compute at it. The architecture itself barely changes; you just make it bigger.</p>
+    <p style="position: relative;">The recipe is always the same: take a simple, repeated building block (self-attention + feedforward), stack it deep, and throw compute at it. The architecture itself barely changes; you just make it bigger.</p>
 
-    <p>This is exactly the property that makes transformers so appealing for scaling. They follow <strong>predictable scaling laws</strong>: double the compute, get a measurable improvement.</p>
+    <p style="position: relative;">This is exactly the property that makes transformers so appealing for scaling. They follow <strong>predictable scaling laws</strong>: double the compute, get a measurable improvement.</p>
 
-    <p>U-Nets don't have this property. Scaling a U-Net means deciding where to add channels, which resolutions get attention, how deep each stage should be. It's an architecture search problem, not a compute scaling problem.</p>
+    <p style="position: relative;">U-Nets don't have this property. Scaling a U-Net means deciding where to add channels, which resolutions get attention, how deep each stage should be. It's an architecture search problem, not a compute scaling problem.</p>
 
-    <p>So the question becomes natural: can we replace the U-Net with a transformer and get the same (or better) results, while inheriting the transformer's scaling properties?</p>
+    <p style="position: relative;">So the question becomes natural: can we replace the U-Net with a transformer and get the same (or better) results, while inheriting the transformer's scaling properties?</p>
 
     <!-- Section 12.2 -->
-    <h2 id="dit-architecture"><span class="section-number">12.2</span> The DiT Architecture</h2>
+    <h2 id="dit-architecture" style="position: relative;"><span class="section-number">12.2</span> The DiT Architecture</h2>
 
-    <p>The answer is <strong>DiT</strong> (<a href="https://arxiv.org/abs/2212.09748" target="_blank">Peebles &amp; Xie, 2023</a>), The core idea is straightforward: Instead of the U-Net's complex encoder-decoder, DiT has three stages: <strong>patchify</strong> the image into a sequence of tokens, process them with <strong>standard transformer blocks</strong>, and <strong>unpatchify</strong> back into an image.</p>
+    <p style="position: relative;">The answer is <b>Diffusion Transformers</b> or&nbsp;<strong>DiT</strong> (<a href="https://arxiv.org/abs/2212.09748" target="_blank">Peebles &amp; Xie, 2023</a>), inspired by the transformer-first vision architecture of <a href="https://arxiv.org/abs/2010.11929" target="_blank">ViT</a> (<a href="https://arxiv.org/abs/2010.11929" target="_blank">Dosovitskiy et al., 2020</a>). The core idea is straightforward: Instead of the U-Net's complex encoder-decoder, DiT has three stages: <strong>patchify</strong> the image into a sequence of tokens, process them with <strong>standard transformer blocks</strong>, and <strong>unpatchify</strong> back into an image.</p>
 
-    <h3 id="patchify">Patchify: Image &rarr; Sequence</h3>
+    <h3 id="patchify" style="position: relative;">Patchify: Image → Sequence</h3>
 
-    <p>The first step borrows directly from Vision Transformers (ViT). We split the input image into non-overlapping patches, flatten each one, and linearly project it to the model's hidden dimension:</p>
+    <p style="position: relative;">The first step borrows directly from Vision Transformers (ViT). We split the input image into non-overlapping patches, flatten each one, and linearly project it to the model's hidden dimension:</p>
 
     <ul>
-      <li><strong>Patch size $p$</strong> &mdash; typically 2, 4, or 8 pixels</li>
-      <li>A $32 \times 32$ image with $p = 4$ produces $8 \times 8 = 64$ patches</li>
-      <li>Each patch is flattened ($p^2 \times C$ values) and projected to $d_{\text{model}}$</li>
-      <li>Shape: $(B, 3, 32, 32) \rightarrow (B, 64, d_{\text{model}})$ &mdash; 64 tokens of dimension $d_{\text{model}}$</li>
+      <li style="position: relative;"><strong>Patch size <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">p</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span></span></strong> — typically 2, 4, or 8 pixels</li>
+      <li style="position: relative;">A <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>32</mn><mo>×</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">32 \times 32</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7278em; vertical-align: -0.0833em;"></span><span class="mord">32</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">32</span></span></span></span></span> image with <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">p = 4</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">4</span></span></span></span></span> produces <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8</mn><mo>×</mo><mn>8</mn><mo>=</mo><mn>64</mn></mrow><annotation encoding="application/x-tex">8 \times 8 = 64</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7278em; vertical-align: -0.0833em;"></span><span class="mord">8</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">8</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">64</span></span></span></span></span> patches</li>
+      <li style="position: relative;">Each patch is flattened (<span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>p</mi><mn>2</mn></msup><mo>×</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">p^2 \times C</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1.0085em; vertical-align: -0.1944em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height: 0.8141em;"><span class="" style="top: -3.063em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6833em;"></span><span class="mord mathnormal" style="margin-right: 0.0715em;">C</span></span></span></span></span> values) and projected to <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mtext>model</mtext></msub></mrow><annotation encoding="application/x-tex">d_{\text{model}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8444em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3361em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">model</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span></li>
+      <li style="position: relative;">Shape: <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>B</mi><mo separator="true">,</mo><mn>3</mn><mo separator="true">,</mo><mn>32</mn><mo separator="true">,</mo><mn>32</mn><mo stretchy="false">)</mo><mo>→</mo><mo stretchy="false">(</mo><mi>B</mi><mo separator="true">,</mo><mn>64</mn><mo separator="true">,</mo><msub><mi>d</mi><mtext>model</mtext></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(B, 3, 32, 32) \rightarrow (B, 64, d_{\text{model}})</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right: 0.0502em;">B</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">32</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">32</span><span class="mclose">)</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right: 0.0502em;">B</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">64</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord"><span class="mord mathnormal">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3361em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">model</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></span> — 64 tokens of dimension <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mtext>model</mtext></msub></mrow><annotation encoding="application/x-tex">d_{\text{model}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8444em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3361em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">model</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span></li>
     </ul>
 
-    <p>We then add <strong>2D positional encodings</strong> (learnable or sinusoidal) so each token knows where in the image it came from. Without these, the transformer has no concept of spatial layout; it just sees an unordered bag of tokens.</p>
+    <p style="position: relative;">We then add <strong>2D positional encodings</strong> (learnable or sinusoidal) so each token knows where in the image it came from. Without these, the transformer has no concept of spatial layout; it just sees an unordered bag of tokens.</p>
 
-    <div class="callout note">
-      <div class="callout-label">Small Image Note</div>
-      Small images like $28 \times 28$ are not evenly divisible by patch size 8. You have several options: use $p = 2$ (giving $14 \times 14 = 196$ patches), $p = 4$ (giving $7 \times 7 = 49$ patches), $p = 7$ (giving $4 \times 4 = 16$ patches), or pad to $32 \times 32$ first. This is a practical detail you'll hit immediately when applying DiT to small-resolution datasets.
+    <div class="callout note" style="position: relative;">
+      <div class="callout-label" style="position: relative;">Small Image Note</div>
+      Small images like <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>28</mn><mo>×</mo><mn>28</mn></mrow><annotation encoding="application/x-tex">28 \times 28</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7278em; vertical-align: -0.0833em;"></span><span class="mord">28</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">28</span></span></span></span></span> are not evenly divisible by patch size 8. You have several options: use <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">p = 2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">2</span></span></span></span></span> (giving <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>14</mn><mo>×</mo><mn>14</mn><mo>=</mo><mn>196</mn></mrow><annotation encoding="application/x-tex">14 \times 14 = 196</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7278em; vertical-align: -0.0833em;"></span><span class="mord">14</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">14</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">196</span></span></span></span></span> patches), <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>4</mn></mrow><annotation encoding="application/x-tex">p = 4</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">4</span></span></span></span></span> (giving <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7</mn><mo>×</mo><mn>7</mn><mo>=</mo><mn>49</mn></mrow><annotation encoding="application/x-tex">7 \times 7 = 49</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7278em; vertical-align: -0.0833em;"></span><span class="mord">7</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">7</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">49</span></span></span></span></span> patches), <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">p = 7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">7</span></span></span></span></span> (giving <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4</mn><mo>×</mo><mn>4</mn><mo>=</mo><mn>16</mn></mrow><annotation encoding="application/x-tex">4 \times 4 = 16</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7278em; vertical-align: -0.0833em;"></span><span class="mord">4</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">4</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">16</span></span></span></span></span> patches), or pad to <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>32</mn><mo>×</mo><mn>32</mn></mrow><annotation encoding="application/x-tex">32 \times 32</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7278em; vertical-align: -0.0833em;"></span><span class="mord">32</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">32</span></span></span></span></span> first. This is a practical detail you'll hit immediately when applying DiT to small-resolution datasets.
     </div>
 
-    <h3 id="transformer-blocks">Transformer Blocks</h3>
+    <h3 id="transformer-blocks" style="position: relative;">Transformer Blocks</h3>
 
-    <p>The middle of DiT is a stack of transformer blocks. Each block has the standard structure you know from NLP and ViT:</p>
+    <p style="position: relative;">The middle of DiT is a stack of transformer blocks. Each block has the standard structure you know from NLP and ViT:</p>
 
     <ol>
-      <li>Layer normalization</li>
-      <li>Multi-head self-attention</li>
-      <li>Residual connection</li>
-      <li>Layer normalization</li>
-      <li>Feedforward network (MLP)</li>
-      <li>Residual connection</li>
+      <li style="position: relative;">Layer normalization</li>
+      <li style="position: relative;">Multi-head self-attention</li>
+      <li style="position: relative;">Residual connection</li>
+      <li style="position: relative;">Layer normalization</li>
+      <li style="position: relative;">Feedforward network (MLP)</li>
+      <li style="position: relative;">Residual connection</li>
     </ol>
 
-    <p>The twist is in how we handle conditioning. The timestep and (optionally) class label need to modulate every block. Standard <a href="https://en.wikipedia.org/wiki/Layer_normalization" target="_blank">LayerNorm</a> won't cut it. This is where <strong>adaLN-Zero</strong> comes in, and it's the key innovation that makes DiT work. We'll cover it in detail in the next section.</p>
+    <p style="position: relative;">The twist is in how we handle conditioning. The timestep and (optionally) class label need to modulate every block. Standard <a href="https://en.wikipedia.org/wiki/Layer_normalization" target="_blank">LayerNorm</a> won't cut it. This is where <strong>adaLN-Zero</strong> comes in, and it's the key innovation that makes DiT work. We'll cover it in detail in the next section.</p>
 
-    <h3 id="unpatchify">Unpatchify: Sequence &rarr; Image</h3>
+    <h3 id="unpatchify" style="position: relative;">Unpatchify: Sequence → Image</h3>
 
-    <p>After all transformer blocks, we need to get back to pixel space. Each token is linearly projected from $d_{\text{model}}$ to $p^2 \times C$ values, then reshaped back into the spatial grid:</p>
+    <p style="position: relative;">After all transformer blocks, we need to get back to pixel space. Each token is linearly projected from <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mtext>model</mtext></msub></mrow><annotation encoding="application/x-tex">d_{\text{model}}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8444em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3361em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">model</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span></span></span></span></span> to <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>p</mi><mn>2</mn></msup><mo>×</mo><mi>C</mi></mrow><annotation encoding="application/x-tex">p^2 \times C</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1.0085em; vertical-align: -0.1944em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height: 0.8141em;"><span class="" style="top: -3.063em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6833em;"></span><span class="mord mathnormal" style="margin-right: 0.0715em;">C</span></span></span></span></span> values, then reshaped back into the spatial grid:</p>
 
-    <p>$(B, 64, d_{\text{model}}) \rightarrow (B, 3, 32, 32)$</p>
+    <p style="position: relative;"><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>B</mi><mo separator="true">,</mo><mn>64</mn><mo separator="true">,</mo><msub><mi>d</mi><mtext>model</mtext></msub><mo stretchy="false">)</mo><mo>→</mo><mo stretchy="false">(</mo><mi>B</mi><mo separator="true">,</mo><mn>3</mn><mo separator="true">,</mo><mn>32</mn><mo separator="true">,</mo><mn>32</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(B, 64, d_{\text{model}}) \rightarrow (B, 3, 32, 32)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right: 0.0502em;">B</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">64</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord"><span class="mord mathnormal">d</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3361em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">model</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right: 0.0502em;">B</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">32</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord">32</span><span class="mclose">)</span></span></span></span></span></p>
 
-    <p>The output is the predicted noise $\hat{\epsilon}$, same as with our U-Net. DiT is a drop-in replacement for the denoiser.</p>
+    <p style="position: relative;">The output is the predicted noise <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover accent="true"><mi>ϵ</mi><mo>^</mo></mover></mrow><annotation encoding="application/x-tex">\hat{\epsilon}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.6944em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height: 0.6944em;"><span class="" style="top: -3em;"><span class="pstrut" style="height: 3em;"></span><span class="mord mathnormal">ϵ</span></span><span class="" style="top: -3em;"><span class="pstrut" style="height: 3em;"></span><span class="accent-body" style="left: -0.1944em;"><span class="mord">^</span></span></span></span></span></span></span></span></span></span></span>, same as with our U-Net. DiT is a drop-in replacement for the denoiser.</p>
 
-    <h3 id="dit-pseudocode">Putting It Together</h3>
+    <h3 id="dit-pseudocode" style="position: relative;">Putting It Together</h3>
 
     <div class="pseudocode">
 <span class="keyword">class</span> DiT:
@@ -152,99 +153,99 @@
     </div>
 
     <!-- Section 12.3 -->
-    <h2 id="adaln-zero"><span class="section-number">12.3</span> Conditioning via adaLN-Zero</h2>
+    <h2 id="adaln-zero" style="position: relative;"><span class="section-number">12.3</span> Conditioning via adaLN-Zero</h2>
 
-    <p>The challenge is conditioning. A diffusion model needs to know <em>what timestep</em> it's denoising at, since the behavior at $t = 10$ (light noise) is completely different from $t = 990$ (nearly pure noise). In our U-Net, we injected timestep information through adaptive group normalization. DiT needs something equivalent for transformer blocks.</p>
+    <p style="position: relative;">The challenge is conditioning. A diffusion model needs to know <em>what timestep</em> it's denoising at, since the behavior at <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>10</mn></mrow><annotation encoding="application/x-tex">t = 10</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.6151em;"></span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">10</span></span></span></span></span> (light noise) is completely different from <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>=</mo><mn>990</mn></mrow><annotation encoding="application/x-tex">t = 990</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.6151em;"></span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">990</span></span></span></span></span> (nearly pure noise). In our U-Net, we injected timestep information through adaptive group normalization. DiT needs something equivalent for transformer blocks.</p>
 
-    <h3 id="from-layernorm-to-adaln">From LayerNorm to Adaptive LayerNorm</h3>
+    <h3 id="from-layernorm-to-adaln" style="position: relative;">From LayerNorm to Adaptive LayerNorm</h3>
 
-    <p>Standard LayerNorm has two learned parameters, $\gamma$ (scale) and $\beta$ (shift):</p>
+    <p style="position: relative;">Standard LayerNorm has two learned parameters, <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi></mrow><annotation encoding="application/x-tex">\gamma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0556em;">γ</span></span></span></span></span> (scale) and <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi></mrow><annotation encoding="application/x-tex">\beta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8889em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0528em;">β</span></span></span></span></span> (shift):</p>
 
-    $$y = \frac{x - \mu}{\sigma} \cdot \gamma + \beta$$
+    <span><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>y</mi><mo>=</mo><mfrac><mrow><mi>x</mi><mo>−</mo><mi>μ</mi></mrow><mi>σ</mi></mfrac><mo>⋅</mo><mi>γ</mi><mo>+</mo><mi>β</mi></mrow><annotation encoding="application/x-tex">y = \frac{x - \mu}{\sigma} \cdot \gamma + \beta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0359em;">y</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 1.9463em; vertical-align: -0.686em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 1.2603em;"><span class="" style="top: -2.314em;"><span class="pstrut" style="height: 3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.0359em;">σ</span></span></span><span class="" style="top: -3.23em;"><span class="pstrut" style="height: 3em;"></span><span class="frac-line" style="border-bottom-width: 0.04em;"></span></span><span class="" style="top: -3.677em;"><span class="pstrut" style="height: 3em;"></span><span class="mord"><span class="mord mathnormal">x</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mord mathnormal">μ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.686em;"><span class=""></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.7778em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0556em;">γ</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.8889em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0528em;">β</span></span></span></span></span></span>
 
-    <p>These parameters are the same regardless of input. <strong>Adaptive LayerNorm (adaLN)</strong> makes them <em>condition-dependent</em> &mdash; we predict $\gamma$ and $\beta$ from the conditioning signal $c$ (timestep + class embedding):</p>
+    <p style="position: relative;">These parameters are the same regardless of input. <strong>Adaptive LayerNorm (adaLN)</strong> makes them <em>condition-dependent</em> — we predict <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi></mrow><annotation encoding="application/x-tex">\gamma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0556em;">γ</span></span></span></span></span> and <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi></mrow><annotation encoding="application/x-tex">\beta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8889em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0528em;">β</span></span></span></span></span> from the conditioning signal <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi></mrow><annotation encoding="application/x-tex">c</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal">c</span></span></span></span></span> (timestep + class embedding):</p>
 
-    $$\gamma, \beta = \text{Linear}(c)$$
+    <span><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>γ</mi><mo separator="true">,</mo><mi>β</mi><mo>=</mo><mtext>Linear</mtext><mo stretchy="false">(</mo><mi>c</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\gamma, \beta = \text{Linear}(c)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8889em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0556em;">γ</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal" style="margin-right: 0.0528em;">β</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord text"><span class="mord">Linear</span></span><span class="mopen">(</span><span class="mord mathnormal">c</span><span class="mclose">)</span></span></span></span></span></span>
 
-    <p>This is the same idea as the adaptive group normalization we used in our U-Net's residual blocks (Lecture 5), just applied to transformer-style LayerNorm instead.</p>
+    <p style="position: relative;">This is the same idea as the adaptive group normalization we used in our U-Net's residual blocks (Lecture 5), just applied to transformer-style LayerNorm instead.</p>
 
-    <h3 id="zero-initialization">The "Zero" in adaLN-Zero</h3>
+    <h3 id="zero-initialization" style="position: relative;">The "Zero" in adaLN-Zero</h3>
 
-    <p>adaLN-Zero additionally predicts a <strong>gate parameter</strong> $\alpha$, and initializes it to zero:</p>
+    <p style="position: relative;">adaLN-Zero additionally predicts a <strong>gate parameter</strong> <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal" style="margin-right: 0.0037em;">α</span></span></span></span></span>, and initializes it to zero:</p>
 
-    $$\gamma, \beta, \alpha = \text{Linear}(c)$$
+    <span><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>γ</mi><mo separator="true">,</mo><mi>β</mi><mo separator="true">,</mo><mi>α</mi><mo>=</mo><mtext>Linear</mtext><mo stretchy="false">(</mo><mi>c</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\gamma, \beta, \alpha = \text{Linear}(c)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.8889em; vertical-align: -0.1944em;"></span><span class="mord mathnormal" style="margin-right: 0.0556em;">γ</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal" style="margin-right: 0.0528em;">β</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal" style="margin-right: 0.0037em;">α</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord text"><span class="mord">Linear</span></span><span class="mopen">(</span><span class="mord mathnormal">c</span><span class="mclose">)</span></span></span></span></span></span>
 
-    <p>After each sublayer (attention or FFN), the output is gated:</p>
+    <p style="position: relative;">After each sublayer (attention or FFN), the output is gated:</p>
 
-    $$x = x + \alpha \cdot \text{sublayer}(\text{adaLN}(x, \gamma, \beta))$$
+    <span><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>x</mi><mo>=</mo><mi>x</mi><mo>+</mo><mi>α</mi><mo>⋅</mo><mtext>sublayer</mtext><mo stretchy="false">(</mo><mtext>adaLN</mtext><mo stretchy="false">(</mo><mi>x</mi><mo separator="true">,</mo><mi>γ</mi><mo separator="true">,</mo><mi>β</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">x = x + \alpha \cdot \text{sublayer}(\text{adaLN}(x, \gamma, \beta))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6667em; vertical-align: -0.0833em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.4445em;"></span><span class="mord mathnormal" style="margin-right: 0.0037em;">α</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord text"><span class="mord">sublayer</span></span><span class="mopen">(</span><span class="mord text"><span class="mord">adaLN</span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal" style="margin-right: 0.0556em;">γ</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal" style="margin-right: 0.0528em;">β</span><span class="mclose">))</span></span></span></span></span></span>
 
-    <p>Because $\alpha$ starts at zero, every transformer block acts as the <strong>identity function</strong> at initialization. The model begins by doing nothing &mdash; just passing the input through unchanged &mdash; and gradually learns to process. This stabilizes training, especially for deep models.</p>
+    <p style="position: relative;">Because <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\alpha</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal" style="margin-right: 0.0037em;">α</span></span></span></span></span> starts at zero, every transformer block acts as the <strong>identity function</strong> at initialization. The model begins by doing nothing — just passing the input through unchanged — and gradually learns to process. This stabilizes training, especially for deep models.</p>
 
-    <div class="callout insight">
-      <div class="callout-label">Key Insight</div>
+    <div class="callout insight" style="position: relative;">
+      <div class="callout-label" style="position: relative;">Key Insight</div>
       Zero-initialization is a principled approach to training deep residual networks, not an ad hoc trick. By starting each block as an identity, you avoid the "signal explosion" problem where randomly initialized deep networks produce wildly varying outputs. The network starts simple and adds complexity only as needed during training.
     </div>
 
-    <h3 id="dit-block-pseudocode">DiT Block Pseudocode</h3>
+    <h3 id="dit-block-pseudocode" style="position: relative;">DiT Block Pseudocode</h3>
 
     <div class="pseudocode">
 <span class="keyword">class</span> DiTBlock:
     <span class="keyword">def</span> <span class="function">forward</span>(x, c):
         <span class="comment"># Predict all adaLN-Zero params from conditioning</span>
-        &gamma;1, &beta;1, &alpha;1, &gamma;2, &beta;2, &alpha;2 = <span class="keyword">self</span>.<span class="function">adaln_mlp</span>(c).<span class="function">chunk</span>(<span class="number">6</span>, dim=-<span class="number">1</span>)
+        γ1, β1, α1, γ2, β2, α2 = <span class="keyword">self</span>.<span class="function">adaln_mlp</span>(c).<span class="function">chunk</span>(<span class="number">6</span>, dim=-<span class="number">1</span>)
 
         <span class="comment"># Self-attention with adaLN</span>
-        h = <span class="function">layer_norm</span>(x) * (<span class="number">1</span> + &gamma;1) + &beta;1
+        h = <span class="function">layer_norm</span>(x) * (<span class="number">1</span> + γ1) + β1
         h = <span class="function">self_attention</span>(h)
-        x = x + &alpha;1 * h                <span class="comment"># gated residual</span>
+        x = x + α1 * h                <span class="comment"># gated residual</span>
 
         <span class="comment"># FFN with adaLN</span>
-        h = <span class="function">layer_norm</span>(x) * (<span class="number">1</span> + &gamma;2) + &beta;2
+        h = <span class="function">layer_norm</span>(x) * (<span class="number">1</span> + γ2) + β2
         h = <span class="function">ffn</span>(h)
-        x = x + &alpha;2 * h                <span class="comment"># gated residual</span>
+        x = x + α2 * h                <span class="comment"># gated residual</span>
 
         <span class="keyword">return</span> x
     </div>
 
-    <p>Notice the symmetry: each block has <strong>six</strong> condition-dependent parameters &mdash; scale, shift, and gate for both the attention sublayer and the FFN sublayer. All six are predicted from a single MLP applied to the conditioning vector $c$.</p>
+    <p style="position: relative;">Notice the symmetry: each block has <strong>six</strong> condition-dependent parameters — scale, shift, and gate for both the attention sublayer and the FFN sublayer. All six are predicted from a single MLP applied to the conditioning vector <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi></mrow><annotation encoding="application/x-tex">c</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal">c</span></span></span></span></span>.</p>
 
     <!-- Section 12.4 -->
-    <h2 id="scaling"><span class="section-number">12.4</span> Why DiT Scales Better</h2>
+    <h2 id="scaling" style="position: relative;"><span class="section-number">12.4</span> Why DiT Scales Better</h2>
 
-    <p>The whole point of moving to transformers was better scaling, and DiT delivers. Let's look at why.</p>
+    <p style="position: relative;">The whole point of moving to transformers was better scaling, and DiT delivers. Let's look at why.</p>
 
-    <h3 id="simpler-architecture">Architectural Simplicity</h3>
+    <h3 id="simpler-architecture" style="position: relative;">Architectural Simplicity</h3>
 
-    <p>Compare what you need to define for each architecture:</p>
+    <p style="position: relative;">Compare what you need to define for each architecture:</p>
 
     <ul>
-      <li><strong>U-Net:</strong> encoder stages, decoder stages, channel multipliers at each resolution, which resolutions get attention, skip connection types, number of ResBlocks per stage</li>
-      <li><strong>DiT:</strong> number of transformer blocks, hidden dimension, number of attention heads, patch size</li>
+      <li style="position: relative;"><strong>U-Net:</strong> encoder stages, decoder stages, channel multipliers at each resolution, which resolutions get attention, skip connection types, number of ResBlocks per stage</li>
+      <li style="position: relative;"><strong>DiT:</strong> number of transformer blocks, hidden dimension, number of attention heads, patch size</li>
     </ul>
 
-    <p>With DiT, scaling is trivial: stack more blocks, increase the hidden dimension. No architectural redesign required.</p>
+    <p style="position: relative;">With DiT, scaling is trivial: stack more blocks, increase the hidden dimension. No architectural redesign required.</p>
 
-    <h3 id="dit-scaling-results">Scaling Results</h3>
+    <h3 id="dit-scaling-results" style="position: relative;">Scaling Results</h3>
 
-    <p><a href="https://arxiv.org/abs/2212.09748" target="_blank">Peebles and Xie</a> demonstrated clean scaling on <strong>ImageNet 256&times;256</strong>:</p>
+    <p style="position: relative;"><a href="https://arxiv.org/abs/2212.09748" target="_blank">Peebles and Xie</a> demonstrated clean scaling on <strong>ImageNet 256×256</strong>:</p>
 
     <div class="algorithm">
-      <div class="algorithm-title">DiT Scaling (ImageNet 256&times;256, Classifier-Free Guidance)</div>
+      <div class="algorithm-title">DiT Scaling (ImageNet 256×256, Classifier-Free Guidance)</div>
       <ul>
-        <li><strong>DiT-S/2</strong> (33M params): FID 68.4</li>
-        <li><strong>DiT-B/2</strong> (130M params): FID 43.5</li>
-        <li><strong>DiT-L/2</strong> (458M params): FID 23.3</li>
-        <li><strong>DiT-XL/2</strong> (675M params): FID 9.62 &rarr; with CFG: <strong>FID 2.27</strong> (state-of-the-art)</li>
+        <li style="position: relative;"><strong>DiT-S/2</strong> (33M params): FID 68.4</li>
+        <li style="position: relative;"><strong>DiT-B/2</strong> (130M params): FID 43.5</li>
+        <li style="position: relative;"><strong>DiT-L/2</strong> (458M params): FID 23.3</li>
+        <li style="position: relative;"><strong>DiT-XL/2</strong> (675M params): FID 9.62 → with CFG: <strong>FID 2.27</strong> (state-of-the-art)</li>
       </ul>
-      <p>The "/2" means patch size $p = 2$. FID (Fr&eacute;chet Inception Distance) measures image quality &mdash; lower is better.</p>
+      <p style="position: relative;">The "/2" means patch size <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">p = 2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.625em; vertical-align: -0.1944em;"></span><span class="mord mathnormal">p</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">2</span></span></span></span></span>. FID (Fréchet Inception Distance) measures image quality — lower is better.</p>
     </div>
 
-    <p>The pattern is clear: each step up in model size gives a predictable drop in <a href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance" target="_blank">FID</a>. This is the transformer scaling recipe at work: more parameters, more compute, better results, no architecture surgery needed.</p>
+    <p style="position: relative;">The pattern is clear: each step up in model size gives a predictable drop in <a href="https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance" target="_blank">FID</a>. This is the transformer scaling recipe at work: more parameters, more compute, better results, no architecture surgery needed.</p>
 
     <!-- Section 12.5 -->
-    <h2 id="unet-vs-dit"><span class="section-number">12.5</span> U-Net vs. DiT &mdash; When to Use Each</h2>
+    <h2 id="unet-vs-dit" style="position: relative;"><span class="section-number">12.5</span> U-Net vs. DiT — When to Use Each</h2>
 
-    <p>DiT doesn't make the U-Net obsolete. Each has its place, and the right choice depends on the project's constraints.</p>
+    <p style="position: relative;">DiT doesn't make the U-Net obsolete. Each has its place, and the right choice depends on the project's constraints.</p>
 
     <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px;">
       <thead>
@@ -288,30 +289,30 @@
       </tbody>
     </table>
 
-    <p>For small-scale experiments like ours, the U-Net is the right tool: smaller, faster to train, and scaling laws don't apply. But for a production image generator, DiT is the architecture of choice.</p>
+    <p style="position: relative;">For small-scale experiments like ours, the U-Net is the right tool: smaller, faster to train, and scaling laws don't apply. But for a production image generator, DiT is the architecture of choice.</p>
 
     <!-- Section 12.6 -->
-    <h2 id="dit-in-practice"><span class="section-number">12.6</span> DiT in the Wild</h2>
+    <h2 id="dit-in-practice" style="position: relative;"><span class="section-number">12.6</span> DiT in the Wild</h2>
 
-    <p>DiT powers the most capable generative models shipping today:</p>
+    <p style="position: relative;">DiT powers the most capable generative models shipping today:</p>
 
     <ul>
-      <li><strong>Sora (OpenAI)</strong> &mdash; uses DiT for video generation by treating video as <em>spatiotemporal patches</em>. A 10-second video becomes a long sequence of space-time tokens, processed by the same transformer machinery.</li>
-      <li><strong>Stable Diffusion 3 (Stability AI)</strong> &mdash; replaces the U-Net with an "MM-DiT" (multimodal DiT) that jointly attends to image and text tokens in the same sequence.</li>
-      <li><strong>Flux (Black Forest Labs)</strong> &mdash; a DiT-based architecture with improved efficiency and quality, from the original Stable Diffusion creators.</li>
+      <li style="position: relative;"><strong>Sora (OpenAI)</strong> — uses DiT for video generation by treating video as <em>spatiotemporal patches</em>. A 10-second video becomes a long sequence of space-time tokens, processed by the same transformer machinery.</li>
+      <li style="position: relative;"><strong>Stable Diffusion 3 (Stability AI)</strong> — replaces the U-Net with an "MM-DiT" (multimodal DiT) that jointly attends to image and text tokens in the same sequence.</li>
+      <li style="position: relative;"><strong>Flux (Black Forest Labs)</strong> — a DiT-based architecture with improved efficiency and quality, from the original Stable Diffusion creators.</li>
     </ul>
 
-    <p>Every new frontier diffusion model is DiT-based, not U-Net-based. The U-Net era (2020&ndash;2023) gave way to the DiT era because transformers scale simply and predictably.</p>
+    <p style="position: relative;">Every new frontier diffusion model is DiT-based, not U-Net-based. The U-Net era (2020–2023) gave way to the DiT era because transformers scale simply and predictably.</p>
 
-    <div class="callout insight">
-      <div class="callout-label">Key Insight</div>
+    <div class="callout insight" style="position: relative;">
+      <div class="callout-label" style="position: relative;">Key Insight</div>
       DiT keeps the noise schedules, training objectives, and sampling procedures unchanged. The contribution is showing that the <em>denoiser architecture</em> can be swapped from a bespoke CNN to a standard transformer, inheriting all the scaling benefits that transformers provide. The diffusion framework is architecture-agnostic.
     </div>
 
     <!-- Section 12.7: PyTorch -->
-    <h2 id="pytorch-reference"><span class="section-number">12.7</span> PyTorch Reference</h2>
+    <h2 id="pytorch-reference" style="position: relative;"><span class="section-number">12.7</span> PyTorch Reference</h2>
 
-    <p>Here's what the key components look like in actual PyTorch. First, the patchify and unpatchify operations:</p>
+    <p style="position: relative;">Here's what the key components look like in actual PyTorch. First, the patchify and unpatchify operations:</p>
 
     <div class="code-block">
       <div class="code-block-label">PyTorch</div>
@@ -327,7 +328,7 @@
         <span class="keyword">return</span> x
     </div>
 
-    <p>And the adaLN-Zero transformer block:</p>
+    <p style="position: relative;">And the adaLN-Zero transformer block:</p>
 
     <div class="code-block">
       <div class="code-block-label">PyTorch</div>
@@ -348,29 +349,30 @@
 
     <span class="keyword">def</span> <span class="function">forward</span>(self, x, c):         <span class="comment"># x: (B, N, dim), c: (B, dim)</span>
         params = self.adaln(c).unsqueeze(1).chunk(6, dim=-1)
-        &gamma;1, &beta;1, &alpha;1, &gamma;2, &beta;2, &alpha;2 = params
+        γ1, β1, α1, γ2, β2, α2 = params
 
         <span class="comment"># Attention with adaLN-Zero</span>
-        h = self.norm1(x) * (1 + &gamma;1) + &beta;1
+        h = self.norm1(x) * (1 + γ1) + β1
         h, _ = self.attn(h, h, h)
-        x = x + &alpha;1 * h
+        x = x + α1 * h
 
         <span class="comment"># FFN with adaLN-Zero</span>
-        h = self.norm2(x) * (1 + &gamma;2) + &beta;2
+        h = self.norm2(x) * (1 + γ2) + β2
         h = self.ffn(h)
-        x = x + &alpha;2 * h
+        x = x + α2 * h
 
         <span class="keyword">return</span> x
     </div>
 
     <!-- Looking Ahead -->
-    <h2 id="looking-ahead"><span class="section-number">12.8</span> Looking Ahead</h2>
+    <h2 id="looking-ahead" style="position: relative;"><span class="section-number">12.8</span> Looking Ahead</h2>
 
-    <p>DiT shows that the denoiser architecture is a replaceable module &mdash; you can swap the U-Net for a transformer and everything else stays the same. But the "everything else" still includes noise schedules, cumulative alpha products, ELBO-derived losses, and 50&ndash;1000 sampling steps.</p>
+    <p style="position: relative;">DiT shows that the denoiser architecture is a replaceable module — you can swap the U-Net for a transformer and everything else stays the same. But the "everything else" still includes noise schedules, cumulative alpha products, ELBO-derived losses, and 50–1000 sampling steps.</p>
 
-    <p>In the next lecture, we'll ask: what if we could simplify <em>that</em> part too? Flow matching does exactly this: it replaces the entire DDPM framework with straight-line interpolation and velocity prediction. The result is simpler math, more stable training, and fewer sampling steps. It's the framework behind Stable Diffusion 3 and Flux, and it pairs naturally with the DiT architecture we just learned.</p>
+    <p style="position: relative;">In the next lecture, we'll ask: what if we could simplify <em>that</em> part too? Flow matching does exactly this: it replaces the entire DDPM framework with straight-line interpolation and velocity prediction. The result is simpler math, more stable training, and fewer sampling steps. It's the framework behind Stable Diffusion 3 and Flux, and it pairs naturally with the DiT architecture we just learned.</p>
 
-  </article>
+  
+</article>
 
   <nav class="lecture-nav">
     <a class="prev" href="lecture11.html">
