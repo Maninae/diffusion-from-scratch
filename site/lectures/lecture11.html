@@ -716,11 +716,11 @@ noise = torch.<span class="function">randn_like</span>(x) + <span class="number"
       <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; justify-content: center;">
         <div style="flex: 1; min-width: 280px;">
           <p style="text-align: center; color: var(--text-secondary); font-size: 13px; font-weight: 600; margin-bottom: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; font-family: var(--mono); position: relative;">Without offset noise</p>
-          <img src="https://cdn.prod.website-files.com/5e338abdcf951ffb0e1fadb1/63d4b445644ead435a37a928_1080x1080-4x4-grid-basemodel1.jpg" alt="Generated images without offset noise — dark alley and snow scenes appear washed out with medium brightness" style="width: 100%; border-radius: 8px; border: 1px solid var(--rule);">
+          <img src="../assets/offset-noise-without.jpg" alt="Generated images without offset noise — dark alley and snow scenes appear washed out with medium brightness" style="width: 100%; border-radius: 8px; border: 1px solid var(--rule);">
         </div>
         <div style="flex: 1; min-width: 280px;">
           <p style="text-align: center; color: var(--text-secondary); font-size: 13px; font-weight: 600; margin-bottom: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase; font-family: var(--mono); position: relative;">With offset noise</p>
-          <img src="https://cdn.prod.website-files.com/5e338abdcf951ffb0e1fadb1/63d4b4792108fe7f6b4ebe5c_1080x1080-4x4-grid-offset1.jpg" alt="Generated images with offset noise — dark alley is properly dark, snow scene is properly bright" style="width: 100%; border-radius: 8px; border: 1px solid var(--rule);">
+          <img src="../assets/offset-noise-with.jpg" alt="Generated images with offset noise — dark alley is properly dark, snow scene is properly bright" style="width: 100%; border-radius: 8px; border: 1px solid var(--rule);">
         </div>
       </div>
       <p style="text-align: center; color: var(--text-muted); font-size: 13px; font-style: italic; margin-top: 0.75rem; line-height: 1.5; position: relative;">Without offset noise, the model can't produce truly dark or bright images: a "dark alley" has ultra-bright highlights, and snowy slopes consistently include darker regions to compensate (trees, shadows). With offset noise, the same prompts produce the full brightness range. Images from <a href="https://www.crosslabs.org/blog/diffusion-with-offset-noise" target="_blank" style="color: var(--text-muted);">CrossLabs</a>.</p>
