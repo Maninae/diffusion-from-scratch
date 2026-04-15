@@ -60,14 +60,14 @@
          ═══════════════════════════════════════════════════════════ -->
     <h2 id="coding">Part 1: Coding Challenges</h2>
 
-    <p>Three timed implementation exercises. For each one, set a timer and work through it as if you were implementing from scratch. Don't look at the solution until your timer runs out.</p>
+    <p>Three implementation exercises. For each one, work through it as if you were implementing from scratch. Try to solve it on your own before looking at the solution.</p>
 
-    <p><strong>General tips:</strong> Spend 2&ndash;3 minutes planning before you code. Write down: schedule &rarr; model &rarr; training &rarr; sampling. Know your tensor shapes at every step. Start simple, get it working, then refine.</p>
+    <p><strong>General tips:</strong> Plan before you code. Write down: schedule &rarr; model &rarr; training &rarr; sampling. Know your tensor shapes at every step. Start simple, get it working, then refine.</p>
 
     <!-- Challenge 1 -->
     <h3 id="challenge-1">Challenge 1: Minimal Diffusion on 2D Point Clouds</h3>
 
-    <p><strong>Time limit:</strong> 45 minutes</p>
+    <p><strong>Difficulty:</strong> Moderate</p>
 
     <div class="callout example">
       <div class="callout-label">The Prompt</div>
@@ -233,7 +233,7 @@ plt.show()
     <!-- Challenge 2 -->
     <h3 id="challenge-2">Challenge 2: DDIM Sampling with Classifier-Free Guidance</h3>
 
-    <p><strong>Time limit:</strong> 45 minutes</p>
+    <p><strong>Difficulty:</strong> Moderate</p>
 
     <div class="callout example">
       <div class="callout-label">The Prompt</div>
@@ -351,7 +351,7 @@ NULL_CLASS = NUM_CLASSES
     <!-- Challenge 3 -->
     <h3 id="challenge-3">Challenge 3: Training Step from Scratch</h3>
 
-    <p><strong>Time limit:</strong> 45 minutes</p>
+    <p><strong>Difficulty:</strong> Moderate</p>
 
     <div class="callout example">
       <div class="callout-label">The Prompt</div>
@@ -967,7 +967,7 @@ images = sample(model)
       "You've built a diffusion model that works on 28&times;28 MNIST. Your manager asks you to scale it to generate 512&times;512 photorealistic images. Walk through your approach."
     </div>
 
-    <p>This is an open-ended discussion. Spend 15&ndash;20 minutes thinking through the problem before reading the reference answer. Consider architecture, training, inference, and evaluation.</p>
+    <p>This is an open-ended discussion. Think through the problem carefully before reading the reference answer. Consider architecture, training, inference, and evaluation.</p>
 
     <details class="collapsible">
       <summary>Show Reference Answer</summary>
@@ -1027,7 +1027,7 @@ images = sample(model)
       <li><strong>Write clean code from the start.</strong> Meaningful variable names (<code>sqrt_alpha_bar_t</code>, not <code>a</code>), logical structure, brief comments on key lines. This reflects real understanding.</li>
       <li><strong>Know your shapes.</strong> At every step, know the tensor shapes. Print them if unsure. Shape mismatches are the #1 bug in diffusion code.</li>
       <li><strong>If you get stuck, that's the point.</strong> Identify exactly where your understanding breaks down&mdash;that's what to review. It's normal to need to derive formulas from first principles.</li>
-      <li><strong>Have a plan.</strong> Spend 2&ndash;3 minutes outlining before coding: "First schedule, then model, then training, then sampling."</li>
+      <li><strong>Have a plan.</strong> Outline before coding: "First schedule, then model, then training, then sampling."</li>
       <li><strong>Know the math cold.</strong> $x_t = \sqrt{\bar\alpha_t} \cdot x_0 + \sqrt{1-\bar\alpha_t} \cdot \epsilon$&mdash;you should be able to write this without thinking.</li>
     </ol>
 
