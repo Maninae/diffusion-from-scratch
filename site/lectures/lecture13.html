@@ -544,14 +544,13 @@ M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist
 
     <h3 id="unified-picture" style="position: relative;">The Unified Picture</h3>
 
-    <p style="position: relative;">Diffusion, score matching, and flow matching are all ways to learn a mapping from noise to data. They differ in three dimensions:</p>
+    <p style="position: relative;">DDPM and flow matching are both ways to learn a mapping from noise to data, but they differ in key dimensions:</p>
 
     <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px;">
       <thead>
         <tr style="border-bottom: 2px solid var(--rule-strong);">
           <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);"></th>
           <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">DDPM</th>
-          <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">Score Matching</th>
           <th style="text-align: left; padding: 12px 16px; color: var(--text-primary);">Flow Matching</th>
         </tr>
       </thead>
@@ -559,19 +558,16 @@ M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist
         <tr style="border-bottom: 1px solid var(--rule);">
           <td style="padding: 10px 16px; color: var(--text-secondary);"><strong>Interpolation path</strong></td>
           <td style="padding: 10px 16px; color: var(--text-secondary);">Curved (schedule-dependent)</td>
-          <td style="padding: 10px 16px; color: var(--text-secondary);">Curved (SDE drift)</td>
           <td style="padding: 10px 16px; color: var(--text-secondary);">Straight (linear)</td>
         </tr>
         <tr style="border-bottom: 1px solid var(--rule);">
           <td style="padding: 10px 16px; color: var(--text-secondary);"><strong>Training target</strong></td>
           <td style="padding: 10px 16px; color: var(--text-secondary);"><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϵ</mi></mrow><annotation encoding="application/x-tex">\epsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal">ϵ</span></span></span></span></span> (noise)</td>
-          <td style="padding: 10px 16px; color: var(--text-secondary);"><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">∇</mi><mi>x</mi></msub><mi>log</mi><mo>⁡</mo><msub><mi>p</mi><mi>t</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\nabla_x \log p_t(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord"><span class="mord">∇</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">x</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mop">lo<span style="margin-right: 0.0139em;">g</span></span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.2806em;"><span class="" style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">t</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span class=""></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span></span> (score)</td>
           <td style="padding: 10px 16px; color: var(--text-secondary);"><span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal" style="margin-right: 0.0359em;">v</span></span></span></span></span> (velocity)</td>
         </tr>
         <tr>
           <td style="padding: 10px 16px; color: var(--text-secondary);"><strong>Sampling</strong></td>
           <td style="padding: 10px 16px; color: var(--text-secondary);">Discrete SDE/DDIM</td>
-          <td style="padding: 10px 16px; color: var(--text-secondary);">SDE or probability flow ODE</td>
           <td style="padding: 10px 16px; color: var(--text-secondary);">ODE (Euler, Heun, RK4)</td>
         </tr>
       </tbody>
@@ -581,7 +577,7 @@ M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist
 
     <div class="callout insight" style="position: relative;">
       <div class="callout-label" style="position: relative;">Key Insight</div>
-      The progression from DDPM to flow matching is a simplification. DDPM proved that the "noise to data" idea works. Score matching showed it has a continuous formulation. v-prediction showed that velocity is a better prediction target. Flow matching completed the arc: build the <em>entire framework</em> around velocity and straight-line transport, dropping everything that was incidental to the core idea.
+      The progression from DDPM to flow matching is a simplification. DDPM proved that the "noise to data" idea works. The probability flow ODE (Lecture 7) revealed a continuous formulation underneath the discrete steps. v-prediction showed that velocity is a better prediction target. Flow matching completed the arc: build the <em>entire framework</em> around velocity and straight-line transport, dropping everything that was incidental to the core idea.
     </div>
 
     <!-- Section 13.9 -->
