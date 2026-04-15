@@ -320,12 +320,12 @@ M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist
 
     <h3 id="better-solvers" style="position: relative;">Better ODE Solvers</h3>
 
-    <p style="position: relative;">Euler's method works but is first-order; errors accumulate, and you need many steps for accuracy. Better options include:</p>
+    <p style="position: relative;">Euler's method works but is <span data-tip="A first-order method means the error per step is proportional to the step size dt. Halving the step size halves the error per step but doubles the number of steps, so total error decreases linearly. Higher-order methods like RK4 have error proportional to dt^4, so halving step size reduces total error by 16x." style="text-decoration: underline dotted var(--teal); text-underline-offset: 3px; cursor: help;">first-order</span>; errors accumulate, and you need many steps for accuracy. Better options include:</p>
 
     <ul>
-      <li style="position: relative;"><strong>Heun's method</strong> (2nd-order) — takes a trial step, evaluates the velocity at the new position, then averages. Roughly halves the steps needed for the same quality.</li>
+      <li style="position: relative;"><strong><span data-tip="Also called the improved Euler method or explicit trapezoidal rule. It uses 2 function evaluations per step: one at the current position and one at the predicted next position, then averages both velocities for a more accurate update." style="text-decoration: underline dotted var(--teal); text-underline-offset: 3px; cursor: help;">Heun's method</span></strong> (2nd-order) — takes a trial step, evaluates the velocity at the new position, then averages. Roughly halves the steps needed for the same quality.</li>
       <li style="position: relative;"><strong>RK4</strong> (4th-order Runge-Kutta) — the classic ODE solver. Four velocity evaluations per step, but far more accurate.</li>
-      <li style="position: relative;"><strong>Adaptive step-size solvers</strong> — automatically choose step sizes based on local error estimates. More function evaluations where the flow is complex, fewer where it's simple.</li>
+      <li style="position: relative;"><strong>Adaptive step-size solvers</strong> — automatically choose step sizes based on local error estimates. More <span data-tip="Each function evaluation means running the full neural network once to get a velocity prediction. This is by far the most expensive operation in sampling, so fewer evaluations means faster generation." style="text-decoration: underline dotted var(--teal); text-underline-offset: 3px; cursor: help;">function evaluations</span> where the flow is complex, fewer where it's simple.</li>
     </ul>
 
     <p style="position: relative;">In practice, 20–50 Euler steps produce good results for flow matching. Compare this to DDPM's 1000 steps — or even DDIM's 50–100.</p>
