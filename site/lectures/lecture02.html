@@ -45,7 +45,7 @@
 
   <article class="lecture-article">
 
-    <p class="lecture-roadmap">Diffusion starts with destruction. We'll define the forward noising process step-by-step, then discover the key mathematical shortcut &mdash; cumulative products $\bar{\alpha}_t$ &mdash; that lets us jump to <em>any</em> noise level in a single operation. Along the way, we'll build intuition for noise schedules, signal-to-noise ratios, and why these choices quietly shape everything the model learns.</p>
+    <p class="lecture-roadmap">Diffusion starts with destruction. We'll define the forward noising process step-by-step, then discover the key mathematical shortcut, cumulative products $\bar{\alpha}_t$, that lets us jump to <em>any</em> noise level in a single operation. Along the way, we'll build intuition for noise schedules, signal-to-noise ratios, and why these choices quietly shape everything the model learns.</p>
 
 
     <div class="callout prereq">
@@ -160,7 +160,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas) <span 
 
     <div class="callout note">
       <div class="callout-label">Looking Ahead</div>
-      <p>Notice that the closed-form writes $x_t$ as a deterministic function of $x_0$ and a separate noise sample $\varepsilon$. Keeping the randomness external to the computation&mdash;rather than baked into a single sampling operation&mdash;is called the <a href="https://gregorygundersen.com/blog/2018/04/29/reparameterization/" target="_blank" rel="noopener"><strong>reparameterization trick</strong></a>, the same idea that makes VAEs trainable. It will turn out to be critical for diffusion training too: this separation is what allows gradients to flow through $x_t$ during backpropagation. We'll see exactly how in Lecture 3.</p>
+      <p>Notice that the closed-form writes $x_t$ as a deterministic function of $x_0$ and a separate noise sample $\varepsilon$. Keeping the randomness external to the computation, rather than baked into a single sampling operation, is called the <a href="https://gregorygundersen.com/blog/2018/04/29/reparameterization/" target="_blank" rel="noopener"><strong>reparameterization trick</strong></a>, the same idea that makes VAEs trainable. It will turn out to be critical for diffusion training too: this separation is what allows gradients to flow through $x_t$ during backpropagation. We'll see exactly how in Lecture 3.</p>
     </div>
 
     <!-- Section 2.5 -->
@@ -614,7 +614,7 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas) <span 
     })();
     </script>
 
-    <p>The three schedules start and end at the same place&mdash;pure signal and pure noise&mdash;but they differ dramatically in how they distribute the transition. The linear schedule burns through signal quickly in the early steps, wasting capacity on timesteps where the image is already mostly destroyed. The cosine schedule preserves signal longer, giving the model more training time at medium noise levels, exactly where the denoising problem is hardest and learning is richest.</p>
+    <p>The three schedules start and end at the same place (pure signal and pure noise) but they differ dramatically in how they distribute the transition. The linear schedule burns through signal quickly in the early steps, wasting capacity on timesteps where the image is already mostly destroyed. The cosine schedule preserves signal longer, giving the model more training time at medium noise levels, exactly where the denoising problem is hardest and learning is richest.</p>
 
     <!-- Section 2.6 -->
     <h2 id="snr"><span class="section-number">2.5</span> Signal-to-Noise Ratio</h2>

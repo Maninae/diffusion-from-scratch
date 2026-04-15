@@ -45,7 +45,7 @@
   <article class="lecture-article">
 
     <p class="lecture-roadmap">How do you teach a machine to create images that never existed?</p>
-    <p class="lecture-roadmap">Every major generative framework &mdash; GANs, VAEs, normalizing flows, autoregressive models &mdash; found a different answer, and each one paid a different price. We'll survey those tradeoffs to understand the gap that diffusion models fill: stable training, full mode coverage, and high-quality samples, all from a single, elegant idea &mdash; learning to reverse destruction.</p>
+    <p class="lecture-roadmap">Every major generative framework (GANs, VAEs, normalizing flows, autoregressive models) found a different answer, and each one paid a different price. We'll survey those tradeoffs to understand the gap that diffusion models fill: stable training, full mode coverage, and high-quality samples, all from a single, elegant idea: learning to reverse destruction.</p>
 
 
     <div class="callout prereq">
@@ -116,7 +116,7 @@
     <!-- Section 1.3 -->
     <h2 id="enter-diffusion"><span class="section-number">1.3</span> Enter Diffusion Models</h2>
 
-    <p>Diffusion models take a completely different angle. Instead of trying to learn the data distribution in one shot&mdash;through a generator, a decoder, an invertible transform, or a sequential factorization&mdash;they learn to <strong>gradually reverse a simple destruction process</strong>.</p>
+    <p>Diffusion models take a completely different angle. Instead of trying to learn the data distribution in one shot, whether through a generator, a decoder, an invertible transform, or a sequential factorization, they learn to <strong>gradually reverse a simple destruction process</strong>.</p>
 
     <p>The core intuition is simple:</p>
 
@@ -160,7 +160,7 @@
 
     <p>Five years later, Ho, Jain, and Abbeel published <em>"Denoising Diffusion Probabilistic Models"</em> (DDPM). They stripped the framework to its essentials: a simple noise schedule, a U-Net architecture, and an MSE loss on predicted noise. The result was competitive image quality with remarkably stable training.</p>
 
-    <p>Two algorithms&mdash;Algorithm 1 (training) and Algorithm 2 (sampling)&mdash;became the foundation of everything in this course.</p>
+    <p>Two algorithms, Algorithm 1 (training) and Algorithm 2 (sampling), became the foundation of everything in this course.</p>
 
     <h3 id="beat-gans">2021 &mdash; Beating GANs</h3>
 

@@ -651,7 +651,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
 
     <div class="callout insight" style="position: relative;">
       <div class="callout-label" style="position: relative;">Key Insight</div>
-      The trend across SD versions is clear: better text encoders, larger models, and more advanced training frameworks. But the core latent diffusion insight—compress with a VAE, diffuse in latent space—remains unchanged.
+      The trend across SD versions is clear: better text encoders, larger models, and more advanced training frameworks. But the core latent diffusion insight, compress with a VAE and diffuse in latent space, remains unchanged.
     </div>
 
     <!-- Section 6: Looking Ahead -->
@@ -659,7 +659,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
 
     <p style="position: relative;">Latent diffusion solves the resolution problem, but we've been using <span><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span></span>-prediction throughout this course without questioning it. Is predicting the noise always the best choice? And are there better noise schedules than the linear and cosine schedules we've seen?</p>
 
-    <p style="position: relative;">In the next lecture, we'll explore <strong>prediction targets</strong>—three different ways to parameterize what the model predicts—and <strong>advanced noise schedules</strong> that fix subtle training-inference mismatches. These are the refinements that separate a working model from a production model.</p>
+    <p style="position: relative;">In the next lecture, we'll explore <strong>prediction targets</strong>, three different ways to parameterize what the model predicts, and <strong>advanced noise schedules</strong> that fix subtle training-inference mismatches. These are the refinements that separate a working model from a production model.</p>
 
   
 

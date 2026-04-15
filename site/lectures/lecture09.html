@@ -530,7 +530,7 @@ M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist
 
     <div class="callout example" contenteditable="true">
       <div class="callout-label" contenteditable="true">Example</div>
-      <strong>Practical use.</strong> Positive prompt: "sharp photo of a cat in sunlight." Negative prompt: "blurry, low quality, watermark." The model computes three predictions — positive, negative, and (optionally) unconditional — and amplifies the difference between positive and negative. The result: images that are both <em>more like</em> the positive and <em>less like</em> the negative.
+      <strong>Practical use.</strong> Positive prompt: "sharp photo of a cat in sunlight." Negative prompt: "blurry, low quality, watermark." The model computes three predictions (positive, negative, and optionally unconditional) and amplifies the difference between positive and negative. The result: images that are both <em>more like</em> the positive and <em>less like</em> the negative.
     </div>
 
     <p contenteditable="true">Since the negative prompt replaces the unconditional prediction, this still requires only two forward passes per step: one for the positive prompt and one for the negative prompt. Some implementations add the unconditional prediction as a third pass for more fine-grained control, but the standard approach is a simple two-pass substitution.</p>

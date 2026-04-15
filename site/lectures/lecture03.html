@@ -93,7 +93,7 @@
     <!-- Section 3.3 -->
     <h2 id="tractable-posterior"><span class="section-number">3.3</span> The Tractable Posterior &mdash; q(x<sub>t&minus;1</sub> | x<sub>t</sub>, x<sub>0</sub>)</h2>
 
-    <p>There is a tractable alternative. If we condition on <strong>both</strong> $x_t$ and $x_0$&mdash;the noisy image and the clean original&mdash;the posterior becomes tractable. Using <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a>:</p>
+    <p>There is a tractable alternative. If we condition on <strong>both</strong> $x_t$ and $x_0$, the noisy image and the clean original, the posterior becomes tractable. Using <a href="https://en.wikipedia.org/wiki/Bayes%27_theorem" target="_blank">Bayes' rule</a>:</p>
 
     $$q(x_{t-1} \mid x_t, x_0) \propto q(x_t \mid x_{t-1}) \cdot q(x_{t-1} \mid x_0)$$
 
@@ -233,7 +233,7 @@
       </ol>
     </div>
 
-    <p>Six lines. That's the entire training procedure behind Stable Diffusion 1.5. The same core idea&mdash;with variations in the prediction target (v-prediction, $x_0$-prediction) and framework (flow matching)&mdash;underlies everything since, including DALL-E 2, Stable Diffusion 3, and Sora.</p>
+    <p>Six lines. That's the entire training procedure behind Stable Diffusion 1.5. The same core idea, with variations in the prediction target (v-prediction, $x_0$-prediction) and framework (flow matching), underlies everything since, including DALL-E 2, Stable Diffusion 3, and Sora.</p>
 
     <p>Let's walk through each line:</p>
 
@@ -319,7 +319,7 @@
     <span class="keyword">return</span> loss.item()</pre>
     </div>
 
-    <p>We now have the complete mathematical foundation: the forward process (Lecture 2) and the reverse process with its training objective (this lecture). Next, we'll build the neural network architecture&mdash;the U-Net&mdash;that actually does the denoising.</p>
+    <p>We now have the complete mathematical foundation: the forward process (Lecture 2) and the reverse process with its training objective (this lecture). Next, we'll build the neural network architecture, the U-Net, that actually does the denoising.</p>
 
   </article>
 
