@@ -183,7 +183,7 @@ M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist
     <ol>
       <li style="position: relative;"><strong>A path</strong> connecting each noise sample to each data sample (the interpolation)</li>
       <li style="position: relative;"><strong>A target velocity</strong> along that path (what the model learns to predict)</li>
-      <li style="position: relative;"><strong>An ODE solver</strong> to follow the learned velocity field at inference</li>
+      <li style="position: relative;"><strong><span data-tip="In this context, an ODE solver is just a loop that takes small steps along the velocity field to move from noise to data. The simplest version is Euler's method: x = x + v * dt, repeated for each step. More sophisticated solvers like RK45 or DPM-Solver take fewer steps by estimating the trajectory more accurately. Think of it as: the model predicts which direction to move, and the solver actually moves you there, one small step at a time." style="text-decoration: underline dotted var(--teal); text-underline-offset: 3px; cursor: help;">An ODE solver</span></strong> to follow the learned velocity field at inference</li>
     </ol>
 
     <p style="position: relative;">That's the complete list: no schedule, no ELBO, no reverse process derivation, no cumulative alpha products.</p>
