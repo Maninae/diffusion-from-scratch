@@ -621,7 +621,7 @@ h = conv2(silu(h))                                     <span style="color: var(-
 
     <p>Everything we've discussed so far is <strong>self-attention</strong>: the query, key, and value all come from the same feature map. But there's a powerful variant used in conditional generation.</p>
 
-    <p>In <strong><a href="https://en.wikipedia.org/wiki/Attention_(machine_learning)" target="_blank">cross-attention</a></strong>, the queries still come from the image features, but the keys and values come from an <em>external conditioning signal</em> &mdash; like a text embedding from <a href="https://openai.com/research/clip" target="_blank">CLIP</a>. This is exactly how Stable Diffusion injects text prompts into the U-Net: the image features "ask questions" (queries) about the text (keys and values).</p>
+    <p>In <strong><a href="https://en.wikipedia.org/wiki/Attention_(machine_learning)" target="_blank">cross-attention</a></strong>, the queries still come from the image features, but the keys and values come from an <em>external conditioning signal</em> &mdash; like a text embedding from <a href="https://arxiv.org/abs/2103.00020" target="_blank">CLIP</a>. This is exactly how Stable Diffusion injects text prompts into the U-Net: the image features "ask questions" (queries) about the text (keys and values).</p>
 
     <ul>
       <li><strong>Self-attention:</strong> $Q, K, V$ all from image features &mdash; "how do different parts of this image relate to each other?"</li>

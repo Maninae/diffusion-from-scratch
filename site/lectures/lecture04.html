@@ -269,7 +269,7 @@ Level 3 (Bottleneck): (B, 256, 7, 7)  &mdash; first ResBlock projects 128 &rarr;
 
     <h3 id="upsample-method">Upsampling Strategy</h3>
 
-    <p>The decoder uses <strong>nearest-neighbor interpolation followed by a convolution</strong> rather than <a href="https://en.wikipedia.org/wiki/Deconvolution#Transposed_convolution" target="_blank">transposed convolution</a> (also called "deconvolution"). Why? Transposed convolutions are notorious for producing <strong><a href="https://distill.pub/2016/deconv-checkerboard/" target="_blank">checkerboard artifacts</a></strong>, grid-like patterns caused by uneven overlap in the transposed operation. Nearest-neighbor upsampling followed by a regular convolution avoids this entirely.</p>
+    <p>The decoder uses <strong>nearest-neighbor interpolation followed by a convolution</strong> rather than <a href="https://en.wikipedia.org/wiki/Transposed_convolution" target="_blank">transposed convolution</a> (also called "deconvolution"). Why? Transposed convolutions are notorious for producing <strong><a href="https://distill.pub/2016/deconv-checkerboard/" target="_blank">checkerboard artifacts</a></strong>, grid-like patterns caused by uneven overlap in the transposed operation. Nearest-neighbor upsampling followed by a regular convolution avoids this entirely.</p>
 
     <h3 id="skip-concat">Skip Concatenation &mdash; The Channel Math</h3>
 

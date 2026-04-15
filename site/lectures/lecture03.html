@@ -69,7 +69,7 @@
 
     <p>The model takes a noisy image $x_t$ and a timestep $t$, and outputs the parameters of a Gaussian distribution over the slightly-less-noisy image $x_{t-1}$. In practice, the model predicts the <strong>mean</strong> $\mu_\theta$, and we fix the variance $\sigma_t^2$ to a known schedule (following DDPM).</p>
 
-    <p>There's a deep result by <a href="https://en.wikipedia.org/wiki/Feller%27s_theorem" target="_blank">Feller (1949)</a> that justifies this: when the forward steps are small enough (small $\beta_t$), the reverse steps are also approximately Gaussian. Our Gaussian parameterization is therefore not only convenient but also theoretically grounded.</p>
+    <p>There's a deep result by <a href="https://en.wikipedia.org/wiki/William_Feller" target="_blank">Feller (1949)</a> that justifies this: when the forward steps are small enough (small $\beta_t$), the reverse steps are also approximately Gaussian. Our Gaussian parameterization is therefore not only convenient but also theoretically grounded.</p>
 
     <!-- Section 3.2 -->
     <h2 id="intractable-reverse"><span class="section-number">3.2</span> Why the True Reverse Is Intractable</h2>

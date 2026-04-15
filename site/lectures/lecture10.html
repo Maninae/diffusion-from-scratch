@@ -610,7 +610,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
     <p style="position: relative;">Converts a text prompt into a sequence of embeddings that the U-Net can attend to:</p>
 
     <ul>
-      <li style="position: relative;"><strong>SD 1.5:</strong> <a href="https://openai.com/research/clip" target="_blank">CLIP</a> <a href="https://en.wikipedia.org/wiki/Vision_transformer" target="_blank">ViT</a>-L/14—77 tokens, 768-dimensional embeddings</li>
+      <li style="position: relative;"><strong>SD 1.5:</strong> <a href="https://arxiv.org/abs/2103.00020" target="_blank">CLIP</a> <a href="https://en.wikipedia.org/wiki/Vision_transformer" target="_blank">ViT</a>-L/14—77 tokens, 768-dimensional embeddings</li>
       <li style="position: relative;"><strong>SDXL:</strong> dual text encoders (CLIP + OpenCLIP) for richer representations</li>
       <li style="position: relative;"><strong>SD 3:</strong> T5-XXL for more powerful text understanding</li>
     </ul>
@@ -635,7 +635,7 @@ images = vae.<span class="function">decode</span>(z_0)  <span class="comment"># 
       </ol>
     </div>
 
-    <p style="position: relative;">Every component we've studied in this course shows up: the U-Net (Lecture 4), noise schedules (Lecture 5), the training loop (Lecture 6), DDIM sampling (Lecture 7), and classifier-free guidance (Lecture 9). Latent diffusion ties them all together into a system that actually works at scale.</p>
+    <p style="position: relative;">Every component we've studied in this course shows up: the U-Net (Lecture 4), noise schedules (Lecture 2), the training loop (Lecture 6), DDIM sampling (Lecture 7), and classifier-free guidance (Lecture 9). Latent diffusion ties them all together into a system that actually works at scale.</p>
 
     <!-- Section 5: SD Evolution -->
     <h2 id="sd-evolution" style="position: relative;"><span class="section-number">10.5</span> The Evolution of Stable Diffusion</h2>
