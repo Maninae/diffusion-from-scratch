@@ -410,6 +410,13 @@
       <li>Use $\hat{\epsilon}$ for the standard DDPM denoising step</li>
     </ol>
 
+    <div class="callout insight">
+      <div class="callout-label">Why a minus sign?</div>
+      <p>The formula subtracts the classifier gradient, which looks backwards at first. After all, the gradient $\nabla_{x_t} \log p(y \mid x_t)$ points in the direction that makes $x_t$ look <em>more</em> like class $y$. Shouldn't we add it?</p>
+      <p>The resolution is that $\epsilon_\theta$ is the noise we <em>subtract</em> during denoising. The update looks roughly like $x_{t-1} \approx x_t - (\text{coeff}) \cdot \hat{\epsilon}$. So subtracting the classifier gradient from $\hat{\epsilon}$ means the denoiser effectively <em>adds</em> that gradient to the update direction. Two minus signs cancel: subtract from the noise, subtract the noise from $x_t$, net effect is a push toward class $y$.</p>
+      <p>Formally, this follows from the score-matching identity $\epsilon_\theta \approx -\sigma_t \cdot \nabla_{x_t} \log p(x_t)$: the noise prediction points <em>opposite</em> to the score. Applying Bayes' rule to get a conditional score ($\nabla \log p(x_t \mid y) = \nabla \log p(x_t) + \nabla \log p(y \mid x_t)$) and converting back to noise produces exactly the formula above, minus sign and all.</p>
+    </div>
+
     <p>The parameter $s$ is the <strong>guidance scale</strong>. It controls how strongly the classifier steers. In concrete terms, a larger $s$ means each denoising step takes a bigger detour toward whatever the classifier thinks class $y$ looks like, at the cost of ignoring other plausible image structures:</p>
 
     <ul>
