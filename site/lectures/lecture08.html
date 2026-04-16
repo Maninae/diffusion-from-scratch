@@ -418,6 +418,75 @@
       <li>$s > 1$: amplified guidance, sharper and more class-specific images, but less diversity</li>
     </ul>
 
+    <!-- Classifier guidance steering vector visualization -->
+    <div style="max-width: 700px; margin: 2rem auto; background: var(--bg-deep, #0a0e17); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 2rem; overflow: hidden;">
+      <svg viewBox="0 0 700 400" style="width: 100%; height: auto; display: block;">
+        <defs>
+          <marker id="cg-ah-gray" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#6b7280"></path></marker>
+          <marker id="cg-ah-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#60a5fa"></path></marker>
+          <marker id="cg-ah-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#f97316"></path></marker>
+        </defs>
+
+        <!--
+          Math frame: origin at SVG (220, 280), scale = 60 px/unit, y-axis up.
+            ε_θ     = (1.5, 1.0)    → tip (310, 220)
+            ∇ log p = (-0.5, -1.3)  → tip (190, 358)
+            s·σ_t effective scale for visualization = 1.5  (i.e. s = 2, σ_t ≈ 0.75)
+            guided  = ε_θ − 1.5·∇   = (1.5 + 0.75, 1 + 1.95) = (2.25, 2.95) → tip (355, 103)
+
+          Collinearity check (SVG coords):
+            guided_tip − uncond_tip = (355−310, 103−220) = (45, −117)
+            −1.5·(grad_tip − origin) = −1.5·(−30, 78) = (45, −117)  ✓
+        -->
+
+        <!-- Origin point x_t -->
+        <circle cx="220" cy="280" r="5" fill="#e8dcc8"></circle>
+        <text x="220" y="302" text-anchor="middle" fill="#e8dcc8" font-family="'IBM Plex Mono', monospace" font-size="13" font-weight="600">xₜ</text>
+
+        <!-- 1. Unconditional noise prediction ε_θ: gray solid -->
+        <line x1="220" y1="280" x2="310" y2="220" stroke="#6b7280" stroke-width="2" stroke-linecap="round" marker-end="url(#cg-ah-gray)"></line>
+        <text x="318" y="214" fill="#9ca3af" font-family="'IBM Plex Mono', monospace" font-size="12">ε_θ(xₜ, t)</text>
+        <text x="318" y="228" fill="#6b7280" font-family="'Source Sans 3', sans-serif" font-size="11" font-style="italic">unconditional direction</text>
+
+        <!-- 2. Classifier gradient ∇_x log p(y|x_t): blue dashed -->
+        <line x1="220" y1="280" x2="190" y2="358" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-dasharray="6,4" marker-end="url(#cg-ah-blue)"></line>
+        <text x="196" y="378" fill="#60a5fa" font-family="'IBM Plex Mono', monospace" font-size="12">∇ₓ log p(y | xₜ)</text>
+        <text x="196" y="392" fill="#7dd3fc" font-family="'Source Sans 3', sans-serif" font-size="11" font-style="italic" opacity="0.85">classifier gradient (toward class y)</text>
+
+        <!-- 3. Guided noise prediction: orange solid, thicker -->
+        <!-- tip = (355, 103): guided = ε_θ − 1.5·∇ -->
+        <line x1="220" y1="280" x2="355" y2="103" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" marker-end="url(#cg-ah-orange)"></line>
+        <text x="362" y="92" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="600">ε̂ = ε_θ − s·σₜ·∇ log p(y | xₜ)</text>
+        <text x="362" y="106" fill="#fdba74" font-family="'Source Sans 3', sans-serif" font-size="11" font-style="italic">guided prediction</text>
+
+        <!-- Dashed construction line: ε_θ tip → guided tip, showing the −s·σ_t·∇ shift -->
+        <line x1="310" y1="220" x2="355" y2="103" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="5,3" opacity="0.7"></line>
+        <text x="336" y="170" fill="#fbbf24" font-family="'IBM Plex Mono', monospace" font-size="11" opacity="0.85">−s·σₜ·∇</text>
+
+        <!-- Guidance scale annotation -->
+        <g transform="translate(40, 40)">
+          <rect x="0" y="0" width="150" height="42" rx="6" fill="rgba(249,115,22,0.08)" stroke="rgba(249,115,22,0.35)" stroke-width="1"></rect>
+          <text x="12" y="18" fill="#fdba74" font-family="'IBM Plex Mono', monospace" font-size="12" font-weight="600">guidance scale</text>
+          <text x="12" y="34" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="13" font-weight="700">s = 2</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(40, 366)">
+          <line x1="0" y1="0" x2="22" y2="0" stroke="#6b7280" stroke-width="2"></line>
+          <text x="28" y="4" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">unconditional</text>
+
+          <line x1="120" y1="0" x2="142" y2="0" stroke="#60a5fa" stroke-width="2" stroke-dasharray="5,3"></line>
+          <text x="148" y="4" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">∇ log p(y|x)</text>
+
+          <line x1="240" y1="0" x2="262" y2="0" stroke="#f97316" stroke-width="2.5"></line>
+          <text x="268" y="4" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="10">guided (s = 2)</text>
+        </g>
+      </svg>
+      <div style="text-align: center; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+        <span style="color: #6b7280; font-family: 'Source Sans 3', sans-serif; font-size: 13px; line-height: 1.5;">Classifier guidance shifts the denoising direction by subtracting a scaled classifier gradient. The guidance scale <em>s</em> controls how strongly the prediction is pulled toward the target class. At <em>s</em> = 0, we get unconditional denoising; at high <em>s</em>, the classifier gradient dominates, producing sharper but less diverse samples.</span>
+      </div>
+    </div>
+
     <h3 id="implicit-distribution">What Distribution Are We Sampling From?</h3>
 
     <p>The gradient-based steering we just described has a clean interpretation in terms of probability distributions. Mathematically, classifier guidance causes us to sample from a sharpened distribution:</p>
