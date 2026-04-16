@@ -117,6 +117,217 @@
       <li><strong>And more:</strong> Concatenation along the channel axis (DiT patchifies the noisy image and concatenates conditioning tokens directly into the input sequence), hypernetworks that generate layer weights from the condition, ControlNet-style parallel branches for spatial control. As long as the conditioning signal is a tensor, there is a way to feed it into the network. New injection methods continue to appear as the field evolves.</li>
     </ul>
 
+    <div style="max-width: 850px; margin: 2rem auto;">
+      <div style="background: var(--bg-deep, #0a0e17); border-radius: 12px; padding: 2rem;">
+        <svg viewBox="0 0 900 420" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; display: block;" font-family="'Source Sans 3', sans-serif">
+          <defs>
+            <marker id="arrowhead-mm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280"/>
+            </marker>
+            <linearGradient id="img-face-top" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#4ade80" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="#4ade80" stop-opacity="0.25"/>
+            </linearGradient>
+            <linearGradient id="img-face-side" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#4ade80" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#4ade80" stop-opacity="0.15"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Zone headers -->
+          <text x="110" y="28" fill="#9ca3af" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="1.5">RAW MODALITY</text>
+          <text x="430" y="28" fill="#9ca3af" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="1.5">TENSOR REPRESENTATION</text>
+          <text x="780" y="28" fill="#9ca3af" font-size="12" font-weight="600" text-anchor="middle" letter-spacing="1.5">MODEL</text>
+
+          <!-- ========== Row 1: Class Label (teal) ========== -->
+          <!-- Zone 1: class icon -->
+          <rect x="40" y="60" width="140" height="46" rx="8" fill="#2dd4bf" fill-opacity="0.12" stroke="#2dd4bf" stroke-width="1.5"/>
+          <text x="110" y="88" fill="#2dd4bf" font-size="15" text-anchor="middle" font-weight="600">&#x1F431; "cat"</text>
+          <text x="110" y="122" fill="#9ca3af" font-size="11" text-anchor="middle">class label</text>
+
+          <!-- arrow + embed label -->
+          <line x1="185" y1="83" x2="335" y2="83" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowhead-mm)"/>
+          <text x="260" y="76" fill="#9ca3af" font-size="10.5" text-anchor="middle" font-style="italic">embed</text>
+
+          <!-- Zone 2: class embedding (vertical bar of small rects) -->
+          <g transform="translate(360, 60)">
+            <rect x="0" y="0" width="24" height="12" fill="#2dd4bf" fill-opacity="0.85"/>
+            <rect x="0" y="13" width="24" height="12" fill="#2dd4bf" fill-opacity="0.55"/>
+            <rect x="0" y="26" width="24" height="12" fill="#2dd4bf" fill-opacity="0.75"/>
+            <rect x="0" y="39" width="24" height="12" fill="#2dd4bf" fill-opacity="0.4"/>
+            <text x="40" y="18" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">(<tspan fill="#2dd4bf">B</tspan>,</text>
+            <text x="40" y="34" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">D</tspan>)</text>
+            <text x="90" y="28" fill="#9ca3af" font-size="10.5" font-style="italic">class emb.</text>
+          </g>
+
+          <!-- converging arrow to model -->
+          <path d="M 500 83 Q 620 83 680 180" stroke="#6b7280" stroke-width="1.4" fill="none" marker-end="url(#arrowhead-mm)"/>
+
+          <!-- ========== Row 2: Text (blue) ========== -->
+          <g transform="translate(0, 150)">
+            <!-- tokens as row of chips -->
+            <rect x="40" y="0" width="32" height="22" rx="4" fill="#60a5fa" fill-opacity="0.15" stroke="#60a5fa" stroke-width="1"/>
+            <text x="56" y="15" fill="#60a5fa" font-size="10" text-anchor="middle">a</text>
+            <rect x="75" y="0" width="40" height="22" rx="4" fill="#60a5fa" fill-opacity="0.15" stroke="#60a5fa" stroke-width="1"/>
+            <text x="95" y="15" fill="#60a5fa" font-size="10" text-anchor="middle">photo</text>
+            <rect x="118" y="0" width="28" height="22" rx="4" fill="#60a5fa" fill-opacity="0.15" stroke="#60a5fa" stroke-width="1"/>
+            <text x="132" y="15" fill="#60a5fa" font-size="10" text-anchor="middle">of</text>
+            <rect x="149" y="0" width="22" height="22" rx="4" fill="#60a5fa" fill-opacity="0.15" stroke="#60a5fa" stroke-width="1"/>
+            <text x="160" y="15" fill="#60a5fa" font-size="10" text-anchor="middle">a</text>
+            <rect x="40" y="26" width="44" height="22" rx="4" fill="#60a5fa" fill-opacity="0.15" stroke="#60a5fa" stroke-width="1"/>
+            <text x="62" y="41" fill="#60a5fa" font-size="10" text-anchor="middle">cat</text>
+            <text x="110" y="66" fill="#9ca3af" font-size="11" text-anchor="middle">text prompt</text>
+          </g>
+
+          <!-- arrow + label -->
+          <line x1="185" y1="173" x2="335" y2="173" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowhead-mm)"/>
+          <text x="260" y="166" fill="#9ca3af" font-size="10.5" text-anchor="middle" font-style="italic">tokenize + embed</text>
+
+          <!-- Zone 2: token embedding grid (B, L, D) -->
+          <g transform="translate(360, 148)">
+            <!-- 5 columns (L) x 4 rows (D) -->
+            <g>
+              <rect x="0" y="0" width="12" height="10" fill="#60a5fa" fill-opacity="0.85"/>
+              <rect x="13" y="0" width="12" height="10" fill="#60a5fa" fill-opacity="0.55"/>
+              <rect x="26" y="0" width="12" height="10" fill="#60a5fa" fill-opacity="0.75"/>
+              <rect x="39" y="0" width="12" height="10" fill="#60a5fa" fill-opacity="0.4"/>
+              <rect x="52" y="0" width="12" height="10" fill="#60a5fa" fill-opacity="0.65"/>
+
+              <rect x="0" y="11" width="12" height="10" fill="#60a5fa" fill-opacity="0.6"/>
+              <rect x="13" y="11" width="12" height="10" fill="#60a5fa" fill-opacity="0.8"/>
+              <rect x="26" y="11" width="12" height="10" fill="#60a5fa" fill-opacity="0.35"/>
+              <rect x="39" y="11" width="12" height="10" fill="#60a5fa" fill-opacity="0.7"/>
+              <rect x="52" y="11" width="12" height="10" fill="#60a5fa" fill-opacity="0.5"/>
+
+              <rect x="0" y="22" width="12" height="10" fill="#60a5fa" fill-opacity="0.45"/>
+              <rect x="13" y="22" width="12" height="10" fill="#60a5fa" fill-opacity="0.7"/>
+              <rect x="26" y="22" width="12" height="10" fill="#60a5fa" fill-opacity="0.6"/>
+              <rect x="39" y="22" width="12" height="10" fill="#60a5fa" fill-opacity="0.85"/>
+              <rect x="52" y="22" width="12" height="10" fill="#60a5fa" fill-opacity="0.4"/>
+
+              <rect x="0" y="33" width="12" height="10" fill="#60a5fa" fill-opacity="0.75"/>
+              <rect x="13" y="33" width="12" height="10" fill="#60a5fa" fill-opacity="0.5"/>
+              <rect x="26" y="33" width="12" height="10" fill="#60a5fa" fill-opacity="0.8"/>
+              <rect x="39" y="33" width="12" height="10" fill="#60a5fa" fill-opacity="0.55"/>
+              <rect x="52" y="33" width="12" height="10" fill="#60a5fa" fill-opacity="0.7"/>
+            </g>
+            <text x="80" y="12" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">(<tspan fill="#2dd4bf">B</tspan>,</text>
+            <text x="80" y="26" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">L</tspan>,</text>
+            <text x="80" y="40" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">D</tspan>)</text>
+            <text x="130" y="28" fill="#9ca3af" font-size="10.5" font-style="italic">token emb.</text>
+          </g>
+
+          <!-- arrow to model -->
+          <path d="M 500 173 Q 600 173 680 205" stroke="#6b7280" stroke-width="1.4" fill="none" marker-end="url(#arrowhead-mm)"/>
+
+          <!-- ========== Row 3: Image (green) ========== -->
+          <g transform="translate(0, 240)">
+            <!-- small 4x4 grid as image stand-in -->
+            <g transform="translate(56, 0)">
+              <rect x="0" y="0" width="16" height="16" fill="#4ade80" fill-opacity="0.9"/>
+              <rect x="17" y="0" width="16" height="16" fill="#4ade80" fill-opacity="0.55"/>
+              <rect x="34" y="0" width="16" height="16" fill="#4ade80" fill-opacity="0.75"/>
+              <rect x="51" y="0" width="16" height="16" fill="#4ade80" fill-opacity="0.4"/>
+              <rect x="0" y="17" width="16" height="16" fill="#4ade80" fill-opacity="0.5"/>
+              <rect x="17" y="17" width="16" height="16" fill="#4ade80" fill-opacity="0.85"/>
+              <rect x="34" y="17" width="16" height="16" fill="#4ade80" fill-opacity="0.35"/>
+              <rect x="51" y="17" width="16" height="16" fill="#4ade80" fill-opacity="0.65"/>
+              <rect x="0" y="34" width="16" height="16" fill="#4ade80" fill-opacity="0.7"/>
+              <rect x="17" y="34" width="16" height="16" fill="#4ade80" fill-opacity="0.4"/>
+              <rect x="34" y="34" width="16" height="16" fill="#4ade80" fill-opacity="0.6"/>
+              <rect x="51" y="34" width="16" height="16" fill="#4ade80" fill-opacity="0.8"/>
+              <rect x="0" y="51" width="16" height="16" fill="#4ade80" fill-opacity="0.45"/>
+              <rect x="17" y="51" width="16" height="16" fill="#4ade80" fill-opacity="0.75"/>
+              <rect x="34" y="51" width="16" height="16" fill="#4ade80" fill-opacity="0.55"/>
+              <rect x="51" y="51" width="16" height="16" fill="#4ade80" fill-opacity="0.9"/>
+              <rect x="0" y="0" width="67" height="67" fill="none" stroke="#4ade80" stroke-width="1" stroke-opacity="0.5"/>
+            </g>
+            <text x="110" y="85" fill="#9ca3af" font-size="11" text-anchor="middle">image condition</text>
+          </g>
+
+          <!-- arrow + label -->
+          <line x1="185" y1="273" x2="335" y2="273" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowhead-mm)"/>
+          <text x="260" y="266" fill="#9ca3af" font-size="10.5" text-anchor="middle" font-style="italic">encode</text>
+
+          <!-- Zone 2: isometric box for feature map (B, C, H, W) -->
+          <g transform="translate(360, 240)">
+            <!-- back face -->
+            <polygon points="15,5 70,5 70,60 15,60" fill="url(#img-face-side)" stroke="#4ade80" stroke-width="1" stroke-opacity="0.6"/>
+            <!-- top face -->
+            <polygon points="0,0 55,0 70,5 15,5" fill="url(#img-face-top)" stroke="#4ade80" stroke-width="1" stroke-opacity="0.6"/>
+            <!-- front face -->
+            <polygon points="0,0 55,0 55,55 0,55" fill="#4ade80" fill-opacity="0.3" stroke="#4ade80" stroke-width="1.2"/>
+            <!-- grid on front -->
+            <line x1="0" y1="18" x2="55" y2="18" stroke="#4ade80" stroke-width="0.6" stroke-opacity="0.4"/>
+            <line x1="0" y1="37" x2="55" y2="37" stroke="#4ade80" stroke-width="0.6" stroke-opacity="0.4"/>
+            <line x1="18" y1="0" x2="18" y2="55" stroke="#4ade80" stroke-width="0.6" stroke-opacity="0.4"/>
+            <line x1="37" y1="0" x2="37" y2="55" stroke="#4ade80" stroke-width="0.6" stroke-opacity="0.4"/>
+
+            <text x="85" y="14" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">(<tspan fill="#2dd4bf">B</tspan>,</text>
+            <text x="85" y="28" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">C</tspan>,</text>
+            <text x="85" y="42" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">H</tspan>,</text>
+            <text x="85" y="56" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">W</tspan>)</text>
+            <text x="135" y="35" fill="#9ca3af" font-size="10.5" font-style="italic">feature map</text>
+          </g>
+
+          <!-- arrow to model -->
+          <path d="M 500 273 Q 600 273 680 235" stroke="#6b7280" stroke-width="1.4" fill="none" marker-end="url(#arrowhead-mm)"/>
+
+          <!-- ========== Row 4: Audio (purple) ========== -->
+          <g transform="translate(0, 340)">
+            <!-- waveform -->
+            <path d="M 45 25 Q 55 5, 65 25 T 85 25 T 105 25 T 125 25 T 145 25 T 165 25 T 175 25"
+                  fill="none" stroke="#a78bfa" stroke-width="1.8" stroke-opacity="0.9"/>
+            <path d="M 45 25 Q 55 45, 65 25 T 85 25 T 105 25 T 125 25 T 145 25 T 165 25 T 175 25"
+                  fill="none" stroke="#a78bfa" stroke-width="1.2" stroke-opacity="0.5"/>
+            <text x="110" y="62" fill="#9ca3af" font-size="11" text-anchor="middle">audio clip</text>
+          </g>
+
+          <!-- arrow + label -->
+          <line x1="185" y1="365" x2="335" y2="365" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowhead-mm)"/>
+          <text x="260" y="358" fill="#9ca3af" font-size="10.5" text-anchor="middle" font-style="italic">spectrogram + encode</text>
+
+          <!-- Zone 2: audio features strip (B, T, D) -->
+          <g transform="translate(360, 350)">
+            <!-- rectangular strip with columns -->
+            <rect x="0" y="0" width="70" height="22" fill="#a78bfa" fill-opacity="0.25" stroke="#a78bfa" stroke-width="1"/>
+            <line x1="10" y1="0" x2="10" y2="22" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="0.8"/>
+            <line x1="20" y1="0" x2="20" y2="22" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="0.8"/>
+            <line x1="30" y1="0" x2="30" y2="22" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="0.8"/>
+            <line x1="40" y1="0" x2="40" y2="22" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="0.8"/>
+            <line x1="50" y1="0" x2="50" y2="22" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="0.8"/>
+            <line x1="60" y1="0" x2="60" y2="22" stroke="#a78bfa" stroke-opacity="0.5" stroke-width="0.8"/>
+            <line x1="0" y1="11" x2="70" y2="11" stroke="#a78bfa" stroke-opacity="0.3" stroke-width="0.6"/>
+
+            <text x="85" y="4" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">(<tspan fill="#2dd4bf">B</tspan>,</text>
+            <text x="85" y="17" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">T</tspan>,</text>
+            <text x="85" y="30" font-family="'IBM Plex Mono', monospace" font-size="11" fill="#e5e7eb">&#160;<tspan fill="#2dd4bf">D</tspan>)</text>
+            <text x="130" y="16" fill="#9ca3af" font-size="10.5" font-style="italic">audio feats.</text>
+          </g>
+
+          <!-- arrow to model -->
+          <path d="M 500 365 Q 620 365 680 260" stroke="#6b7280" stroke-width="1.4" fill="none" marker-end="url(#arrowhead-mm)"/>
+
+          <!-- ========== Zone 3: Diffusion Model ========== -->
+          <g>
+            <rect x="680" y="155" width="180" height="110" rx="12"
+                  fill="#f97316" fill-opacity="0.18" stroke="#f97316" stroke-width="2"/>
+            <text x="770" y="205" fill="#f97316" font-size="17" font-weight="700" text-anchor="middle">Diffusion</text>
+            <text x="770" y="228" fill="#f97316" font-size="17" font-weight="700" text-anchor="middle">Model</text>
+            <text x="770" y="250" fill="#9ca3af" font-size="10.5" text-anchor="middle" font-style="italic">U-Net / DiT</text>
+          </g>
+
+          <!-- Bottom caption inside SVG -->
+          <text x="450" y="408" fill="#9ca3af" font-size="11.5" text-anchor="middle" font-style="italic">
+            All roads lead to the same network &mdash; as long as you can turn it into a tensor.
+          </text>
+        </svg>
+      </div>
+      <p style="text-align: center; color: var(--text-muted, #9ca3af); font-size: 0.9rem; font-style: italic; margin-top: 0.75rem; max-width: 720px; margin-left: auto; margin-right: auto;">
+        Four different modalities, four different tensor shapes, one unified entry point. The trick isn't in the model &mdash; it's in converting each input into a tensor and injecting it through one of the mechanisms above.
+      </p>
+    </div>
+
     <h3 id="null-class-token">The Null Class Token</h3>
 
     <p>One important detail: we allocate <em>one extra class</em> in our embedding table. If we have 10 digit classes (0&ndash;9), we create an embedding of size 11. Index 10 is the <strong>null class</strong> &mdash; it means "no conditioning": no additional information hinting at what to produce, as if conditioning were never applied.</p>
