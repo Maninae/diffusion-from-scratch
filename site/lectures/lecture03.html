@@ -110,7 +110,7 @@
       $$\tilde{\beta}_t = \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t} \cdot \beta_t$$
     </div>
 
-    <p>Look at the posterior mean carefully. It's a <strong>weighted average of $x_0$ and $x_t$</strong>. The model's best guess for $x_{t-1}$ lies somewhere between the clean image and the noisy image. The weights depend on the schedule: at early timesteps (low noise), $x_t$ dominates; at late timesteps (high noise), $x_0$ dominates.</p>
+    <p>Look at the posterior mean carefully. It's a <strong>weighted average of $x_0$ and $x_t$</strong>. The model's best guess for $x_{t-1}$ lies somewhere between the clean image and the noisy image. The weights depend on the schedule: at very early timesteps ($t \approx 1$), $x_0$ dominates because $x_{t-1}$ is nearly identical to the clean image. As $t$ grows, the balance shifts sharply toward $x_t$, since $x_{t-1}$ is now much closer to the current noisy state than to $x_0$.</p>
 
     <div id="posterior-mean-widget" style="max-width: 700px; margin: 2rem auto; background: var(--bg-deep, #0a0e17); border-radius: 12px; padding: 2rem; border: 1px solid rgba(255,255,255,0.08);">
       <div style="text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 20px; color: var(--text-primary, #e6edf3); margin-bottom: 1.5rem; line-height: 1.6;">
@@ -139,7 +139,7 @@
       </div>
 
       <p style="font-size: 13px; color: var(--text-muted, #8b949e); text-align: center; line-height: 1.5; margin: 0; font-style: italic;">
-        Drag the slider to see how the posterior mean's weights shift. At early timesteps (low t), x<sub>t</sub> dominates because the image is barely noised. At late timesteps (high t), x<sub>0</sub> dominates because the model must rely more on the denoising prior.
+        Drag the slider to see how the posterior mean's weights shift. Computed with a linear β schedule (β<sub>1</sub> = 0.0001 to β<sub>T</sub> = 0.02, T = 1000). At t=1, x<sub>0</sub> carries all the weight because x<sub>t-1</sub> equals the clean image. The balance tips toward x<sub>t</sub> almost immediately and stays there for the rest of the schedule — a reminder that each denoising step is a small local correction from x<sub>t</sub>, not a jump back to x<sub>0</sub>.
       </p>
     </div>
 
