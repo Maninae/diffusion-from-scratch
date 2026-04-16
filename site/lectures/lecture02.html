@@ -688,7 +688,12 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas) <span 
     <span class="keyword">return</span> sqrt_ab * x_0 + sqrt_om * noise, noise</pre>
     </div>
 
-    <p>In the next lecture, we'll tackle the reverse process: how to train a neural network to undo the noise we just learned to add.</p>
+    <!-- Section 2.7: Looking Ahead -->
+    <h2 id="looking-ahead"><span class="section-number">2.7</span> Looking Ahead</h2>
+
+    <p>The forward process is fully specified: pick a schedule, precompute the cumulative products, and any timestep is one tensor multiplication away. Destruction is trivially easy. Reversal is the hard part.</p>
+
+    <p>The next lecture turns the chain around and asks what it would take to go from noise back to data. The true reverse distribution is intractable, so the derivation takes a detour through the ELBO, introduces a clever reparameterization that swaps predicting the clean image for predicting the noise, and arrives at a loss function so simple it's almost suspicious: mean squared error between two noise tensors. That simplified loss is the training objective that makes diffusion practical.</p>
 
   </article>
 

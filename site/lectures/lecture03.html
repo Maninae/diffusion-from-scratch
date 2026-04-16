@@ -426,7 +426,12 @@
     <span class="keyword">return</span> loss.item()</pre>
     </div>
 
-    <p>We now have the complete mathematical foundation: the forward process (Lecture 2) and the reverse process with its training objective (this lecture). Next, we'll build the neural network architecture, the U-Net, that actually does the denoising.</p>
+    <!-- Section 3.9: Looking Ahead -->
+    <h2 id="looking-ahead"><span class="section-number">3.9</span> Looking Ahead</h2>
+
+    <p>The mathematical foundation is now complete: the forward process from Lecture 2 and the reverse process with its simplified training objective from this lecture. What's missing is the function approximator itself. The $\varepsilon$-prediction formulation calls for a network that takes a noisy image and a timestep and returns a noise tensor of the same shape, but says nothing about what architecture makes that prediction accurate.</p>
+
+    <p>The next lecture builds that architecture: the <strong>U-Net</strong>, the encoder-decoder with skip connections that has become the default denoiser in diffusion models. Since denoising requires preserving fine spatial detail while also reasoning globally about image content, the U-shape turns out to be a remarkably good fit. The skip connections carry high-frequency detail across the bottleneck, while the contracting path builds up the semantic context needed to decide what to denoise toward.</p>
 
   </article>
 

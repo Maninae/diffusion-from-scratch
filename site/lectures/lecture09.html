@@ -628,7 +628,14 @@ M834 80h400000v40h-400000z"></path></svg></span></span></span><span class="vlist
     <span class="keyword">return</span> denormalize(x.<span class="function">clamp</span>(-<span class="number">1</span>, <span class="number">1</span>))
     </div>
 
-  
+    <!-- Section 9.8: Looking Ahead -->
+    <h2 id="looking-ahead"><span class="section-number">9.8</span> Looking Ahead</h2>
+
+    <p>Classifier-free guidance closes the story on <em>how</em> to control a diffusion model: a single dropout trick during training, a single linear combination at sampling time, and the model learns to steer itself. Every modern text-to-image system, from Stable Diffusion to Imagen to DALL-E, uses this exact recipe.</p>
+
+    <p>But so far the model has been denoising full-resolution pixels, one value per channel per spatial location, which becomes prohibitive at 512&times;512 and above. The next lecture introduces <strong>latent diffusion</strong>, the breakthrough behind Stable Diffusion: run the diffusion process in the compressed latent space of a pretrained VAE, where an 8&times; spatial downsample drops compute by 64&times; with almost no loss in fidelity. The same U-Net, the same noise schedule, the same CFG, all applied to a much smaller tensor.</p>
+
+
 </article>
 
   <nav class="lecture-nav">
