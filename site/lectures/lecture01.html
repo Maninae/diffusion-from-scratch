@@ -132,6 +132,173 @@
       <li><strong>The reverse process</strong> &mdash; Train a neural network to predict and remove the noise at each step. Starting from pure noise $x_T \sim \mathcal{N}(0, I)$, the network iteratively denoises: $x_T \to x_{T-1} \to \cdots \to x_0$. The result is a clean, generated image.</li>
     </ul>
 
+    <!-- Forward/Reverse Process Chain Diagram -->
+    <div style="max-width: 800px; margin: 2rem auto;">
+      <svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto; background: var(--bg-deep, #0a0e17); border-radius: 12px; padding: 16px; box-sizing: border-box;">
+        <defs>
+          <!-- Arrow markers -->
+          <marker id="arrowFwd" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="#6b7280"/>
+          </marker>
+          <marker id="arrowRev" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6" fill="#2dd4bf"/>
+          </marker>
+          <!-- Noise patterns for each step -->
+          <pattern id="noise0" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#1a2332"/>
+            <circle cx="3" cy="3" r="2.5" fill="#4ade80" opacity="0.5"/>
+            <circle cx="8" cy="8" r="2.5" fill="#4ade80" opacity="0.5"/>
+            <rect x="1" y="6" width="3" height="3" rx="0.5" fill="#4ade80" opacity="0.35"/>
+            <rect x="6" y="1" width="3" height="3" rx="0.5" fill="#4ade80" opacity="0.35"/>
+          </pattern>
+          <pattern id="noise1" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#1a2332"/>
+            <circle cx="3" cy="3" r="2" fill="#4ade80" opacity="0.4"/>
+            <circle cx="8" cy="8" r="2" fill="#4ade80" opacity="0.35"/>
+            <circle cx="7" cy="2" r="1" fill="#94a3b8" opacity="0.3"/>
+            <circle cx="2" cy="7" r="1.2" fill="#94a3b8" opacity="0.35"/>
+            <rect x="5" y="5" width="2" height="2" rx="0.5" fill="#4ade80" opacity="0.25"/>
+          </pattern>
+          <pattern id="noise2" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="#1a2332"/>
+            <circle cx="2" cy="2" r="1.5" fill="#4ade80" opacity="0.25"/>
+            <circle cx="6" cy="6" r="1.5" fill="#94a3b8" opacity="0.4"/>
+            <circle cx="5" cy="1" r="1" fill="#94a3b8" opacity="0.35"/>
+            <circle cx="1" cy="5" r="1.2" fill="#6b7280" opacity="0.4"/>
+          </pattern>
+          <pattern id="noise3" x="0" y="0" width="6" height="6" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="#1a2332"/>
+            <circle cx="1" cy="1" r="1" fill="#94a3b8" opacity="0.5"/>
+            <circle cx="4" cy="4" r="1.2" fill="#6b7280" opacity="0.5"/>
+            <circle cx="3" cy="1" r="0.8" fill="#94a3b8" opacity="0.4"/>
+            <circle cx="5" cy="2" r="0.7" fill="#6b7280" opacity="0.45"/>
+            <circle cx="1" cy="5" r="0.9" fill="#94a3b8" opacity="0.5"/>
+          </pattern>
+          <pattern id="noise4" x="0" y="0" width="5" height="5" patternUnits="userSpaceOnUse">
+            <rect width="5" height="5" fill="#1a2332"/>
+            <circle cx="1" cy="1" r="0.9" fill="#6b7280" opacity="0.6"/>
+            <circle cx="3.5" cy="3.5" r="0.8" fill="#94a3b8" opacity="0.5"/>
+            <circle cx="2" cy="4" r="0.7" fill="#6b7280" opacity="0.55"/>
+            <circle cx="4" cy="1" r="0.85" fill="#94a3b8" opacity="0.45"/>
+            <circle cx="0.5" cy="3" r="0.6" fill="#6b7280" opacity="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- ==================== FORWARD PROCESS (top row) ==================== -->
+        <text x="400" y="24" text-anchor="middle" fill="#cbd5e1" font-family="'Source Sans 3', sans-serif" font-size="14" font-weight="600">Forward Process: Gradually Add Noise</text>
+
+        <!-- Square positions: x = 40, 190, 340, 490, 640 -->
+        <!-- Square 1: clean x₀ -->
+        <rect x="40" y="40" width="70" height="70" rx="6" fill="url(#noise0)" stroke="#4ade80" stroke-width="2"/>
+        <text x="75" y="128" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">0</tspan></text>
+
+        <!-- Arrow 1→2 -->
+        <line x1="118" y1="75" x2="182" y2="75" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFwd)"/>
+        <text x="150" y="66" text-anchor="middle" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="8.5">q(x<tspan baseline-shift="sub" font-size="6">t</tspan>|x<tspan baseline-shift="sub" font-size="6">t-1</tspan>)</text>
+
+        <!-- Square 2: light noise x₁ -->
+        <rect x="190" y="40" width="70" height="70" rx="6" fill="url(#noise1)" stroke="#7cc89a" stroke-width="2"/>
+        <text x="225" y="128" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">1</tspan></text>
+
+        <!-- Arrow 2→3 -->
+        <line x1="268" y1="75" x2="332" y2="75" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFwd)"/>
+        <text x="300" y="66" text-anchor="middle" fill="#6b7280" font-family="'Source Sans 3', sans-serif" font-size="9">add noise</text>
+
+        <!-- Square 3: medium noise xₜ -->
+        <rect x="340" y="40" width="70" height="70" rx="6" fill="url(#noise2)" stroke="#8a9aaa" stroke-width="2"/>
+        <text x="375" y="128" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">t</tspan></text>
+
+        <!-- Arrow 3→4 -->
+        <line x1="418" y1="75" x2="482" y2="75" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFwd)"/>
+        <text x="450" y="66" text-anchor="middle" fill="#6b7280" font-family="'Source Sans 3', sans-serif" font-size="9">add noise</text>
+
+        <!-- Square 4: heavy noise x_{T-1} -->
+        <rect x="490" y="40" width="70" height="70" rx="6" fill="url(#noise3)" stroke="#6b7280" stroke-width="2"/>
+        <text x="525" y="128" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">T-1</tspan></text>
+
+        <!-- Arrow 4→5 -->
+        <line x1="568" y1="75" x2="632" y2="75" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowFwd)"/>
+        <text x="600" y="66" text-anchor="middle" fill="#6b7280" font-family="'IBM Plex Mono', monospace" font-size="8.5">q(x<tspan baseline-shift="sub" font-size="6">T</tspan>|x<tspan baseline-shift="sub" font-size="6">T-1</tspan>)</text>
+
+        <!-- Square 5: pure noise x_T -->
+        <rect x="640" y="40" width="70" height="70" rx="6" fill="url(#noise4)" stroke="#4b5563" stroke-width="2"/>
+        <text x="675" y="128" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">T</tspan></text>
+
+        <!-- Ellipsis between center squares -->
+        <text x="150" y="94" text-anchor="middle" fill="#4b5563" font-family="'Source Sans 3', sans-serif" font-size="16">...</text>
+        <text x="450" y="94" text-anchor="middle" fill="#4b5563" font-family="'Source Sans 3', sans-serif" font-size="16">...</text>
+
+        <!-- Divider line -->
+        <line x1="60" y1="155" x2="740" y2="155" stroke="#1e293b" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- ==================== REVERSE PROCESS (bottom row) ==================== -->
+        <text x="400" y="182" text-anchor="middle" fill="#cbd5e1" font-family="'Source Sans 3', sans-serif" font-size="14" font-weight="600">Reverse Process: Learn to Denoise</text>
+
+        <!-- Reversed: noise on left, clean on right -->
+        <!-- Square 1 (reverse): pure noise x_T -->
+        <rect x="40" y="198" width="70" height="70" rx="6" fill="url(#noise4)" stroke="#4b5563" stroke-width="2"/>
+        <text x="75" y="286" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">T</tspan></text>
+
+        <!-- NN circle above arrow 1→2 -->
+        <circle cx="150" cy="213" r="11" fill="none" stroke="#f97316" stroke-width="1.5"/>
+        <text x="150" y="217" text-anchor="middle" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="8" font-weight="500">NN</text>
+        <!-- Arrow 1→2 reverse -->
+        <line x1="118" y1="233" x2="182" y2="233" stroke="#2dd4bf" stroke-width="1.5" marker-end="url(#arrowRev)"/>
+        <text x="150" y="254" text-anchor="middle" fill="#2dd4bf" font-family="'IBM Plex Mono', monospace" font-size="8.5">p<tspan baseline-shift="sub" font-size="6">&theta;</tspan>(x<tspan baseline-shift="sub" font-size="6">T-1</tspan>|x<tspan baseline-shift="sub" font-size="6">T</tspan>)</text>
+
+        <!-- Square 2 (reverse): heavy noise x_{T-1} -->
+        <rect x="190" y="198" width="70" height="70" rx="6" fill="url(#noise3)" stroke="#6b7280" stroke-width="2"/>
+        <text x="225" y="286" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">T-1</tspan></text>
+
+        <!-- NN circle above arrow 2→3 -->
+        <circle cx="300" cy="213" r="11" fill="none" stroke="#f97316" stroke-width="1.5"/>
+        <text x="300" y="217" text-anchor="middle" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="8" font-weight="500">NN</text>
+        <!-- Arrow 2→3 reverse -->
+        <line x1="268" y1="233" x2="332" y2="233" stroke="#2dd4bf" stroke-width="1.5" marker-end="url(#arrowRev)"/>
+        <text x="300" y="254" text-anchor="middle" fill="#2dd4bf" font-family="'Source Sans 3', sans-serif" font-size="9">denoise</text>
+
+        <!-- Square 3 (reverse): medium noise xₜ -->
+        <rect x="340" y="198" width="70" height="70" rx="6" fill="url(#noise2)" stroke="#8a9aaa" stroke-width="2"/>
+        <text x="375" y="286" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">t</tspan></text>
+
+        <!-- NN circle above arrow 3→4 -->
+        <circle cx="450" cy="213" r="11" fill="none" stroke="#f97316" stroke-width="1.5"/>
+        <text x="450" y="217" text-anchor="middle" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="8" font-weight="500">NN</text>
+        <!-- Arrow 3→4 reverse -->
+        <line x1="418" y1="233" x2="482" y2="233" stroke="#2dd4bf" stroke-width="1.5" marker-end="url(#arrowRev)"/>
+        <text x="450" y="254" text-anchor="middle" fill="#2dd4bf" font-family="'Source Sans 3', sans-serif" font-size="9">denoise</text>
+
+        <!-- Square 4 (reverse): light noise x₁ -->
+        <rect x="490" y="198" width="70" height="70" rx="6" fill="url(#noise1)" stroke="#7cc89a" stroke-width="2"/>
+        <text x="525" y="286" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">1</tspan></text>
+
+        <!-- NN circle above arrow 4→5 -->
+        <circle cx="600" cy="213" r="11" fill="none" stroke="#f97316" stroke-width="1.5"/>
+        <text x="600" y="217" text-anchor="middle" fill="#f97316" font-family="'IBM Plex Mono', monospace" font-size="8" font-weight="500">NN</text>
+        <!-- Arrow 4→5 reverse -->
+        <line x1="568" y1="233" x2="632" y2="233" stroke="#2dd4bf" stroke-width="1.5" marker-end="url(#arrowRev)"/>
+        <text x="600" y="254" text-anchor="middle" fill="#2dd4bf" font-family="'IBM Plex Mono', monospace" font-size="8.5">p<tspan baseline-shift="sub" font-size="6">&theta;</tspan>(x<tspan baseline-shift="sub" font-size="6">0</tspan>|x<tspan baseline-shift="sub" font-size="6">1</tspan>)</text>
+
+        <!-- Square 5 (reverse): clean x₀ -->
+        <rect x="640" y="198" width="70" height="70" rx="6" fill="url(#noise0)" stroke="#4ade80" stroke-width="2"/>
+        <text x="675" y="286" text-anchor="middle" fill="#94a3b8" font-family="'IBM Plex Mono', monospace" font-size="12">x<tspan baseline-shift="sub" font-size="9">0</tspan></text>
+
+        <!-- Ellipsis between center squares -->
+        <text x="300" y="252" text-anchor="middle" fill="#1e4038" font-family="'Source Sans 3', sans-serif" font-size="16">...</text>
+        <text x="450" y="252" text-anchor="middle" fill="#1e4038" font-family="'Source Sans 3', sans-serif" font-size="16">...</text>
+
+        <!-- Legend -->
+        <text x="400" y="310" text-anchor="middle" fill="#475569" font-family="'Source Sans 3', sans-serif" font-size="10">
+          <tspan fill="#4ade80">&#9632;</tspan> clean &nbsp;&nbsp;
+          <tspan fill="#6b7280">&#9632;</tspan> noisy &nbsp;&nbsp;
+          <tspan fill="#f97316">&#9675;</tspan> neural network &nbsp;&nbsp;
+          <tspan fill="#6b7280">&#8594;</tspan> forward &nbsp;&nbsp;
+          <tspan fill="#2dd4bf">&#8594;</tspan> reverse
+        </text>
+      </svg>
+      <p style="text-align: center; color: #64748b; font-family: 'Source Sans 3', sans-serif; font-size: 0.9rem; font-style: italic; margin-top: 0.75rem; line-height: 1.5;">The forward process gradually destroys an image with Gaussian noise. The reverse process learns to undo each step, recovering the original image from pure noise.</p>
+    </div>
+
     <p>Why does this work so well? Because <strong>each denoising step is a small, learnable problem</strong>. The network doesn't have to generate an entire image from scratch; it just has to remove a tiny bit of noise at each step. A thousand easy problems instead of one impossible one.</p>
 
     <p>Diffusion models deliver on these tradeoffs:</p>
