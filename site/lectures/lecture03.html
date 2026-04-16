@@ -112,6 +112,113 @@
 
     <p>Look at the posterior mean carefully. It's a <strong>weighted average of $x_0$ and $x_t$</strong>. The model's best guess for $x_{t-1}$ lies somewhere between the clean image and the noisy image. The weights depend on the schedule: at early timesteps (low noise), $x_t$ dominates; at late timesteps (high noise), $x_0$ dominates.</p>
 
+    <div id="posterior-mean-widget" style="max-width: 700px; margin: 2rem auto; background: var(--bg-deep, #0a0e17); border-radius: 12px; padding: 2rem; border: 1px solid rgba(255,255,255,0.08);">
+      <div style="text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 20px; color: var(--text-primary, #e6edf3); margin-bottom: 1.5rem; line-height: 1.6;">
+        <span style="color: var(--text-muted, #8b949e);">&mu;<sub>t</sub> =</span>
+        <span id="pm-w0" style="color: #2dd4bf; display: inline-block; min-width: 5.5em; text-align: right;">0.0000</span>
+        <span style="color: var(--text-muted, #8b949e);"> &middot; x<sub>0</sub> +</span>
+        <span id="pm-wt" style="color: #f97316; display: inline-block; min-width: 5.5em; text-align: right;">0.0000</span>
+        <span style="color: var(--text-muted, #8b949e);"> &middot; x<sub>t</sub></span>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 0.5rem; font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--text-secondary, #b1bac4);">
+        t = <span id="pm-t-val">500</span>
+      </div>
+      <input type="range" id="pm-slider" min="1" max="999" value="500" step="1" style="width: 100%; accent-color: #2dd4bf; margin-bottom: 1.25rem;">
+
+      <div style="display: flex; height: 28px; border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem; background: rgba(255,255,255,0.05);">
+        <div id="pm-bar-w0" style="background: #2dd4bf; width: 50%; transition: width 0.05s linear;"></div>
+        <div id="pm-bar-wt" style="background: #f97316; width: 50%; transition: width 0.05s linear;"></div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted, #8b949e); text-align: center; margin-bottom: 1rem;">
+        <div>&beta;<sub>t</sub> = <span id="pm-beta" style="color: var(--text-secondary, #b1bac4);">0.0000</span></div>
+        <div>&alpha;<sub>t</sub> = <span id="pm-alpha" style="color: var(--text-secondary, #b1bac4);">0.0000</span></div>
+        <div>&#257;<sub>t</sub> = <span id="pm-ab" style="color: var(--text-secondary, #b1bac4);">0.0000</span></div>
+        <div>&#257;<sub>t&minus;1</sub> = <span id="pm-ab-prev" style="color: var(--text-secondary, #b1bac4);">0.0000</span></div>
+      </div>
+
+      <p style="font-size: 13px; color: var(--text-muted, #8b949e); text-align: center; line-height: 1.5; margin: 0; font-style: italic;">
+        Drag the slider to see how the posterior mean's weights shift. At early timesteps (low t), x<sub>t</sub> dominates because the image is barely noised. At late timesteps (high t), x<sub>0</sub> dominates because the model must rely more on the denoising prior.
+      </p>
+    </div>
+
+    <script>
+      (function() {
+        function initPosteriorMeanWidget() {
+          const T = 1000;
+          const beta_start = 0.0001;
+          const beta_end = 0.02;
+          const betas = [];
+          const alphas = [];
+          const alpha_bars = [];
+          let cum = 1.0;
+          for (let t = 0; t < T; t++) {
+            const b = beta_start + (beta_end - beta_start) * t / (T - 1);
+            betas.push(b);
+            alphas.push(1 - b);
+            cum *= (1 - b);
+            alpha_bars.push(cum);
+          }
+
+          const slider = document.getElementById('pm-slider');
+          const tVal = document.getElementById('pm-t-val');
+          const w0El = document.getElementById('pm-w0');
+          const wtEl = document.getElementById('pm-wt');
+          const betaEl = document.getElementById('pm-beta');
+          const alphaEl = document.getElementById('pm-alpha');
+          const abEl = document.getElementById('pm-ab');
+          const abPrevEl = document.getElementById('pm-ab-prev');
+          const bar0 = document.getElementById('pm-bar-w0');
+          const barT = document.getElementById('pm-bar-wt');
+
+          if (!slider) return;
+
+          function fmt(x, digits) {
+            digits = digits || 4;
+            if (x === 0) return (0).toFixed(digits);
+            const abs = Math.abs(x);
+            if (abs < 1e-3 || abs >= 1e5) {
+              return x.toExponential(3);
+            }
+            return x.toFixed(digits);
+          }
+
+          function update() {
+            const t = parseInt(slider.value, 10);
+            const alpha_t = alphas[t];
+            const beta_t = betas[t];
+            const ab_t = alpha_bars[t];
+            const ab_prev = alpha_bars[t - 1];
+            const w0 = Math.sqrt(ab_prev) * beta_t / (1 - ab_t);
+            const wt = Math.sqrt(alpha_t) * (1 - ab_prev) / (1 - ab_t);
+
+            tVal.textContent = t;
+            w0El.textContent = w0.toFixed(4);
+            wtEl.textContent = wt.toFixed(4);
+            betaEl.textContent = fmt(beta_t);
+            alphaEl.textContent = fmt(alpha_t);
+            abEl.textContent = fmt(ab_t);
+            abPrevEl.textContent = fmt(ab_prev);
+
+            const total = w0 + wt;
+            const pct0 = total > 0 ? (w0 / total) * 100 : 50;
+            bar0.style.width = pct0 + '%';
+            barT.style.width = (100 - pct0) + '%';
+          }
+
+          slider.addEventListener('input', update);
+          update();
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initPosteriorMeanWidget);
+        } else {
+          initPosteriorMeanWidget();
+        }
+      })();
+    </script>
+
     <p>The variance $\tilde{\beta}_t$ is small; the posterior is a tight Gaussian. This makes sense: knowing both the clean and noisy images pins down the intermediate state precisely.</p>
 
     <p>But we don't have $x_0$ at test time. That's the whole point: we're trying to <em>generate</em> $x_0$.</p>
