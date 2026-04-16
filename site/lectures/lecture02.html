@@ -647,6 +647,117 @@ alphas_cumprod = <span class="function">cumulative_product</span>(alphas) <span 
 
     <p>To build intuition, let's watch what happens to a single image as the forward process runs.</p>
 
+    <div class="forward-strip-viz" style="margin: 2rem auto; max-width: 900px;">
+      <div id="forwardStripContainer" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;"></div>
+      <p style="text-align: center; color: #8a7f6d; font-size: 12px; margin-top: 16px; font-family: 'Source Sans 3', sans-serif; font-style: italic;">The same MNIST-style digit under the linear schedule (&beta; ramping from 10<sup>&minus;4</sup> to 0.02 over T = 1000). Each panel shows the closed-form $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1 - \bar{\alpha}_t}\, \varepsilon$ with a fresh noise sample.</p>
+      <script>
+      (function() {
+        var container = document.getElementById('forwardStripContainer');
+        if (!container) return;
+        var T = 1000;
+        var timesteps = [0, 100, 250, 500, 750, 1000];
+
+        // Pre-render source image on a hidden canvas
+        var W = 96, H = 96;
+        var srcCanvas = document.createElement('canvas');
+        srcCanvas.width = W; srcCanvas.height = H;
+        var sctx = srcCanvas.getContext('2d');
+        // Black background (MNIST-style)
+        sctx.fillStyle = '#000000';
+        sctx.fillRect(0, 0, W, H);
+        // Draw a bold digit "3" in cream-white
+        sctx.fillStyle = '#f5e6d3';
+        sctx.font = 'bold 78px "Source Sans 3", Arial, sans-serif';
+        sctx.textAlign = 'center';
+        sctx.textBaseline = 'middle';
+        sctx.fillText('3', W / 2, H / 2 + 4);
+        var srcPixels = sctx.getImageData(0, 0, W, H).data;
+
+        // Linear schedule: compute ᾱ_t for t = 0..T
+        var alphaBar = new Float64Array(T + 1);
+        alphaBar[0] = 1.0;
+        for (var i = 0; i < T; i++) {
+          var beta = 1e-4 + (0.02 - 1e-4) * i / (T - 1);
+          alphaBar[i + 1] = alphaBar[i] * (1 - beta);
+        }
+
+        // Seeded RNG + Gaussian sampler
+        function mulberry32(seed) {
+          return function() {
+            seed = (seed + 0x6D2B79F5) | 0;
+            var t = seed;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+          };
+        }
+        function gauss(rng) {
+          var u1 = Math.max(rng(), 1e-10);
+          var u2 = rng();
+          return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        }
+
+        function fmtSnr(v) {
+          if (!isFinite(v)) return '\u221E';
+          if (v >= 10) return v.toFixed(1);
+          if (v >= 0.1) return v.toFixed(2);
+          if (v >= 0.01) return v.toFixed(3);
+          return v.toExponential(1).replace('e', '\u00D710^').replace('+', '').replace('10^-', '10^\u2212');
+        }
+
+        function makeLabel(text, color, bold) {
+          var d = document.createElement('div');
+          d.textContent = text;
+          if (color) d.style.color = color;
+          if (bold) { d.style.fontWeight = '600'; d.style.fontSize = '12px'; }
+          return d;
+        }
+
+        timesteps.forEach(function(t, idx) {
+          var panel = document.createElement('div');
+          panel.style.cssText = 'display: flex; flex-direction: column; align-items: center;';
+
+          var canvas = document.createElement('canvas');
+          canvas.width = W; canvas.height = H;
+          canvas.style.cssText = 'width: 108px; height: 108px; image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 6px; background: #000; border: 1px solid rgba(255,255,255,0.08);';
+          panel.appendChild(canvas);
+
+          var ctx = canvas.getContext('2d');
+          var outImgData = ctx.createImageData(W, H);
+
+          var ab = alphaBar[t];
+          var sqrtAb = Math.sqrt(ab);
+          var sqrtOm = Math.sqrt(1 - ab);
+
+          // Each panel uses its own seeded RNG — reproducible and independent
+          var rng = mulberry32(42 + idx * 997);
+          for (var i = 0; i < srcPixels.length; i += 4) {
+            for (var c = 0; c < 3; c++) {
+              // Normalize [0, 255] -> [-1, 1], apply closed-form, denormalize + clip
+              var v0 = (srcPixels[i + c] / 127.5) - 1;
+              var vt = sqrtAb * v0 + sqrtOm * gauss(rng);
+              outImgData.data[i + c] = Math.max(0, Math.min(255, (vt + 1) * 127.5));
+            }
+            outImgData.data[i + 3] = 255;
+          }
+          ctx.putImageData(outImgData, 0, 0);
+
+          // Label block below each panel — safe DOM, no innerHTML
+          var labels = document.createElement('div');
+          labels.style.cssText = 'margin-top: 10px; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: #b8ad98; text-align: center; line-height: 1.6; min-width: 108px;';
+          var snr = (1 - ab) > 1e-10 ? ab / (1 - ab) : Infinity;
+          labels.appendChild(makeLabel('t = ' + t, '#f97316', true));
+          labels.appendChild(makeLabel('\u221A\u0101\u0305 = ' + sqrtAb.toFixed(3)));
+          labels.appendChild(makeLabel('\u221A(1\u2212\u0101\u0305) = ' + sqrtOm.toFixed(3)));
+          labels.appendChild(makeLabel('SNR = ' + fmtSnr(snr)));
+          panel.appendChild(labels);
+
+          container.appendChild(panel);
+        });
+      })();
+      </script>
+    </div>
+
     <p>At $t = 0$, you see the original image clearly. By $t = 100$, there's a subtle graininess, like a slightly noisy photograph. At $t = 250$, you can still make out the overall shape and structure, but details are fading. At $t = 500$, it's a ghostly outline buried in static.</p>
 
     <p>By $t = 750$, you're squinting to see any structure at all. At $t = 1000$, it's pure noise. No trace of the original image remains.</p>
