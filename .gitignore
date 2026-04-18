@@ -19,3 +19,14 @@ __pycache__/
 .env
 .venv/
 venv/
+
+# Session histories & internal plans
+.agent/
+.claude/history/
+.claude/plans/
+
+# Backup files
+*.bak
+
+# Drafts
+docs/threads-draft.md
