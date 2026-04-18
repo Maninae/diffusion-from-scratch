@@ -323,7 +323,7 @@ Assessment Track (separate section)
 | | |
 |---|---|
 | **Source material** | Module 08 §8.3–8.7, Module 03 §3.5 (cross-attention) |
-| **Estimated depth** | Core concept (likely interview topic) |
+| **Estimated depth** | Core concept |
 | **Dependencies** | Lecture 8 |
 
 **Content:**
@@ -526,7 +526,7 @@ Assessment Track (separate section)
 | **07 — Sampling** | Lecture 7 | Condensed. DDPM + DDIM + ODE in one lecture. |
 | **08 — Conditioning** | Lectures 8–9 | Split: conditioning/classifier guidance vs CFG. |
 | **09 — Advanced** | Lectures 10–13 | Split into 4 lectures across 2 modules. |
-| **10 — Interview** | Assessment track | Separate section, not a numbered module. |
+| **10 — Assessment** | Assessment track | Separate section, not a numbered module. |
 
 ---
 

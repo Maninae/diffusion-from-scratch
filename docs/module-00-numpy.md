@@ -1,7 +1,7 @@
 # Module 0: Python & NumPy Foundations
 
 ## Purpose
-Warm up vectorization skills and ensure NumPy fluency before touching PyTorch. The interview requires practical Python — sloppy, loop-heavy code signals inexperience.
+Warm up vectorization skills and ensure NumPy fluency before touching PyTorch. Clean, vectorized code is essential — sloppy, loop-heavy code signals inexperience.
 
 ## 📄 Key Papers
 None for this module — this is foundational tooling.

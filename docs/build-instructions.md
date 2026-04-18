@@ -1,14 +1,10 @@
-# Build Instructions — For the Coding Agent
+# Build Instructions
 
-This document is the spec for a coding agent (Claude Code / Codex) to build the Jupyter notebook curriculum.
+Spec for building the Jupyter notebook curriculum.
 
 ---
 
 ## Context
-
-**Who this is for:** Owen Wang, preparing for a technical assessment on image diffusion.
-
-**Interview format:** 45-minute live coding, image diffusion model-based question, practical Python + PyTorch (NOT LeetCode).
 
 **Goal:** A comprehensive, pedagogical Jupyter notebook curriculum covering diffusion models from scratch.
 
@@ -17,7 +13,6 @@ This document is the spec for a coding agent (Claude Code / Codex) to build the 
 ## Project Structure
 
 ```
-~/Developer/diffusion-prep/
 ├── requirements.txt
 ├── README.md
 ├── module_00_numpy_foundations.ipynb
@@ -52,10 +47,10 @@ numpy
 matplotlib
 jupyter
 tqdm
-einops          # Optional but nice for einsum-like reshaping
+einops
 ```
 
-**Target hardware:** MacBook with MPS (Apple Silicon) or CPU. No CUDA required. Training should be feasible on CPU/MPS for toy models.
+**Target hardware:** Apple Silicon (MPS) or CPU. No CUDA required. Training should be feasible on CPU/MPS for toy models.
 
 ---
 
@@ -71,7 +66,7 @@ Each module follows this pattern:
    a. **Concept introduction (markdown):** Explain the concept with LaTeX math, diagrams (use matplotlib to generate inline), intuition. Focus on WHY before HOW.
    b. **Worked example (code):** Complete, runnable implementation with detailed inline comments. The student reads and runs, doesn't write.
    c. **Exercise (markdown):** Clear problem statement, expected output described, time estimate if applicable.
-   d. **Solution (code):** In a cell marked with `# ✅ SOLUTION — try the exercise above before running this`. Use cell metadata or a comment-based collapse hint.
+   d. **Solution (code):** In a cell marked with `# SOLUTION — try the exercise above before running this`. Use cell metadata or a comment-based collapse hint.
 4. **Capstone exercise** at the end of each module
 
 ### Code Style
@@ -157,13 +152,3 @@ Before considering a module complete:
 ## Paper References
 
 See `papers.md` in this directory for the complete list with arxiv links. Each module spec indicates which papers to reference and where.
-
----
-
-## Notes for the Agent
-
-- **[removed]** Quality matters more than speed. Get it right.
-- **Owen has deep experience with diffusion models** (Meta Reality Labs, Codec Avatars, DataGen). The notebook should be thorough enough to refresh and sharpen, not basic enough to bore.
-- **This is practical implementation, not algorithmic puzzles.** It's practical implementation. The notebook should emphasize writing clean, structured PyTorch code under time pressure.
-- **Test everything.** Every code cell should actually run. If training takes too long for a notebook, reduce epochs/dataset but include a note about full training.
-- **MPS compatibility:** Some PyTorch operations don't work on MPS yet. Fallback to CPU gracefully where needed with a note.

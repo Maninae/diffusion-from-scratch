@@ -1,7 +1,7 @@
-# Module 10: Interview Simulation
+# Module 10: Assessment & Coding Challenges
 
 ## Purpose
-Apply everything under time pressure. These exercises simulate the actual 45-minute technical coding assessment: live coding with image diffusion, practical Python/PyTorch, structured code, verbal explanation of thought process.
+Apply everything under time pressure. These exercises simulate a technical coding assessment: live coding with image diffusion, practical Python/PyTorch, structured code, verbal explanation of thought process.
 
 ## 📄 Key Papers
 All papers from previous modules apply here. No new papers — this is about execution.
@@ -13,7 +13,7 @@ Each exercise should include:
 - **Starter code:** Minimal imports and any provided scaffolding (like a pre-trained model checkpoint path)
 - **Evaluation criteria:** What "good" looks like (code structure, correctness, completeness)
 - **Solution:** Complete, clean, well-commented implementation
-- **Debrief:** Common mistakes, things interviewers look for, talking points
+- **Debrief:** Common mistakes, key evaluation criteria, talking points
 
 ---
 
@@ -26,7 +26,7 @@ Each exercise should include:
 **Prompt:**
 > "Implement a diffusion model that learns to generate samples from a 2D distribution (e.g., a spiral or Swiss roll). You should implement: the forward noising process, a simple MLP denoiser, the training loop, and the sampling loop."
 
-**What the interviewer is looking for:**
+**Evaluation criteria:**
 - Correct noise schedule computation (β, α, ᾱ)
 - Correct forward process: `x_t = √ᾱ_t x_0 + √(1-ᾱ_t) ε`
 - Simple MLP that takes (x_t, t) and predicts ε
@@ -69,7 +69,7 @@ data = make_spiral(2000)
 **Prompt:**
 > "You have a trained class-conditional diffusion model. Implement DDIM sampling with classifier-free guidance. The model accepts (x_t, t, class_label) where class_label can be a null token for unconditional prediction."
 
-**What the interviewer is looking for:**
+**Evaluation criteria:**
 - Correct DDIM update formula
 - CFG: two forward passes (conditional + unconditional), correct combination
 - Guidance scale parameter
@@ -120,7 +120,7 @@ def ddim_sample_cfg(model, noise_schedule, shape, class_label,
 **Prompt:**
 > "Implement the complete training step for a DDPM-style diffusion model. Given a batch of images and a model, implement: noise schedule setup, the noising process, loss computation, and a training loop that runs for N steps."
 
-**What the interviewer is looking for:**
+**Evaluation criteria:**
 - Precomputing schedule values as tensors
 - Correct indexing of schedule values by timestep
 - Proper random timestep sampling (one per batch element)
@@ -163,7 +163,7 @@ T = 1000  # Total timesteps
 
 ### 10.4 — Verbal Explanation Prompts
 
-These are questions the interviewer might ask during or after coding. Practice explaining these clearly and concisely.
+Practice explaining these concepts clearly and concisely — the kind of questions that test deep understanding.
 
 **Core Understanding:**
 1. "Walk me through the forward diffusion process. What happens to an image at each step?"
@@ -252,16 +252,15 @@ These are questions the interviewer might ask during or after coding. Practice e
 **Format:**
 - Present the discussion prompt
 - Structured model answer with the points above
-- Follow-up questions the interviewer might ask
+- Follow-up questions to deepen understanding
 
 ---
 
-## General Interview Tips (Include as Final Section)
+## General Tips (Include as Final Section)
 
-1. **Think out loud.** The interviewer wants to hear your reasoning, not just see code. Narrate as you type.
+1. **Think out loud.** Narrate your reasoning as you code — not just the what, but the why.
 2. **Start with the simplest version.** Get something working first, then optimize. Don't try to implement everything at once.
-3. **Write clean code from the start.** Good variable names, logical structure, brief comments on key lines. This is what they're evaluating.
+3. **Write clean code from the start.** Good variable names, logical structure, brief comments on key lines.
 4. **Know your shapes.** At every step, know the tensor shapes. Print them if unsure. Shape mismatches are the #1 bug.
-5. **Don't panic if stuck.** Ask clarifying questions. The interviewer expects some collaboration.
-6. **Have a plan before coding.** Spend 2-3 minutes outlining your approach before writing code. "First I'll set up the schedule, then the model, then training, then sampling."
-7. **Know the math cold.** Be able to write `x_t = √ᾱ_t x_0 + √(1-ᾱ_t) ε` without hesitation. This is the foundation of everything.
+5. **Have a plan before coding.** Spend 2-3 minutes outlining your approach before writing code. "First I'll set up the schedule, then the model, then training, then sampling."
+6. **Know the math cold.** Be able to write `x_t = √ᾱ_t x_0 + √(1-ᾱ_t) ε` without hesitation. This is the foundation of everything.

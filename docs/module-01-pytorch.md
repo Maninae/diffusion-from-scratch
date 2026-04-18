@@ -1,7 +1,7 @@
 # Module 1: PyTorch Fundamentals
 
 ## Purpose
-Build PyTorch fluency from the ground up. The interview is PyTorch-based — you need to write modules, training loops, and custom layers without hesitation.
+Build PyTorch fluency from the ground up. You need to write modules, training loops, and custom layers without hesitation.
 
 ## 📄 Key Papers
 - **PyTorch: An Imperative Style, High-Performance Deep Learning Library** — Paszke et al. 2019. [arxiv.org/abs/1912.01703](https://arxiv.org/abs/1912.01703)

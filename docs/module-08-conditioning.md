@@ -1,7 +1,7 @@
 # Module 8: Conditioning & Guidance
 
 ## Purpose
-Understand how to control what a diffusion model generates. Class conditioning, classifier guidance, and classifier-free guidance are essential for practical diffusion models and very likely interview topics.
+Understand how to control what a diffusion model generates. Class conditioning, classifier guidance, and classifier-free guidance are essential for practical diffusion models.
 
 ## 📄 Key Papers
 - **Classifier-Free Diffusion Guidance** — Ho & Salimans 2022. [arxiv.org/abs/2207.12598](https://arxiv.org/abs/2207.12598)
