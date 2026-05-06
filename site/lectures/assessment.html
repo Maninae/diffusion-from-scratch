@@ -283,10 +283,10 @@ NULL_CLASS = NUM_CLASSES
         <p><strong>Step 1: Timestep sub-selection.</strong> Uniformly space $N$ steps across the full schedule of $T$ timesteps:</p>
         <div class="code-block">
 <span class="keyword">def</span> <span class="function">get_ddim_timesteps</span>(T, num_steps):
-    <span class="comment"># Uniform spacing: [T-1, T-1-step, ..., 0]</span>
+    <span class="comment"># Uniform spacing from T-1 down to 0</span>
     step_size = T // num_steps
-    timesteps = list(range(<span class="number">0</span>, T, step_size))  <span class="comment"># ascending</span>
-    <span class="keyword">return</span> list(reversed(timesteps))            <span class="comment"># descending for sampling</span>
+    timesteps = list(range(<span class="number">0</span>, T, step_size))  <span class="comment"># [0, step, 2*step, ...]</span>
+    <span class="keyword">return</span> list(reversed(timesteps))            <span class="comment"># [T-step, ..., step, 0] descending</span>
         </div>
 
         <p><strong>Step 2: Full DDIM + CFG implementation.</strong></p>
@@ -373,6 +373,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=<span class="number">2e-4</s
 dataloader = DataLoader(mnist_dataset, batch_size=<span class="number">64</span>, shuffle=<span class="keyword">True</span>)
 T = <span class="number">1000</span>
 
+<span class="comment"># Note: images must be normalized to [-1, 1] for diffusion training.</span>
 <span class="comment"># Implement: setup_schedule(), train_step(), run training loop</span>
     </div>
 
@@ -528,7 +529,7 @@ losses = []
           <li><strong>ELBO:</strong> We can't maximize $\log p(x_0)$ directly, so we maximize a variational lower bound (the ELBO).</li>
           <li><strong>KL decomposition:</strong> The ELBO decomposes into a sum of KL divergences between consecutive reverse steps.</li>
           <li><strong>Gaussians:</strong> Because both the forward and reverse processes are Gaussian, each KL reduces to a comparison of means (the variances are fixed).</li>
-          <li><strong>Mean matching → $\epsilon$-prediction:</strong> Matching the means is equivalent to predicting the noise $\epsilon$ that was added, giving: $\mathcal{L}_t = \|\epsilon - \epsilon_\theta(x_t, t)\|^2$.</li>
+          <li><strong>Mean matching → substitution → $\epsilon$-prediction:</strong> The tractable posterior mean $\tilde{\mu}_t$ depends on $x_0$. Rearranging the forward process gives $x_0 = (x_t - \sqrt{1-\bar\alpha_t}\,\epsilon) / \sqrt{\bar\alpha_t}$. Substituting this into $\tilde{\mu}_t$ yields an expression in terms of $\epsilon$. Matching the model's predicted mean to this expression is equivalent to predicting $\epsilon$, giving: $\mathcal{L}_t = \|\epsilon - \epsilon_\theta(x_t, t)\|^2$.</li>
           <li><strong>Simplification:</strong> The full ELBO has per-timestep weights $\lambda_t$. Ho et al. found that setting $\lambda_t = 1$ for all $t$ (i.e., the unweighted "simple" loss) produces better samples, even though it's no longer a tight bound.</li>
         </ol>
         <p><strong>Common mistake:</strong> Not connecting the simplified loss back to the ELBO. The simple MSE isn't ad hoc&mdash;it's a deliberate simplification of a principled objective.</p>
@@ -669,7 +670,7 @@ losses = []
       <summary>Show Model Answer</summary>
       <div class="collapsible-content">
         <p><strong>Pixel-space diffusion</strong> operates directly on raw pixels. For a $256 \times 256 \times 3$ image, the diffusion process runs on a $256 \times 256 \times 3$ tensor at every step. This is conceptually simple but computationally expensive&mdash;especially because attention is $O(n^2)$ in spatial dimensions.</p>
-        <p><strong>Latent diffusion</strong> (Rombach et al., 2022) first trains a VAE to compress images into a smaller latent space (e.g., $256 \times 256 \to 32 \times 32$ with 4 channels), then runs the entire diffusion process in that compressed space. At generation time, the final latent is decoded back to pixel space by the VAE decoder.</p>
+        <p><strong>Latent diffusion</strong> (Rombach et al., 2022) first trains a VAE to compress images into a smaller latent space (e.g., $256 \times 256 \times 3 \to 32 \times 32 \times 4$, an $8\times$ spatial reduction), then runs the entire diffusion process in that compressed space. At generation time, the final latent is decoded back to pixel space by the VAE decoder.</p>
         <p><strong>Tradeoffs:</strong></p>
         <ul>
           <li><strong>Speed:</strong> Latent diffusion is ~10&times; faster because the spatial dimensions are 8&times; smaller in each direction ($64\times$ fewer spatial tokens).</li>
@@ -701,14 +702,14 @@ losses = []
       <summary>Show Model Answer</summary>
       <div class="collapsible-content">
         <p>Flow matching learns a <strong>velocity field</strong> that transports samples from noise to data along straight (or near-straight) paths. Instead of the diffusion framework of gradual corruption and iterative denoising, flow matching defines a continuous trajectory:</p>
-        <p>$$x_t = (1 - t) \cdot x_0 + t \cdot \epsilon, \quad t \in [0, 1]$$</p>
-        <p>The model learns the velocity $v_\theta(x_t, t)$ that moves $x_t$ along this path. The training objective is simply:</p>
-        <p>$$\mathcal{L} = \|v_\theta(x_t, t) - (\epsilon - x_0)\|^2$$</p>
+        <p>$$x_t = (1 - t) \cdot x_0 + t \cdot x_1, \quad t \in [0, 1]$$</p>
+        <p>where $x_0$ is a data sample and $x_1 \sim \mathcal{N}(0, I)$ is a noise sample. At $t = 0$ we have pure data; at $t = 1$ we have pure noise. The model learns the velocity $v_\theta(x_t, t)$ that moves $x_t$ along this path. The training objective is simply:</p>
+        <p>$$\mathcal{L} = \|v_\theta(x_t, t) - (x_1 - x_0)\|^2$$</p>
         <p><strong>Key differences from diffusion:</strong></p>
         <ul>
           <li><strong>Simpler objective:</strong> No noise schedule, no $\bar\alpha_t$ bookkeeping, no ELBO derivation.</li>
           <li><strong>Straighter paths:</strong> The interpolation between noise and data is (approximately) linear, which means fewer ODE steps are needed at inference.</li>
-          <li><strong>Fewer steps:</strong> Models like Stable Diffusion 3 use flow matching and generate high-quality images in 20&ndash;30 steps.</li>
+          <li><strong>Fewer steps:</strong> Straight paths need fewer ODE solver steps. With rectified flows (iteratively straightening trajectories), models like Stable Diffusion 3 can generate high-quality images in as few as 4&ndash;8 steps.</li>
           <li><strong>Same model architectures:</strong> U-Nets and DiTs work with flow matching; only the training target changes.</li>
         </ul>
       </div>
@@ -722,7 +723,7 @@ losses = []
         <p>This is a system design question&mdash;see <a href="#design">Part 4</a> for the full discussion. In brief:</p>
         <ul>
           <li><strong>Latent diffusion:</strong> Train a VAE to compress $512 \to 64$ spatially, then run diffusion in latent space.</li>
-          <li><strong>Architecture:</strong> Consider DiT for better scaling properties. Attention only at $32 \times 32$ and below.</li>
+          <li><strong>Architecture:</strong> U-Net with selective attention ($32 \times 32$ and below), or DiT (flat transformer over all patches). DiT scales more predictably with compute.</li>
           <li><strong>Training:</strong> Mixed precision (bf16), gradient checkpointing, distributed training, EMA weights.</li>
           <li><strong>Inference:</strong> DDIM with 50 steps, classifier-free guidance, dynamic thresholding.</li>
         </ul>
@@ -929,7 +930,9 @@ images = sample(model)
         <p>The <code>TimestepEmbedding</code> just broadcasts the raw integer $t$ to fill a vector. This gives the model almost no ability to distinguish between timesteps&mdash;the values 499 and 500 look nearly identical. It should use sinusoidal positional embedding to create a rich, continuous representation.</p>
         <div class="code-block">
 <span class="comment"># Bug:  return t.float().unsqueeze(-1).expand(-1, self.dim)</span>
-<span class="comment"># Fix:  Use sinusoidal embedding (sin/cos at different frequencies)</span>
+<span class="comment"># Fix:  Use sinusoidal embedding:</span>
+<span class="comment">#   freqs = 1 / (10000 ** (arange(half_dim) / half_dim))</span>
+<span class="comment">#   emb = cat([sin(t * freqs), cos(t * freqs)], dim=-1)</span>
         </div>
 
         <p><strong>Bug 8: CFG formula is wrong.</strong></p>
@@ -948,11 +951,11 @@ images = sample(model)
 <span class="comment">#       alpha_bar = ... .to(DEVICE)</span>
         </div>
 
-        <p><strong>Bug 10: Variance schedule not clipped.</strong></p>
-        <p>The beta schedule goes up to $0.06$, which is far too high (standard DDPM uses $0.02$). At the upper end, $\beta_t = 0.06$ means $\alpha_t = 0.94$, and $\bar\alpha_T$ goes to near-zero much too quickly, causing numerical instability. The schedule should be clipped: <code>betas = betas.clamp(max=0.999)</code> and the upper bound should be $0.02$, not $0.06$.</p>
+        <p><strong>Bug 10: Beta schedule upper bound too high.</strong></p>
+        <p>The beta schedule goes up to $0.06$, which is 3$\times$ higher than the standard DDPM value of $0.02$ (Ho et al. 2020). At $\beta_t = 0.06$, $\bar\alpha_T$ reaches near-zero far too quickly, meaning the model destroys too much signal too fast. This causes numerical instability and poor sample quality. The fix is to use the standard upper bound:</p>
         <div class="code-block">
 <span class="comment"># Bug:  betas = torch.linspace(1e-4, 0.06, T)</span>
-<span class="comment"># Fix:  betas = torch.linspace(1e-4, 0.02, T).clamp(max=0.999)</span>
+<span class="comment"># Fix:  betas = torch.linspace(1e-4, 0.02, T)</span>
         </div>
       </div>
     </details>
@@ -977,9 +980,9 @@ images = sample(model)
 
         <h4>Architecture Decisions</h4>
         <ul>
-          <li><strong>Latent diffusion:</strong> Train a VAE to compress images spatially ($512 \to 64$, an $8\times$ reduction in each dimension). Run the entire diffusion process in the $64 \times 64 \times 4$ latent space. Decode back to pixels only at the final step. This reduces compute by $\sim64\times$.</li>
-          <li><strong>DiT vs U-Net:</strong> At this scale, consider the Diffusion Transformer (DiT) architecture for better scaling properties. DiT replaces convolutional blocks with transformer blocks and scales more predictably with compute.</li>
-          <li><strong>Attention placement:</strong> Even in latent space ($64 \times 64$), full attention is expensive. Use attention only at $32 \times 32$ and below. Use efficient attention variants (flash attention) where possible.</li>
+          <li><strong>Latent diffusion:</strong> Train a VAE to compress images spatially ($512 \times 512 \times 3 \to 64 \times 64 \times 4$, an $8\times$ reduction in each spatial dimension). Run the entire diffusion process in the $64 \times 64 \times 4$ latent space. Decode back to pixels only at the final step. This reduces compute by $\sim64\times$.</li>
+          <li><strong>DiT vs U-Net:</strong> Two architecture families to choose from. <strong>U-Net</strong>: encoder-decoder with skip connections and selective attention placement (only at $32 \times 32$ and below, since attention is $O(n^2)$ in spatial tokens). <strong>DiT</strong>: patchify the latent into a flat token sequence, process with repeated transformer blocks (uniform attention over all patches), unpatchify back. DiT is architecturally simpler (no multi-resolution hierarchy) and scales more predictably with compute.</li>
+          <li><strong>Efficient attention:</strong> Regardless of architecture, use flash attention or memory-efficient variants to reduce the constant factor in attention cost.</li>
           <li><strong>Gradient checkpointing:</strong> Trade compute for memory by recomputing intermediate activations during the backward pass instead of storing them. Essential for training large models on limited GPU memory.</li>
           <li><strong>Mixed precision:</strong> Train in fp16 or bf16 for approximately $2\times$ memory savings and faster matmuls.</li>
         </ul>

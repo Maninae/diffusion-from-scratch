@@ -74,7 +74,3 @@ assets/                 # README images
 ```
 
 ---
-
-<p align="center">
-  <em>"All you need is noise and patience."</em>
-</p>
