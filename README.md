@@ -5,7 +5,7 @@
 <h1 align="center">Diffusion From Scratch</h1>
 
 <p align="center">
-  <em>A free course on how diffusion models work — from first principles to flow matching.</em>
+  <em>Understanding diffusion models by building them, one equation at a time.</em>
 </p>
 
 <p align="center">
@@ -20,9 +20,9 @@
 
 ---
 
-Diffusion models turn static into pictures. Add noise until an image is unrecognizable, then train a neural network to undo it — one step at a time. That's the engine behind Stable Diffusion, DALL·E, and Sora.
+Diffusion models turn static into pictures. Start with an image, add noise until it's unrecognizable, then train a neural network to undo it one step at a time. That's the engine behind Stable Diffusion, DALL·E, and Sora.
 
-This course covers it all across 13 lectures: the forward process, U-Net architecture, training, DDPM/DDIM sampling, classifier-free guidance, latent diffusion, DiT, and flow matching. Interactive diagrams, inline math with intuition, and pseudocode you can trace through.
+We cover this framework, broken up into themed lectures tracing a narrative path suited for learning: the forward process, U-Net architecture, training, DDPM/DDIM sampling, classifier-free guidance, latent diffusion, DiT, and flow matching. All with interactive diagrams, inline math with intuition, and pseudocode you can trace through.
 
 ## Course Outline
 
@@ -38,7 +38,7 @@ This course covers it all across 13 lectures: the forward process, U-Net archite
 
 ## The Website
 
-The lectures live as a static course website in `site/` — dark theme, KaTeX math, SVG diagrams, interactive elements. Open `site/index.html` in a browser to read locally.
+The lectures are hosted at **[maninae.github.io/diffusion-from-scratch](https://maninae.github.io/diffusion-from-scratch/)**. Dark theme, KaTeX math, SVG diagrams, interactive elements.
 
 > **Prerequisites:** CS231N-level deep learning (CNNs, backprop, attention basics), PyTorch, and introductory probability.
 
